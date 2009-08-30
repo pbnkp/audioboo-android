@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+ This file is part of AudioBoo, an android program for audio blogging.
+ Copyright (C) 2009 BestBefore Media Ltd. All rights reserved.
+
+ Author: Jens Finkhaeuser <jens@finkhaeuser.de>
+
+ $Id$
+-->
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    package="fm.audioboo.app"
+    android:versionCode="1"
+    android:versionName="1.0.0"
+  >
+  <application android:label="@string/app_name">
+    <activity android:name=".AudioBoo"
+        android:label="@string/app_name"
+      >
+      <intent-filter>
+        <action android:name="android.intent.action.MAIN" />
+        <category android:name="android.intent.category.LAUNCHER" />
+      </intent-filter>
+    </activity>
+  </application>
+</manifest>
