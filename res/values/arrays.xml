@@ -8,6 +8,12 @@
  $Id$
 -->
 <resources>
-  <!-- App name... probably shouldn't be localized -->
-  <string name="app_name">AudioBoo</string>
+
+  <!--
+    Main Activity's Tab drawables
+  -->
+  <array name="main_tab_drawables">
+    <item>@drawable/icon</item> <!-- FIXME -->
+  </array>
+
 </resources>

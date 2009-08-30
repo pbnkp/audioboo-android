@@ -8,6 +8,12 @@
  $Id$
 -->
 <resources>
-  <!-- App name... probably shouldn't be localized -->
-  <string name="app_name">AudioBoo</string>
+
+  <!--
+    Main Activity's Tab labels
+  -->
+  <string-array name="main_tab_labels">
+    <item>Recent Boos</item>
+  </string-array>
+
 </resources>

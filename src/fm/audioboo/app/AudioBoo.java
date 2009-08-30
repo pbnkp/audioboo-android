@@ -9,24 +9,38 @@
 
 package fm.audioboo.app;
 
-import android.app.Activity;
+import android.app.TabActivity;
 
 import android.os.Bundle;
 
+import android.content.Intent;
+
 import android.content.res.Configuration;
+import android.content.res.TypedArray;
+
+import android.widget.TabHost;
 
 import android.util.Log;
 
 /**
- * FIXME
+ * Main Activity. Does little more than set up the Tabs that contain the
+ * other Activities.
  **/
-public class AudioBoo extends Activity
+public class AudioBoo extends TabActivity
 {
   /***************************************************************************
    * Private constants
    **/
   // Log ID
   private static final String LTAG  = "AudioBoo";
+
+  // Classes for the Intents used to launch Tab contents.
+  // XXX Indices need to correspond with the "main_tab_labels" array in
+  //     localized.xml and the "main_tab_drawables" array in arrays.xml
+  private static final Class TAB_CONTENT_CLASSES[] = {
+    RecentBoosActivity.class,
+  };
+
 
 
   /***************************************************************************
@@ -46,17 +60,29 @@ public class AudioBoo extends Activity
   {
     super.onStart();
 
-    // Right, fetch boos. XXX This'll move elsewhere, I guess, but for now it
-    // works here.
-  }
+    // Load resources describing the tabs.
+    String[] labels = getResources().getStringArray(R.array.main_tab_labels);
+    TypedArray drawables = getResources().obtainTypedArray(
+        R.array.main_tab_drawables);
 
+    if (labels.length != drawables.length()
+        || labels.length != TAB_CONTENT_CLASSES.length)
+    {
+      Log.e(LTAG, "Programming error: differing numbers of tab labels, drawables "
+          + "and classes found.");
+      return;
+    }
 
-
-  @Override
-  public void onConfigurationChanged(Configuration config)
-  {
-    // Ignore when the keyboard opens to the extent that we don't fetch boos
-    // again.
-    super.onConfigurationChanged(config);
+    // Create tabs.
+    TabHost host = getTabHost();
+    for (int i = 0 ; i < labels.length ; ++i) {
+      host.addTab(host.newTabSpec("tab" + i)
+          .setIndicator(labels[i], drawables.getDrawable(i))
+          .setContent(
+            new Intent(this, TAB_CONTENT_CLASSES[i])
+          )
+        );
+    }
+    host.setCurrentTab(0);
   }
 }
