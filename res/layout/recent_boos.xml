@@ -7,8 +7,21 @@
 
  $Id$
 -->
-<TextView xmlns:android="http://schemas.android.com/apk/res/android"
-    android:layout_width="fill_parent" 
-    android:layout_height="wrap_content" 
-    android:text="Hello World, AudioBoo"
-  />
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="fill_parent"
+    android:layout_height="fill_parent"
+  >
+  <!-- List view -->
+  <ListView android:id="@android:id/list"
+      android:orientation="vertical"
+      android:layout_width="fill_parent"
+      android:layout_height="fill_parent"
+    />
+
+  <!-- Empty list view -->
+  <TextView android:id="@+id/recent_boos_empty"
+      android:layout_width="fill_parent" 
+      android:layout_height="wrap_content" 
+      android:text="Hello World, AudioBoo"
+    />
+</RelativeLayout>

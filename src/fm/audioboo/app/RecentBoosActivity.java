@@ -9,18 +9,25 @@
 
 package fm.audioboo.app;
 
-import android.app.Activity;
+import android.app.ListActivity;
 
 import android.os.Bundle;
 
+import android.os.Handler;
+import android.os.Message;
+
 import android.content.res.Configuration;
+
+import android.view.View;
+
+import java.util.LinkedList;
 
 import android.util.Log;
 
 /**
  * FIXME
  **/
-public class RecentBoosActivity extends Activity
+public class RecentBoosActivity extends ListActivity
 {
   /***************************************************************************
    * Private constants
@@ -30,13 +37,23 @@ public class RecentBoosActivity extends Activity
 
 
   /***************************************************************************
+   * Data members
+   **/
+  // API instance
+  private API mApi;
+
+
+  /***************************************************************************
    * Implementation
    **/
   @Override
   public void onCreate(Bundle savedInstanceState)
   {
     super.onCreate(savedInstanceState);
+
     setContentView(R.layout.recent_boos);
+    View v = findViewById(R.id.recent_boos_empty);
+    getListView().setEmptyView(v);
   }
 
 
@@ -45,6 +62,24 @@ public class RecentBoosActivity extends Activity
   public void onStart()
   {
     super.onStart();
+
+    // Start loading recent Boos.
+    if (null == mApi) {
+      mApi = new API();
+    }
+    mApi.fetchRecentBoos(new Handler(new Handler.Callback() {
+      public boolean handleMessage(Message msg)
+      {
+        if (API.ERR_SUCCESS == msg.what) {
+          onReceiveRecentBoos((LinkedList<Boo>) msg.obj);
+        }
+        else {
+          onRecentBoosError(msg.what, (String) msg.obj);
+        }
+        return true;
+      }
+
+    }));
   }
 
 
@@ -56,5 +91,17 @@ public class RecentBoosActivity extends Activity
     // again.
     super.onConfigurationChanged(config);
     Log.d(LTAG, "config changed");
+  }
+
+
+
+  private void onReceiveRecentBoos(LinkedList<Boo> boos)
+  {
+  }
+
+
+
+  private void onRecentBoosError(int code, String msg)
+  {
   }
 }
