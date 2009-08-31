@@ -90,7 +90,6 @@ public class RecentBoosActivity extends ListActivity
     // Ignore when the keyboard opens to the extent that we don't fetch boos
     // again.
     super.onConfigurationChanged(config);
-    Log.d(LTAG, "config changed");
   }
 
 

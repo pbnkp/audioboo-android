@@ -85,4 +85,16 @@ public class AudioBoo extends TabActivity
     }
     host.setCurrentTab(0);
   }
+
+
+
+  @Override
+  public void onConfigurationChanged(Configuration config)
+  {
+    // Ignore when the keyboard opens to the extent that we don't fetch boos
+    // again. XXX We need to ignore this in the parent activity so the child
+    // actvities don't get restarted. Ignoring in the child activities is also
+    // required.
+    super.onConfigurationChanged(config);
+  }
 }
