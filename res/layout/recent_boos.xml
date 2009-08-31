@@ -19,9 +19,26 @@
     />
 
   <!-- Empty list view -->
-  <TextView android:id="@+id/recent_boos_empty"
-      android:layout_width="fill_parent" 
-      android:layout_height="wrap_content" 
-      android:text="Hello World, AudioBoo"
-    />
+  <LinearLayout android:id="@+id/recent_boos_empty"
+      android:orientation="vertical"
+      android:layout_width="fill_parent"
+      android:layout_height="fill_parent"
+      android:gravity="center"
+    >
+
+    <ProgressBar
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:max="10000"
+        style="android:progressBarStyleSmall"
+      />
+
+    <ImageView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="20dp"
+        android:src="@drawable/logotype"
+      />
+
+  </LinearLayout>
 </RelativeLayout>
