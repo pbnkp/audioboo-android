@@ -33,5 +33,9 @@
     <activity android:name=".RecentBoosActivity"
         android:configChanges="orientation|keyboardHidden"
       />
+
+    <activity android:name=".RecordActivity"
+        android:configChanges="orientation|keyboardHidden"
+      />
   </application>
 </manifest>
