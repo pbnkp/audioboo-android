@@ -7,11 +7,13 @@
  * $Id$
  **/
 
-#include <jni.h>
+package fm.audioboo.jni;
 
-jint
-Java_fm_audioboo_jni_FLAC_foo(JNIEnv * env,
-    jobject this)
+public class FLAC
 {
-  return 42;
+  native public int foo();
+
+  static {
+    System.loadLibrary("audioboo-native");
+  }
 }
