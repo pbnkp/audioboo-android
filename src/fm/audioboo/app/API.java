@@ -59,6 +59,10 @@ public class API
   public static final int ERR_TRANSMISSION    = 1003;
   // TODO move to Error class; read localized descriptions
 
+  // API version we're requesting
+  public static final int API_VERSION = 200;
+
+
   /***************************************************************************
    * Private constants
    **/
@@ -73,6 +77,9 @@ public class API
 
   // URI snippets for various APIs
   private static final String API_RECENT  = "audio_clips";
+
+  // API version parameter
+  private static final int KEY_API_VERSION  = "version";
 
   // HTTP Client parameters
   private static final int          HTTP_TIMEOUT = 60 * 1000;
@@ -163,7 +170,7 @@ public class API
   /**
    * Converts an InputStream to a String containing the InputStream's content.
    **/
-  public static String readStream(InputStream is)
+  public static String readStream(InputStream is) throws IOException
   {
     BufferedReader reader = new BufferedReader(new InputStreamReader(is),
         READ_BUFFER_SIZE);
@@ -176,11 +183,13 @@ public class API
       }
     } catch (IOException ex) {
       Log.e(LTAG, "Failed to read from HTTP stream: " + ex);
+      throw ex;
     } finally {
       try {
         is.close();
       } catch (IOException ex) {
         Log.e(LTAG, "Failed to close HTTP stream: " + ex);
+        throw ex;
       }
     }
 
@@ -223,7 +232,7 @@ public class API
    **/
   public void fetchRecentBoos(final Handler result_handler)
   {
-    String uri_string = BASE_URL + API_RECENT + FORMAT;
+    String uri_string = getApiUrl(API_RECENT);
 
     if (null != mFetcher) {
       mFetcher.keepRunning = false;
@@ -253,6 +262,27 @@ public class API
   private void parseRecentBoosResponse(String response, Handler result_handler)
   {
     Log.d(LTAG, "Response: " + response);
+    ResponseParser parser = new ResponseParser();
+
+  }
+
+
+
+  /**
+   * Prepare an API URL
+   **/
+  private String getApiUrl(String api)
+  {
+    return getApiUrl(api, new HashMap<String, String>());
+  }
+
+
+  private String getApiUrl(String api, HashMap<String, String> params)
+  {
+    params.put(KEY_API_VERSION, String.valueOf(API_VERSION));
+
+    // :w
+    // :
   }
 
 
