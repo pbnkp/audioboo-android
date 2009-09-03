@@ -1,0 +1,9 @@
+APP_MODULES = audioboo-ogg audioboo-flac
+APP_PROJECT_PATH = @PATH@
+APP_OPTIM = @OPTIMIZATION@
+APP_CFLAGS += \
+	-Isources/AudioBoo/config \
+	-Isources/AudioBoo/ogg/include \
+	-DVERSION=\"1.2\" \
+	-Isources/AudioBoo/flac/include \
+	-Isources/AudioBoo/flac/src/libFLAC/include
