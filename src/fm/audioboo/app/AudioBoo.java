@@ -39,6 +39,7 @@ public class AudioBoo extends TabActivity
   //     localized.xml and the "main_tab_drawables" array in arrays.xml
   private static final Class TAB_CONTENT_CLASSES[] = {
     RecentBoosActivity.class,
+    RecordActivity.class,
   };
 
 
