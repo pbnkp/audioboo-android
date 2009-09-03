@@ -1,4 +1,4 @@
-APP_MODULES = audioboo-ogg audioboo-flac
+APP_MODULES = audioboo-ogg audioboo-flac audioboo-native
 APP_PROJECT_PATH = @PATH@
 APP_OPTIM = @OPTIMIZATION@
 APP_CFLAGS += \

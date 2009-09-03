@@ -11,7 +11,7 @@ LOCAL_SRC_FILES := \
 
 include $(BUILD_STATIC_LIBRARY)
 
-# Then build flac dynamically, link against libogg
+# Then build flac statically
 #
 include $(CLEAR_VARS)
 
@@ -39,6 +39,16 @@ LOCAL_SRC_FILES := \
 	flac/src/libFLAC/window.c \
 	flac/src/libFLAC/bitwriter.c
 
-LOCAL_STATIC_LIBRARIES := audioboo-ogg
+include $(BUILD_STATIC_LIBRARY)
+
+# Lastly build the JNI wrapper and link both other libs against it
+#
+include $(CLEAR_VARS)
+
+LOCAL_MODULE    := audioboo-native
+LOCAL_SRC_FILES := \
+	jni_wrapper.c
+
+LOCAL_STATIC_LIBRARIES := audioboo-ogg audioboo-flac
 
 include $(BUILD_SHARED_LIBRARY)
