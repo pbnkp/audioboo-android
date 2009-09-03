@@ -14,6 +14,7 @@
   -->
   <string-array name="main_tab_labels">
     <item>Recent Boos</item>
+    <item>Record</item>
   </string-array>
 
 </resources>

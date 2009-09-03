@@ -14,6 +14,7 @@
   -->
   <array name="main_tab_drawables">
     <item>@drawable/icon</item> <!-- FIXME -->
+    <item>@drawable/icon</item> <!-- FIXME -->
   </array>
 
 </resources>
