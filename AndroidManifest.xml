@@ -17,6 +17,7 @@
 
   <!-- Permissions used by this bundle -->
   <uses-permission android:name="android.permission.INTERNET" />
+  <uses-permission android:name="android.permission.RECORD_AUDIO" />
 
   <application android:label="@string/app_name">
     <activity android:name=".AudioBoo"
