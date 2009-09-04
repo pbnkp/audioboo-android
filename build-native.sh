@@ -20,4 +20,7 @@ if [ ! -z "$1" ] ; then
     exit 4
   fi
 fi
-cd ndk && make APP="AudioBoo-${BUILD_TARGET}" V=1
+
+COMMAND="$2"
+
+cd ndk && make ${COMMAND} APP="AudioBoo-${BUILD_TARGET}" V=1
