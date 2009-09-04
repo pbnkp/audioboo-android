@@ -15,7 +15,8 @@ import android.os.Bundle;
 
 import android.content.res.Configuration;
 
-import fm.audioboo.jni.FLAC;
+import android.widget.ToggleButton;
+import android.widget.CompoundButton;
 
 import android.util.Log;
 
@@ -34,7 +35,7 @@ public class RecordActivity extends Activity
   /***************************************************************************
    * Data members
    **/
-  private FLAC mFlac;
+  private FLACRecorder mFlacRecorder;
 
 
   /***************************************************************************
@@ -53,11 +54,27 @@ public class RecordActivity extends Activity
   {
     super.onStart();
 
-    if (null == mFlac) {
-      mFlac = new FLAC();
+    setContentView(R.layout.record);
+
+    if (null == mFlacRecorder) {
+      mFlacRecorder = new FLACRecorder();
+      mFlacRecorder.start();
     }
 
-    Log.d(LTAG, "Foo: " + mFlac.foo());
+    ToggleButton tb = (ToggleButton) findViewById(R.id.record_button);
+    if (null != tb) {
+      tb.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+        public void onCheckedChanged(CompoundButton buttonView, boolean isChecked)
+        {
+          if (isChecked) {
+            mFlacRecorder.resumeRecording();
+          }
+          else {
+            mFlacRecorder.pauseRecording();
+          }
+        }
+      });
+    }
   }
 
 
