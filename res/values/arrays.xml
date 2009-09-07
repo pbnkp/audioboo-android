@@ -13,8 +13,8 @@
     Main Activity's Tab drawables
   -->
   <array name="main_tab_drawables">
-    <item>@drawable/icon</item> <!-- FIXME -->
-    <item>@drawable/icon</item> <!-- FIXME -->
+    <item>@drawable/tabbar_boos</item>
+    <item>@drawable/tabbar_record</item>
   </array>
 
 </resources>
