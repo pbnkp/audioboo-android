@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+ This file is part of AudioBoo, an android program for audio blogging.
+ Copyright (C) 2009 BestBefore Media Ltd. All rights reserved.
+
+ Author: Jens Finkhaeuser <jens@finkhaeuser.de>
+
+ $Id$
+-->
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+  >
+  <!-- Toggle button -->
+  <ToggleButton android:id="@+id/record_button_toggle"
+      android:layout_width="wrap_content"
+      android:layout_height="wrap_content"
+      android:background="@drawable/record_button"
+      android:textOn=""
+      android:textOff=""
+    />
+
+  <!-- Text label -->
+  <TextView android:id="@+id/record_button_label"
+      android:layout_width="wrap_content"
+      android:layout_height="wrap_content"
+      android:layout_marginTop="7dp"
+      android:layout_marginLeft="34dp"
+      android:textSize="17dp"
+      android:textStyle="bold"
+      android:textColor="#f7ffffff"
+      android:shadowColor="#cc000000"
+      android:shadowRadius="1"
+      android:shadowDx="0"
+      android:shadowDy="-1"
+    />
+
+</RelativeLayout>

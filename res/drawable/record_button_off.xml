@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+ This file is part of AudioBoo, an android program for audio blogging.
+ Copyright (C) 2009 BestBefore Media Ltd. All rights reserved.
+
+ Author: Jens Finkhaeuser <jens@finkhaeuser.de>
+
+ $Id$
+-->
+<selector xmlns:android="http://schemas.android.com/apk/res/android">
+  <!-- Pressed from trackball -->
+  <item android:drawable="@drawable/recording_off_hit"
+      android:state_selected="true"
+      android:state_pressed="true"
+    />
+
+  <!-- No idea -->
+  <item android:drawable="@drawable/recording_off"
+      android:state_selected="true"
+      android:state_focused="true"
+    />
+
+  <!-- Selected via trackball FIXME -->
+  <item android:drawable="@drawable/recording_off"
+      android:state_selected="true"
+    />
+
+  <!-- Pressed via screen -->
+  <item android:drawable="@drawable/recording_off_hit"
+      android:state_selected="false"
+      android:state_pressed="true"
+    />
+
+  <!-- Regular -->
+  <item android:drawable="@drawable/recording_off" />
+</selector>
+

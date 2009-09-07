@@ -7,16 +7,19 @@
 
  $Id$
 -->
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:audioboo="http://schemas.android.com/apk/res/fm.audioboo.app"
     android:layout_width="fill_parent"
     android:layout_height="fill_parent"
   >
-
-  <ToggleButton android:id="@+id/record_button"
+  <fm.audioboo.widget.RecordButton android:id="@+id/record_button"
       android:layout_width="fill_parent"
       android:layout_height="wrap_content"
+      android:layout_marginTop="10dp"
       android:gravity="center"
-      android:textOn="Recording..."
-      android:textOff="Stopped."
+      audioboo:textInitial="Start"
+      audioboo:textOn="Pause"
+      audioboo:textOff="Resume"
     />
 </LinearLayout>
