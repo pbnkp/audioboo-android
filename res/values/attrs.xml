@@ -8,6 +8,7 @@
  $Id$
 -->
 <resources>
+  <!-- Custom RecordButton attributes -->
   <declare-styleable name="RecordButton">
     <!-- The initial text for the button. -->
     <attr name="textInitial" format="string" />
@@ -15,5 +16,11 @@
     <attr name="textOn" format="string" />
     <!-- The text for the button when it is not checked. -->
     <attr name="textOff" format="string" />
+  </declare-styleable>
+
+  <!-- Custom PieProgressView attributes -->
+  <declare-styleable name="PieProgressView">
+    <!-- Pie color -->
+    <attr name="pieColor" format="color" />
   </declare-styleable>
 </resources>
