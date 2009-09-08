@@ -7,12 +7,14 @@
 
  $Id$
 -->
-<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<RelativeLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:audioboo="http://schemas.android.com/apk/res/fm.audioboo.app"
     android:layout_width="wrap_content"
     android:layout_height="wrap_content"
   >
   <!-- Toggle button -->
-  <ToggleButton android:id="@+id/record_button_toggle"
+  <fm.audioboo.widget.NotifyingToggleButton android:id="@+id/record_button_toggle"
       android:layout_width="wrap_content"
       android:layout_height="wrap_content"
       android:background="@drawable/record_button"
@@ -20,19 +22,64 @@
       android:textOff=""
     />
 
-  <!-- Text label -->
-  <TextView android:id="@+id/record_button_label"
-      android:layout_width="wrap_content"
+  <!-- Button overlay -->
+  <RelativeLayout android:id="@+id/record_button_overlay"
+      android:layout_width="fill_parent"
       android:layout_height="wrap_content"
       android:layout_marginTop="7dp"
       android:layout_marginLeft="34dp"
-      android:textSize="17dp"
-      android:textStyle="bold"
-      android:textColor="#f7ffffff"
-      android:shadowColor="#cc000000"
-      android:shadowRadius="1"
-      android:shadowDx="0"
-      android:shadowDy="-1"
-    />
+      android:layout_marginRight="34dp"
+    >
 
+    <!-- Text label -->
+    <TextView android:id="@+id/record_button_label"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentLeft="true"
+        android:layout_alignParentTop="true"
+        android:textSize="17dp"
+        android:textStyle="bold"
+        android:textColor="@color/record_button_overlay"
+        android:shadowColor="#cc000000"
+        android:shadowRadius="1"
+        android:shadowDx="0"
+        android:shadowDy="-1"
+      />
+
+    <!-- Progress label -->
+    <TextView android:id="@+id/record_button_progress_label"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentRight="true"
+        android:layout_alignParentTop="true"
+        android:layout_marginRight="24dp"
+        android:textSize="17dp"
+        android:textStyle="bold"
+        android:textColor="@color/record_button_overlay"
+        android:shadowColor="#cc000000"
+        android:shadowRadius="1"
+        android:shadowDx="0"
+        android:shadowDy="-1"
+      />
+
+    <!-- Progress pie -->
+    <fm.audioboo.widget.PieProgressView android:id="@+id/record_button_progress"
+        android:layout_width="17dp"
+        android:layout_height="17dp"
+        android:layout_alignParentTop="true"
+        android:layout_alignParentRight="true"
+        android:layout_marginTop="4dp"
+        audioboo:pieColor="@color/record_button_overlay"
+      />
+
+    <!-- Progress pie shadow -->
+    <ImageView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentTop="true"
+        android:layout_alignParentRight="true"
+        android:layout_marginTop="4dp"
+        android:src="@drawable/pie_shadow"
+      />
+  </RelativeLayout>
 </RelativeLayout>

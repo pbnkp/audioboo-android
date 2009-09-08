@@ -9,9 +9,13 @@
 
 package fm.audioboo.widget;
 
+import android.view.View;
+import android.view.KeyEvent;
+
+import android.graphics.Canvas;
+
 import android.widget.RelativeLayout;
 import android.widget.CompoundButton;
-import android.widget.ToggleButton;
 import android.widget.TextView;
 
 import android.content.Context;
@@ -45,16 +49,22 @@ public class RecordButton extends RelativeLayout
    * Data members
    **/
   // Text label for initial state, on state and off state.
-  private String        mTextInitial;
-  private String        mTextOn;
-  private String        mTextOff;
+  private String                mTextInitial;
+  private String                mTextOn;
+  private String                mTextOff;
+
+  private int                   mProgressMax = 100;
+  private int                   mProgressCurrent;
 
   // Context
-  private Context       mContext;
+  private Context               mContext;
 
   // Contained elements
-  private ToggleButton  mToggle;
-  private TextView      mLabel;
+  private View                  mOverlay;
+  private NotifyingToggleButton mToggle;
+  private TextView              mLabel;
+  private PieProgressView       mProgress;
+  private TextView              mProgressLabel;
 
   // Listener to toggle button presses
   private CompoundButton.OnCheckedChangeListener  mListener;
@@ -66,6 +76,10 @@ public class RecordButton extends RelativeLayout
   {
     super(context);
     mContext = context;
+
+    setClickable(true);
+    setFocusable(true);
+    setFocusableInTouchMode(true);
   }
 
 
@@ -75,6 +89,10 @@ public class RecordButton extends RelativeLayout
     super(context, attrs);
     mContext = context;
     initWithAttrs(attrs);
+
+    setClickable(true);
+    setFocusable(true);
+    setFocusableInTouchMode(true);
   }
 
 
@@ -84,6 +102,30 @@ public class RecordButton extends RelativeLayout
     super(context, attrs, defStyle);
     mContext = context;
     initWithAttrs(attrs);
+
+    setClickable(true);
+    setFocusable(true);
+    setFocusableInTouchMode(true);
+  }
+
+
+  public void setProgress(int progress)
+  {
+    mProgressCurrent = progress;
+    if (null != mProgress) {
+      mProgress.setProgress(progress);
+    }
+    // FIXME also update mProgressLabel
+  }
+
+
+
+  public void setMax(int max)
+  {
+    mProgressMax = max;
+    if (null != mProgress) {
+      mProgress.setMax(max);
+    }
   }
 
 
@@ -91,14 +133,17 @@ public class RecordButton extends RelativeLayout
   @Override
   protected void onFinishInflate()
   {
+    super.onFinishInflate();
+
     RelativeLayout content = (RelativeLayout) inflate(mContext, R.layout.record_button, this);
+    mOverlay = content.findViewById(R.id.record_button_overlay);
 
     mLabel = (TextView) content.findViewById(R.id.record_button_label);
     if (null != mLabel) {
       mLabel.setText(mTextInitial);
     }
 
-    mToggle = (ToggleButton) content.findViewById(R.id.record_button_toggle);
+    mToggle = (NotifyingToggleButton) content.findViewById(R.id.record_button_toggle);
     if (null != mToggle) {
       mToggle.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
         public void onCheckedChanged(CompoundButton buttonView, boolean isChecked)
@@ -111,20 +156,26 @@ public class RecordButton extends RelativeLayout
           }
         }
       });
+
+      mToggle.setOnPressedListener(new NotifyingToggleButton.OnPressedListener() {
+        public void onPressed(NotifyingToggleButton btn, boolean pressed)
+        {
+          // Propagate the toggle's pressed state to the overlay
+          mOverlay.setPressed(pressed);
+        }
+      });
     }
 
-    // FIXME also notify self, if possible.
+    mProgress = (PieProgressView) content.findViewById(R.id.record_button_progress);
+    if (null != mProgress) {
+      mProgress.setMax(mProgressMax);
+      mProgress.setProgress(mProgressMax);
+    }
 
-//    if (null != mToggle) {
-//      Log.d(LTAG, "text initial: " + mTextInitial);
-//      Log.d(LTAG, "text on: " + mTextOn);
-//      Log.d(LTAG, "text off: " + mTextOff);
-//      mToggle.setTextOn(mTextOn);
-//      mToggle.setTextOff(mTextOff);
-//      requestLayout();
-//      invalidate();
-//    }
-
+    mProgressLabel = (TextView) content.findViewById(R.id.record_button_progress_label);
+    if (null != mProgressLabel) {
+      mProgressLabel.setText("0:00");
+    }
   }
 
 
@@ -149,8 +200,6 @@ public class RecordButton extends RelativeLayout
 
   private void onChecked()
   {
-    Log.d(LTAG, "on checked!");
-
     if (null != mLabel) {
       mLabel.setText(mTextOn);
     }
@@ -164,8 +213,6 @@ public class RecordButton extends RelativeLayout
 
   private void onUnchecked()
   {
-    Log.d(LTAG, "on unchecked!");
-
     if (null != mLabel) {
       mLabel.setText(mTextOff);
     }
