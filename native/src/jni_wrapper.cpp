@@ -78,6 +78,8 @@ public:
     , m_bits_per_sample(bits_per_sample)
     , m_encoder(NULL)
     , m_max_amplitude(0)
+    , m_average_sum(0)
+    , m_average_count(0)
   {
   }
 
@@ -143,28 +145,38 @@ public:
   /**
    * Copies inbuf to outpuf, assuming that inbuf is really a buffer of
    * sized_sampleT.
-   * Returns the maximum amplitude found in this buffer's samples. That's
-   * a bit mixed up, but at least we don't iterate over the buffer twice.
+   * As a side effect, m_max_amplitude, m_average_sum and m_average_count are
+   * modified.
    **/
   template <typename sized_sampleT>
-  float copyBuffer(FLAC__int32 * outbuf, char * inbuf, int inbufsize)
+  void copyBuffer(FLAC__int32 * outbuf, char * inbuf, int inbufsize)
   {
     sized_sampleT * inbuf_sized = reinterpret_cast<sized_sampleT *>(inbuf);
-    sized_sampleT max = 0;
     for (int i = 0 ; i < inbufsize / sizeof(sized_sampleT) ; ++i) {
       sized_sampleT cur = inbuf_sized[i];
-      if (cur > max) {
-        max = cur;
-      }
-      outbuf[i] = cur;
-    }
 
-    // max contains the maximum sample, but we want to scale that to an
-    // amplitude independent of the bits_per_sample, or of it's sign.
-    if (max < 0) {
-      max = -max;
+      // Convert sized sample to int32
+      outbuf[i] = cur;
+
+      // Convert to float on a range from 0..1
+      if (cur < 0) {
+        // Need to lose precision here, the positive value range is lower than
+        // the negative value range in a signed integer.
+        cur = -(cur + 1);
+      }
+      float amp = static_cast<float>(cur) / type_traits<sized_sampleT>::MAX;
+
+      // Store max amplitude
+      if (amp > m_max_amplitude) {
+        m_max_amplitude = amp;
+      }
+
+      // Sum average.
+      if (!(i % m_channels)) {
+        m_average_sum += amp;
+        ++m_average_count;
+      }
     }
-    return static_cast<float>(max) / type_traits<sized_sampleT>::MAX;
   }
 
 
@@ -181,19 +193,15 @@ public:
     FLAC__int32 * buf = reinterpret_cast<FLAC__int32*>(alloca(
           sizeof(FLAC__int32) * bufsize32));
 
-    float v = 0;
     if (8 == m_bits_per_sample) {
-      v = copyBuffer<int8_t>(buf, buffer, bufsize);
+      copyBuffer<int8_t>(buf, buffer, bufsize);
     }
     else if (16 == m_bits_per_sample) {
-      v = copyBuffer<int16_t>(buf, buffer, bufsize);
+      copyBuffer<int16_t>(buf, buffer, bufsize);
     }
     else {
       // XXX should never happen, just exit.
       return 0;
-    }
-    if (v > m_max_amplitude) {
-      m_max_amplitude = v;
     }
 
     // Encode!
@@ -218,6 +226,16 @@ public:
   }
 
 
+
+  float getAverageAmplitude()
+  {
+    float result = m_average_sum / m_average_count;
+    m_average_sum = 0;
+    m_average_count = 0;
+    return result;
+  }
+
+
 private:
   // Configuration values passed to ctor
   char *  m_outfile;
@@ -230,6 +248,8 @@ private:
 
   // Max amplitude measured
   float   m_max_amplitude;
+  float   m_average_sum;
+  int     m_average_count;
 };
 
 
@@ -390,5 +410,22 @@ Java_fm_audioboo_jni_FLACStreamEncoder_getMaxAmplitude(JNIEnv * env, jobject obj
 
   return encoder->getMaxAmplitude();
 }
+
+
+
+jfloat
+Java_fm_audioboo_jni_FLACStreamEncoder_getAverageAmplitude(JNIEnv * env, jobject obj)
+{
+  FLACStreamEncoder * encoder = get_encoder(env, obj);
+
+  if (NULL == encoder) {
+    throwByName(env, IllegalArgumentException_classname,
+        "Called without a valid encoder instance!");
+    return 0;
+  }
+
+  return encoder->getAverageAmplitude();
+}
+
 
 } // extern "C"

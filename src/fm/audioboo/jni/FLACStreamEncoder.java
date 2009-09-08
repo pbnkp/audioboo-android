@@ -84,6 +84,12 @@ public class FLACStreamEncoder
   native public float getMaxAmplitude();
 
   /**
+   * Returns the average amplitude written to the file since the last call
+   * to this function.
+   **/
+  native public float getAverageAmplitude();
+
+  /**
    * Writes data to the encoder. The provided buffer must be at least as long
    * as the provided buffer size.
    * Returns the number of bytes actually written.
