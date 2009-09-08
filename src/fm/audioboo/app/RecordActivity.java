@@ -18,6 +18,8 @@ import android.content.res.Configuration;
 import android.widget.ToggleButton;
 import android.widget.CompoundButton;
 
+import fm.audioboo.widget.RecordButton;
+
 import android.util.Log;
 
 /**
@@ -30,6 +32,9 @@ public class RecordActivity extends Activity
    **/
   // Log ID
   private static final String LTAG  = "RecordActivity";
+
+  // Limit for the recording time we allow, in seconds.
+  private static final int    RECORDING_TIME_LIMIT = 1200;
 
 
   /***************************************************************************
@@ -61,16 +66,20 @@ public class RecordActivity extends Activity
       mFlacRecorder.start();
     }
 
-    ToggleButton tb = (ToggleButton) findViewById(R.id.record_button);
+    RecordButton tb = (RecordButton) findViewById(R.id.record_button);
     if (null != tb) {
+      tb.setMax(RECORDING_TIME_LIMIT);
+
       tb.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
         public void onCheckedChanged(CompoundButton buttonView, boolean isChecked)
         {
           if (isChecked) {
-            mFlacRecorder.resumeRecording();
+            Log.d(LTAG, "Resume recording!");
+//            mFlacRecorder.resumeRecording();
           }
           else {
-            mFlacRecorder.pauseRecording();
+            Log.d(LTAG, "Pause recording!");
+//            mFlacRecorder.pauseRecording();
           }
         }
       });
