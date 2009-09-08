@@ -9,24 +9,23 @@
 -->
 <selector xmlns:android="http://schemas.android.com/apk/res/android">
   <!-- Pressed from trackball -->
-  <item android:drawable="@drawable/recording_off_hit"
+  <item android:color="#ababab"
       android:state_selected="true"
       android:state_pressed="true"
     />
 
   <!-- No idea -->
-  <item android:drawable="@drawable/recording_off"
+  <item android:color="#ababab"
       android:state_selected="true"
       android:state_focused="true"
     />
 
   <!-- Pressed via screen -->
-  <item android:drawable="@drawable/recording_off_hit"
+  <item android:color="#ababab"
       android:state_selected="false"
       android:state_pressed="true"
     />
 
   <!-- Regular -->
-  <item android:drawable="@drawable/recording_off" />
+  <item android:color="#ffffff" />
 </selector>
-

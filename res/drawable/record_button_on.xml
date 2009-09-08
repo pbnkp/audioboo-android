@@ -20,11 +20,6 @@
       android:state_focused="true"
     />
 
-  <!-- Selected via trackball FIXME -->
-  <item android:drawable="@drawable/recording_on"
-      android:state_selected="true"
-    />
-
   <!-- Pressed via screen -->
   <item android:drawable="@drawable/recording_on_hit"
       android:state_selected="false"
