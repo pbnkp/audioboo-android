@@ -78,9 +78,15 @@ public class FLACStreamEncoder
   native private void deinit();
 
   /**
+   * Returns the maximum amplitude written to the file since the last call
+   * to this function.
+   **/
+  native public float getMaxAmplitude();
+
+  /**
    * Writes data to the encoder. The provided buffer must be at least as long
    * as the provided buffer size.
-   * FIXME return value
+   * Returns the number of bytes actually written.
    **/
   native public int write(byte[] buffer, int bufsize);
 

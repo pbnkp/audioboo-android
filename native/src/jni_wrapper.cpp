@@ -7,14 +7,16 @@
  * $Id$
  **/
 
-#include "FLAC/metadata.h"
-#include "FLAC/stream_encoder.h"
-
+// Define __STDINT_LIMITS to get INT8_MAX and INT16_MAX.
+#define __STDINT_LIMITS 1
+#include <stdint.h>
 #include <assert.h>
-#include <limits.h>
 #include <string.h>
 #include <alloca.h>
-#include <stdint.h>
+#include <limits.h>
+
+#include "FLAC/metadata.h"
+#include "FLAC/stream_encoder.h"
 
 #include <jni.h>
 
@@ -29,6 +31,32 @@ static char const * const FLACStreamEncoder_mObject     = "mObject";
 static char const * const IllegalArgumentException_classname  = "java.lang.IllegalArgumentException";
 
 static int COMPRESSION_LEVEL                            = 5;
+
+/*****************************************************************************
+ * Very simple traits for int8_t/int16_t
+ **/
+template <typename intT>
+struct type_traits
+{
+};
+
+
+template <>
+struct type_traits<int8_t>
+{
+  enum {
+    MAX = INT8_MAX,
+  };
+};
+
+
+template <>
+struct type_traits<int16_t>
+{
+  enum {
+    MAX = INT16_MAX,
+  };
+};
 
 
 
@@ -49,6 +77,7 @@ public:
     , m_channels(channels)
     , m_bits_per_sample(bits_per_sample)
     , m_encoder(NULL)
+    , m_max_amplitude(0)
   {
   }
 
@@ -114,13 +143,28 @@ public:
   /**
    * Copies inbuf to outpuf, assuming that inbuf is really a buffer of
    * sized_sampleT.
+   * Returns the maximum amplitude found in this buffer's samples. That's
+   * a bit mixed up, but at least we don't iterate over the buffer twice.
    **/
   template <typename sized_sampleT>
-  void copyBuffer(FLAC__int32 * outbuf, char * inbuf, int inbufsize)
+  float copyBuffer(FLAC__int32 * outbuf, char * inbuf, int inbufsize)
   {
+    sized_sampleT * inbuf_sized = reinterpret_cast<sized_sampleT *>(inbuf);
+    sized_sampleT max = 0;
     for (int i = 0 ; i < inbufsize / sizeof(sized_sampleT) ; ++i) {
-      outbuf[i] = reinterpret_cast<sized_sampleT *>(inbuf)[i];
+      sized_sampleT cur = inbuf_sized[i];
+      if (cur > max) {
+        max = cur;
+      }
+      outbuf[i] = cur;
     }
+
+    // max contains the maximum sample, but we want to scale that to an
+    // amplitude independent of the bits_per_sample, or of it's sign.
+    if (max < 0) {
+      max = -max;
+    }
+    return static_cast<float>(max) / type_traits<sized_sampleT>::MAX;
   }
 
 
@@ -137,17 +181,22 @@ public:
     FLAC__int32 * buf = reinterpret_cast<FLAC__int32*>(alloca(
           sizeof(FLAC__int32) * bufsize32));
 
+    float v = 0;
     if (8 == m_bits_per_sample) {
-      copyBuffer<int8_t>(buf, buffer, bufsize);
+      v = copyBuffer<int8_t>(buf, buffer, bufsize);
     }
     else if (16 == m_bits_per_sample) {
-      copyBuffer<int16_t>(buf, buffer, bufsize);
+      v = copyBuffer<int16_t>(buf, buffer, bufsize);
     }
     else {
       // XXX should never happen, just exit.
       return 0;
     }
+    if (v > m_max_amplitude) {
+      m_max_amplitude = v;
+    }
 
+    // Encode!
     FLAC__bool ok = FLAC__stream_encoder_process_interleaved(m_encoder,
         buf, bufsize32);
     if (!ok) {
@@ -160,6 +209,15 @@ public:
   }
 
 
+
+  float getMaxAmplitude()
+  {
+    float result = m_max_amplitude;
+    m_max_amplitude = 0;
+    return result;
+  }
+
+
 private:
   // Configuration values passed to ctor
   char *  m_outfile;
@@ -169,6 +227,9 @@ private:
 
   // FLAC encoder instance
   FLAC__StreamEncoder * m_encoder;
+
+  // Max amplitude measured
+  float   m_max_amplitude;
 };
 
 
@@ -312,6 +373,22 @@ Java_fm_audioboo_jni_FLACStreamEncoder_write(JNIEnv * env, jobject obj,
         &copy));
 
   return encoder->write(buf, bufsize);
+}
+
+
+
+jfloat
+Java_fm_audioboo_jni_FLACStreamEncoder_getMaxAmplitude(JNIEnv * env, jobject obj)
+{
+  FLACStreamEncoder * encoder = get_encoder(env, obj);
+
+  if (NULL == encoder) {
+    throwByName(env, IllegalArgumentException_classname,
+        "Called without a valid encoder instance!");
+    return 0;
+  }
+
+  return encoder->getMaxAmplitude();
 }
 
 } // extern "C"
