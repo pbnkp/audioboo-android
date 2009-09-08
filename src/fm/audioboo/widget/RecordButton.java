@@ -109,17 +109,33 @@ public class RecordButton extends RelativeLayout
   }
 
 
+
+  /**
+   * In contrast to Android's stock progress widgets, this one treats both the
+   * maximum and current progress to be in units of seconds. The label next to
+   * the pie view is updated accordingly.
+   **/
   public void setProgress(int progress)
   {
     mProgressCurrent = progress;
     if (null != mProgress) {
       mProgress.setProgress(progress);
     }
-    // FIXME also update mProgressLabel
+
+    if (null != mProgressLabel) {
+      // Split progress into minutes and seconds
+      int minutes = progress % 60;
+      int seconds = progress - (minutes * 60);
+
+      mProgressLabel.setText(String.format("%d:%02d", minutes, seconds));
+    }
   }
 
 
 
+  /**
+   * see @setProgress
+   **/
   public void setMax(int max)
   {
     mProgressMax = max;
@@ -169,13 +185,11 @@ public class RecordButton extends RelativeLayout
     mProgress = (PieProgressView) content.findViewById(R.id.record_button_progress);
     if (null != mProgress) {
       mProgress.setMax(mProgressMax);
-      mProgress.setProgress(mProgressMax);
     }
 
     mProgressLabel = (TextView) content.findViewById(R.id.record_button_progress_label);
-    if (null != mProgressLabel) {
-      mProgressLabel.setText("0:00");
-    }
+
+    setProgress(0);
   }
 
 
