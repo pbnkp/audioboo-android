@@ -9,11 +9,14 @@
 
 package fm.audioboo.app;
 
+import android.content.Context;
+
+import android.os.Handler;
+import android.os.Environment;
+
+import android.media.AudioFormat;
 import android.media.AudioRecord;
 import android.media.MediaRecorder;
-import android.media.AudioFormat;
-
-import android.os.Environment;
 
 import java.io.File;
 
@@ -22,10 +25,24 @@ import fm.audioboo.jni.FLACStreamEncoder;
 import android.util.Log;
 
 /**
- * FIXME
+ * Records a single FLAC file from the microphone. Overwrites the file if it
+ * already exists.
  **/
 public class FLACRecorder extends Thread
 {
+  /***************************************************************************
+   * Public constants
+   **/
+  // Message codes
+  public static final int MSG_OK                    = 0;
+  public static final int MSG_INVALID_FORMAT        = 1;
+  public static final int MSG_HARDWARE_UNAVAILABLE  = 2;
+  public static final int MSG_ILLEGAL_ARGUMENT      = 3;
+  public static final int MSG_READ_ERROR            = 4;
+  public static final int MSG_WRITE_ERROR           = 5;
+  public static final int MSG_AMPLITUDES            = 6;
+
+
   /***************************************************************************
    * Private constants
    **/
@@ -37,25 +54,70 @@ public class FLACRecorder extends Thread
   private static final int CHANNEL_CONFIG = AudioFormat.CHANNEL_CONFIGURATION_MONO;
   private static final int FORMAT         = AudioFormat.ENCODING_PCM_16BIT;
 
+  /***************************************************************************
+   * Simple class for reporting measured Amplitudes to user of FLACRecorder
+   **/
+  public static class Amplitudes
+  {
+    public int    mPosition;
+    public float  mPeak;
+    public float  mAverage;
+
+    public String toString()
+    {
+      return String.format("%dms: %f/%f", mPosition, mAverage, mPeak);
+    }
+  }
+
 
   /***************************************************************************
    * Public data
    **/
+  // Flag that keeps the thread running when true.
   public boolean mShouldRun;
 
 
   /***************************************************************************
    * Private data
    **/
-  private boolean     mShouldRecord;
+  // Flag that signals whether the thread should record or ignore PCM data.
+  private boolean           mShouldRecord;
 
+  // Context in which this object was created
+  private Context           mContext;
+
+  // Stream encoder
+  private FLACStreamEncoder mEncoder;
+
+  // File path for the output file.
+  private String            mRelativeFilePath;
+
+  // Base path, prepended before mRelativeFilePath. It's on the external
+  // storage and includes the file bundle.
+  private String            mBasePath;
+
+  // Interval (in msec) at which the recorder thread should report amplitudes
+  private int               mReportInterval;
+
+  // Handler to notify at the above report interval
+  private Handler           mHandler;
+
+  // Report intervals counted; can be used to determine the time position in
+  // the audio stream.
+  private int               mReportIntervalCounted;
 
   /***************************************************************************
    * Implementation
    **/
-  public FLACRecorder()
+  public FLACRecorder(Context context, String relativeFilePath,
+      int reportInterval, Handler handler)
   {
+    mContext = context;
+    mRelativeFilePath = relativeFilePath;
+    mReportInterval = reportInterval;
+    mHandler = handler;
   }
+
 
 
   public void resumeRecording()
@@ -64,10 +126,12 @@ public class FLACRecorder extends Thread
   }
 
 
+
   public void pauseRecording()
   {
     mShouldRecord = false;
   }
+
 
 
   private int mapChannelConfig(int channelConfig)
@@ -100,6 +164,7 @@ public class FLACRecorder extends Thread
   }
 
 
+
   public void run()
   {
     mShouldRun = true;
@@ -111,12 +176,12 @@ public class FLACRecorder extends Thread
           FORMAT);
       if (AudioRecord.ERROR_BAD_VALUE == bufsize) {
         Log.e(LTAG, "Sample rate, channel config or format not supported!");
-        // FIXME report to caller
+        mHandler.obtainMessage(MSG_INVALID_FORMAT).sendToTarget();
         return;
       }
       if (AudioRecord.ERROR == bufsize) {
         Log.e(LTAG, "Unable to query hardware!");
-        // FIXME report to caller
+        mHandler.obtainMessage(MSG_HARDWARE_UNAVAILABLE).sendToTarget();
         return;
       }
 
@@ -125,14 +190,24 @@ public class FLACRecorder extends Thread
 
       AudioRecord recorder = new AudioRecord(MediaRecorder.AudioSource.MIC,
         SAMPLE_RATE, CHANNEL_CONFIG, FORMAT, bufsize);
+      recorder.setRecordPositionUpdateListener(new AudioRecord.OnRecordPositionUpdateListener() {
+        public void onMarkerReached(AudioRecord recorder)
+        {
+          // ignore
+        }
 
-      // Set up encoder
-      // FIXME path
-      String foo = Environment.getExternalStorageDirectory().getPath();
-      File f = new File(foo + "/data/fm.audioboo.app");
-      f.mkdirs();
-      foo += "/data/fm.audioboo.app/asdf.flac";
-      FLACStreamEncoder encoder = new FLACStreamEncoder(foo, SAMPLE_RATE,
+        public void onPeriodicNotification(AudioRecord recorder)
+        {
+          handlePeriodicNotification(recorder);
+        }
+      });
+      recorder.setPositionNotificationPeriod((int) (SAMPLE_RATE * (mReportInterval / 1000.0f)));
+
+      // Set up encoder. Create path for the file if it doesn't yet exist.
+      String path = getBasePath() + File.separator + mRelativeFilePath;
+      File f = new File(path);
+      f.getParentFile().mkdirs();
+      mEncoder = new FLACStreamEncoder(path, SAMPLE_RATE,
           mapChannelConfig(CHANNEL_CONFIG), mapFormat(FORMAT));
 
       // Start recording loop
@@ -158,29 +233,63 @@ public class FLACRecorder extends Thread
           int result = recorder.read(buffer, 0, bufsize);
           switch (result) {
             case AudioRecord.ERROR_INVALID_OPERATION:
-              Log.e(LTAG, "INvalid operation");
+              Log.e(LTAG, "Invalid operation.");
+              mHandler.obtainMessage(MSG_READ_ERROR).sendToTarget();
               break;
 
             case AudioRecord.ERROR_BAD_VALUE:
-              Log.e(LTAG, "Bad value");
+              Log.e(LTAG, "Bad value.");
+              mHandler.obtainMessage(MSG_READ_ERROR).sendToTarget();
               break;
 
             default:
               if (result > 0) {
-                Log.d(LTAG, "Read: " + result);
-                int write_result = encoder.write(buffer, result);
-                Log.d(LTAG, "Wrote: " + write_result);
+                int write_result = mEncoder.write(buffer, result);
+                if (write_result != result) {
+                  Log.e(LTAG, "Attempted to write " + result
+                      + " but only wrote " + write_result);
+                  mHandler.obtainMessage(MSG_WRITE_ERROR).sendToTarget();
+                }
               }
           }
         }
       }
 
       recorder.release();
-      encoder.release();
+      mEncoder.release();
+      mEncoder = null;
 
     } catch (IllegalArgumentException ex) {
       Log.e(LTAG, "Illegal argument: " + ex.getMessage());
-      // FIXME report to caller
+      mHandler.obtainMessage(MSG_ILLEGAL_ARGUMENT, ex.getMessage()).sendToTarget();
     }
+
+    mHandler.obtainMessage(MSG_OK).sendToTarget();
+  }
+
+
+
+  private void handlePeriodicNotification(AudioRecord recorder)
+  {
+    ++mReportIntervalCounted;
+
+    Amplitudes amp = new Amplitudes();
+    amp.mPosition = (mReportIntervalCounted * mReportInterval);
+    amp.mPeak = mEncoder.getMaxAmplitude();
+    amp.mAverage = mEncoder.getAverageAmplitude();
+
+    mHandler.obtainMessage(MSG_AMPLITUDES, amp).sendToTarget();
+  }
+
+
+
+  private String getBasePath()
+  {
+    if (null == mBasePath) {
+      String base = Environment.getExternalStorageDirectory().getPath();
+      base += File.separator + "data" + File.separator + mContext.getPackageName();
+      mBasePath = base;
+    }
+    return mBasePath;
   }
 }
