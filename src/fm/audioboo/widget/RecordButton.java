@@ -124,8 +124,8 @@ public class RecordButton extends RelativeLayout
 
     if (null != mProgressLabel) {
       // Split progress into minutes and seconds
-      int minutes = progress % 60;
-      int seconds = progress - (minutes * 60);
+      int minutes = progress / 60;
+      int seconds = progress % 60;
 
       mProgressLabel.setText(String.format("%d:%02d", minutes, seconds));
     }
