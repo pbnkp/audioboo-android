@@ -59,12 +59,13 @@ public class FLACRecorder extends Thread
    **/
   public static class Amplitudes
   {
+    public long   mPosition;
     public float  mPeak;
     public float  mAverage;
 
     public String toString()
     {
-      return String.format("%f/%f", mAverage, mPeak);
+      return String.format("%ldms: %f/%f", mPosition, mAverage, mPeak);
     }
   }
 
@@ -182,14 +183,19 @@ public class FLACRecorder extends Thread
       AudioRecord recorder = new AudioRecord(MediaRecorder.AudioSource.MIC,
         SAMPLE_RATE, CHANNEL_CONFIG, FORMAT, bufsize);
 
+      // Initialize variables for calculating the recording duration.
+      int format = mapFormat(FORMAT);
+      int channels = mapChannelConfig(CHANNEL_CONFIG);
+      int bytesPerSecond = SAMPLE_RATE * (format / 8) * channels;
+
       // Set up encoder. Create path for the file if it doesn't yet exist.
       String path = getBasePath() + File.separator + mRelativeFilePath;
       File f = new File(path);
       f.getParentFile().mkdirs();
-      mEncoder = new FLACStreamEncoder(path, SAMPLE_RATE,
-          mapChannelConfig(CHANNEL_CONFIG), mapFormat(FORMAT));
+      mEncoder = new FLACStreamEncoder(path, SAMPLE_RATE, channels, format);
 
       // Start recording loop
+      float position = 0.0f;
       byte[] buffer = new byte[bufsize];
       boolean oldShouldRecord = mShouldRecord;
       while (mShouldRun) {
@@ -223,6 +229,10 @@ public class FLACRecorder extends Thread
 
             default:
               if (result > 0) {
+                // Compute time recorded
+                float read_ms = (1000.0f * result) / bytesPerSecond;
+                position += read_ms;
+
                 int write_result = mEncoder.write(buffer, result);
                 if (write_result != result) {
                   Log.e(LTAG, "Attempted to write " + result
@@ -231,6 +241,7 @@ public class FLACRecorder extends Thread
                 }
                 else {
                   Amplitudes amp = new Amplitudes();
+                  amp.mPosition = (long) position;
                   amp.mPeak = mEncoder.getMaxAmplitude();
                   amp.mAverage = mEncoder.getAverageAmplitude();
 
