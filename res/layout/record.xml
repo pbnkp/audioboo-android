@@ -33,6 +33,8 @@
       android:layout_width="fill_parent"
       android:layout_height="fill_parent"
       android:background="@drawable/spectral_view_background"
+      audioboo:inactiveDrawable="@drawable/spectral_view_inactive"
+      audioboo:inactiveTintColor="#bf3b3b3b"
       audioboo:numberOfBars="9"
       audioboo:frameDrawable="@drawable/spectral_view_frame"
       audioboo:evenBarDrawable="@drawable/spectral_view_even_bar"

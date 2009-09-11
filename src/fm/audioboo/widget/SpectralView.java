@@ -46,21 +46,24 @@ public class SpectralView extends RelativeLayout
   private static final String LTAG  = "SpectralView";
 
   // Max level for ClipDrawables, defined by Android
-  private static final int    MAX_LEVEL                 = 10000;
+  private static final int    MAX_LEVEL                   = 10000;
 
   // Default number of bars to display
-  private static final int    DEFAULT_NUMBER_OF_BARS    = 9;
+  private static final int    DEFAULT_NUMBER_OF_BARS      = 9;
 
   // Default animation duration and FPS.
-  private static final int    DEFAULT_ANIMATION_MAX_FPS = 15;
+  private static final int    DEFAULT_ANIMATION_MAX_FPS   = 15;
+
+  // Default tint color for inactive views is 50% black
+  private static final int    DEFAULT_INACTIVE_TINT_COLOR = Color.argb(127, 0, 0, 0);
 
   // Minimum/maximum bar exponent.
-  private static final float  MIN_BAR_EXP               = 0.2f;
-  private static final float  MAX_BAR_EXP               = 0.5f;
+  private static final float  MIN_BAR_EXP                 = 0.2f;
+  private static final float  MAX_BAR_EXP                 = 0.5f;
 
   // Low pass filter limits
-  private static final float  FILTER_LOWER_LIMIT        = 0.1f;
-  private static final float  FILTER_UPPER_LIMIT        = 0.7f;
+  private static final float  FILTER_LOWER_LIMIT          = 0.1f;
+  private static final float  FILTER_UPPER_LIMIT          = 0.7f;
 
   /***************************************************************************
    * Data members
@@ -69,6 +72,11 @@ public class SpectralView extends RelativeLayout
   private int                 mNumberOfBars;
   // Drawable for the frame to overlay over the bars.
   private Drawable            mFrameDrawable;
+  // Drawable for displaying when the view is inactive, i.e. startAnimation has
+  // not been called.
+  private Drawable            mInactiveDrawable;
+  // Tint color for inactive views
+  private ColorStateList      mInactiveTintColor;
   // Drawables for even and odd bars.
   private ClipDrawable        mEvenBarDrawable;
   private ClipDrawable        mOddBarDrawable;
@@ -298,6 +306,10 @@ public class SpectralView extends RelativeLayout
     // Get grid color
     mGridColor = a.getColorStateList(R.styleable.SpectralView_gridColor);
 
+    // Get inactive drawable & tint color
+    mInactiveDrawable = a.getDrawable(R.styleable.SpectralView_inactiveDrawable);
+    mInactiveTintColor = a.getColorStateList(R.styleable.SpectralView_inactiveTintColor);
+
     a.recycle();
   }
 
@@ -343,11 +355,14 @@ public class SpectralView extends RelativeLayout
         d = mOddBarDrawable;
       }
 
-      // The scale takes into consideration the height of each bar (via their
-      // exponents), and a low pass filter is applied.
-      float scale = (float) Math.pow(mPeakAmp, mBarHeightExponents[mBarHeightSlot[i]]);
-      float filterSize = FILTER_LOWER_LIMIT + mBarFilterFactors[mBarFilterSlot[i]] * mFilterStep;
-      scale = filterSize * scale + (1 - filterSize) * mAverageAmp;
+      float scale = 1.0f;
+      if (mShouldAnimate) {
+        // The scale takes into consideration the height of each bar (via their
+        // exponents), and a low pass filter is applied.
+        scale = (float) Math.pow(mPeakAmp, mBarHeightExponents[mBarHeightSlot[i]]);
+        float filterSize = FILTER_LOWER_LIMIT + mBarFilterFactors[mBarFilterSlot[i]] * mFilterStep;
+        scale = filterSize * scale + (1 - filterSize) * mAverageAmp;
+      }
 
       // Levels are from 0 to MAX_LEVEL. In orde to show at least one pixel, we need
       // to ensure we set the level to least MAX_LEVEL/height.
@@ -361,6 +376,46 @@ public class SpectralView extends RelativeLayout
       d.setBounds(x, y, (int) (x + bar_width), height);
       d.setLevel(level);
       d.draw(canvas);
+    }
+
+    // Draw the inactive background, if necessary.
+    if (!mShouldAnimate) {
+      if (null != mInactiveDrawable) {
+        int dwidth = mInactiveDrawable.getIntrinsicWidth();
+        int dheight = mInactiveDrawable.getIntrinsicHeight();
+
+        int xoffs = mBarPaddingLeft;
+        int yoffs = mBarPaddingTop;
+        if (dwidth >= width || dheight >= height) {
+          int maxwidth = width - 2 * (mBarPaddingTop + mBarPaddingBottom);
+          int maxheight = height - 2 * (mBarPaddingLeft + mBarPaddingRight);
+
+          float wfactor = (float) maxwidth / dwidth;
+          float hfactor = (float) maxheight / dheight;
+          float factor = (float) Math.min(wfactor, hfactor);
+
+          dwidth *= factor;
+          dheight *= factor;
+        }
+        xoffs += (width - dwidth) / 2;
+        yoffs += (height - dheight) / 2;
+
+        mInactiveDrawable.setBounds(xoffs, yoffs, xoffs + dwidth, yoffs + dheight);
+        mInactiveDrawable.draw(canvas);
+      }
+
+      // Tint bars
+      int currentColor = DEFAULT_INACTIVE_TINT_COLOR;
+      if (null != mInactiveTintColor) {
+        currentColor = mInactiveTintColor.getColorForState(getDrawableState(),
+            DEFAULT_INACTIVE_TINT_COLOR);
+      }
+      ClipDrawable cd = new ClipDrawable(new ColorDrawable(currentColor),
+          Gravity.FILL, ClipDrawable.VERTICAL);
+
+      cd.setBounds(0, 0, getWidth(), getHeight());
+      cd.setLevel(MAX_LEVEL);
+      cd.draw(canvas);
     }
 
     // Draw grid over the bars. We need to draw a 2px line between bars.

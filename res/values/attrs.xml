@@ -46,5 +46,11 @@
     <attr name="barAnimationMaxFPS" format="integer" />
     <!-- Color for the grid to lay on top of the bars -->
     <attr name="gridColor" format="color" />
+    <!-- Image to display, centered, behind the grid, when the view is inactive
+    -->
+    <attr name="inactiveDrawable" format="reference" />
+    <!-- Tint color that overlays the bars (and inactive drawable) when the
+         view is inactive. -->
+    <attr name="inactiveTintColor" format="color" />
   </declare-styleable>
 </resources>
