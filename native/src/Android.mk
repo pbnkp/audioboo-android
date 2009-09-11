@@ -47,7 +47,7 @@ include $(CLEAR_VARS)
 
 LOCAL_MODULE    := audioboo-native
 LOCAL_SRC_FILES := \
-	jni_wrapper.cpp
+	jni/FLACStreamEncoder.cpp
 
 LOCAL_STATIC_LIBRARIES := audioboo-ogg audioboo-flac
 
