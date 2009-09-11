@@ -50,10 +50,13 @@ public class RecordActivity extends Activity
    * Data members
    **/
   // Recorder instance
-  private FLACRecorder mFlacRecorder;
+  private FLACRecorder  mFlacRecorder;
+
+  // Reference to the record button
+  private RecordButton  mRecordButton;
 
   // Reference to the spectral view
-  private SpectralView mSpectralView;
+  private SpectralView  mSpectralView;
 
 
   /***************************************************************************
@@ -85,7 +88,9 @@ public class RecordActivity extends Activity
           {
             switch (m.what) {
               case FLACRecorder.MSG_AMPLITUDES:
-                drawAmplitudes((FLACRecorder.Amplitudes) m.obj);
+                FLACRecorder.Amplitudes amp = (FLACRecorder.Amplitudes) m.obj;
+                drawAmplitudes(amp);
+                mRecordButton.setProgress((int) (amp.mPosition / 1000));
                 break;
 
               default:
@@ -100,11 +105,11 @@ public class RecordActivity extends Activity
       mFlacRecorder.start();
     }
 
-    RecordButton tb = (RecordButton) findViewById(R.id.record_button);
-    if (null != tb) {
-      tb.setMax(RECORDING_TIME_LIMIT);
+    mRecordButton = (RecordButton) findViewById(R.id.record_button);
+    if (null != mRecordButton) {
+      mRecordButton.setMax(RECORDING_TIME_LIMIT);
 
-      tb.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+      mRecordButton.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
         public void onCheckedChanged(CompoundButton buttonView, boolean isChecked)
         {
           if (isChecked) {
