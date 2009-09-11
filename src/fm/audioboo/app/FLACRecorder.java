@@ -59,13 +59,12 @@ public class FLACRecorder extends Thread
    **/
   public static class Amplitudes
   {
-    public int    mPosition;
     public float  mPeak;
     public float  mAverage;
 
     public String toString()
     {
-      return String.format("%dms: %f/%f", mPosition, mAverage, mPeak);
+      return String.format("%f/%f", mAverage, mPeak);
     }
   }
 
@@ -96,25 +95,17 @@ public class FLACRecorder extends Thread
   // storage and includes the file bundle.
   private String            mBasePath;
 
-  // Interval (in msec) at which the recorder thread should report amplitudes
-  private int               mReportInterval;
-
   // Handler to notify at the above report interval
   private Handler           mHandler;
 
-  // Report intervals counted; can be used to determine the time position in
-  // the audio stream.
-  private int               mReportIntervalCounted;
 
   /***************************************************************************
    * Implementation
    **/
-  public FLACRecorder(Context context, String relativeFilePath,
-      int reportInterval, Handler handler)
+  public FLACRecorder(Context context, String relativeFilePath, Handler handler)
   {
     mContext = context;
     mRelativeFilePath = relativeFilePath;
-    mReportInterval = reportInterval;
     mHandler = handler;
   }
 
@@ -190,18 +181,6 @@ public class FLACRecorder extends Thread
 
       AudioRecord recorder = new AudioRecord(MediaRecorder.AudioSource.MIC,
         SAMPLE_RATE, CHANNEL_CONFIG, FORMAT, bufsize);
-      recorder.setRecordPositionUpdateListener(new AudioRecord.OnRecordPositionUpdateListener() {
-        public void onMarkerReached(AudioRecord recorder)
-        {
-          // ignore
-        }
-
-        public void onPeriodicNotification(AudioRecord recorder)
-        {
-          handlePeriodicNotification(recorder);
-        }
-      });
-      recorder.setPositionNotificationPeriod((int) (SAMPLE_RATE * (mReportInterval / 1000.0f)));
 
       // Set up encoder. Create path for the file if it doesn't yet exist.
       String path = getBasePath() + File.separator + mRelativeFilePath;
@@ -250,6 +229,13 @@ public class FLACRecorder extends Thread
                       + " but only wrote " + write_result);
                   mHandler.obtainMessage(MSG_WRITE_ERROR).sendToTarget();
                 }
+                else {
+                  Amplitudes amp = new Amplitudes();
+                  amp.mPeak = mEncoder.getMaxAmplitude();
+                  amp.mAverage = mEncoder.getAverageAmplitude();
+
+                  mHandler.obtainMessage(MSG_AMPLITUDES, amp).sendToTarget();
+                }
               }
           }
         }
@@ -265,20 +251,6 @@ public class FLACRecorder extends Thread
     }
 
     mHandler.obtainMessage(MSG_OK).sendToTarget();
-  }
-
-
-
-  private void handlePeriodicNotification(AudioRecord recorder)
-  {
-    ++mReportIntervalCounted;
-
-    Amplitudes amp = new Amplitudes();
-    amp.mPosition = (mReportIntervalCounted * mReportInterval);
-    amp.mPeak = mEncoder.getMaxAmplitude();
-    amp.mAverage = mEncoder.getAverageAmplitude();
-
-    mHandler.obtainMessage(MSG_AMPLITUDES, amp).sendToTarget();
   }
 
 
