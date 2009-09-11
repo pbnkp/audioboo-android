@@ -428,16 +428,14 @@ public class SpectralView extends RelativeLayout
 
     x = (int) (mBarPaddingLeft + (bar_width - 1));
     for (int i = 0 ; i < (mNumberOfBars - 1) ; ++i, x += bar_width) {
-      cd.setBounds(x, y, x + 2, height);
+      cd.setBounds(x, 0, x + 2, getHeight());
       cd.setLevel(MAX_LEVEL);
       cd.draw(canvas);
     }
-    x = (int) (mBarPaddingLeft);
     y = (int) (mBarPaddingTop + (bar_width - 1));
-    int numSquares = (int) (width / bar_width);
-    y += (int) ((width - (bar_width * numSquares)) / 2);
+    int numSquares = (int) (height / bar_width);
     for ( ; y < width ; y += bar_width) {
-      cd.setBounds(x, y, width, y + 2);
+      cd.setBounds(0, y, getWidth(), y + 2);
       cd.setLevel(MAX_LEVEL);
       cd.draw(canvas);
     }
