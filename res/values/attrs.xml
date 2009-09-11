@@ -23,4 +23,28 @@
     <!-- Pie color -->
     <attr name="pieColor" format="color" />
   </declare-styleable>
+
+  <!-- Custom SpectralView attributes -->
+  <declare-styleable name="SpectralView">
+    <!-- Number of bars -->
+    <attr name="numberOfBars" format="integer" />
+    <!-- Frame drawable -->
+    <attr name="frameDrawable" format="reference" />
+    <!-- Padding around just the bars, to account for the fact that the frame
+         overdraws some of each bar. The more specific barPadding* settings
+         override the generic barPadding. -->
+    <attr name="barPadding" format="dimension" />
+    <attr name="barPaddingLeft" format="dimension" />
+    <attr name="barPaddingRight" format="dimension" />
+    <attr name="barPaddingTop" format="dimension" />
+    <attr name="barPaddingBottom" format="dimension" />
+    <!-- Drawables for even/odd bars. If only one is specified, it's used for
+         both even and odd bars. Defaults are simple red and green bars. -->
+    <attr name="evenBarDrawable" format="reference" />
+    <attr name="oddBarDrawable" format="reference" />
+    <!-- Animation framerate in frames (per second). Default is 15fps -->
+    <attr name="barAnimationMaxFPS" format="integer" />
+    <!-- Color for the grid to lay on top of the bars -->
+    <attr name="gridColor" format="color" />
+  </declare-styleable>
 </resources>

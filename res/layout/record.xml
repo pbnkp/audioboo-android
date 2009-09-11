@@ -12,14 +12,35 @@
     xmlns:audioboo="http://schemas.android.com/apk/res/fm.audioboo.app"
     android:layout_width="fill_parent"
     android:layout_height="fill_parent"
+    android:orientation="vertical"
+    android:background="#3b3b3b"
+    android:padding="5dp"
+    android:gravity="center"
   >
+  <!-- Record button -->
   <fm.audioboo.widget.RecordButton android:id="@+id/record_button"
       android:layout_width="fill_parent"
       android:layout_height="wrap_content"
-      android:layout_marginTop="10dp"
+      android:layout_marginTop="5dp"
       android:gravity="center"
       audioboo:textInitial="Start"
       audioboo:textOn="Pause"
       audioboo:textOff="Resume"
+    />
+
+  <!-- Pseudo-spectral analysis view -->
+  <fm.audioboo.widget.SpectralView android:id="@+id/record_spectral_view"
+      android:layout_width="fill_parent"
+      android:layout_height="fill_parent"
+      android:background="@drawable/spectral_view_background"
+      audioboo:numberOfBars="9"
+      audioboo:frameDrawable="@drawable/spectral_view_frame"
+      audioboo:evenBarDrawable="@drawable/spectral_view_even_bar"
+      audioboo:oddBarDrawable="@drawable/spectral_view_odd_bar"
+      audioboo:barPaddingLeft="5dp"
+      audioboo:barPaddingRight="3dp"
+      audioboo:barPaddingTop="3dp"
+      audioboo:barPaddingBottom="3dp"
+      audioboo:gridColor="#cc3b3b3b"
     />
 </LinearLayout>

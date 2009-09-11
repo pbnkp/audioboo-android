@@ -16,7 +16,7 @@
   <!-- Toggle button -->
   <fm.audioboo.widget.NotifyingToggleButton android:id="@+id/record_button_toggle"
       android:layout_width="fill_parent"
-      android:layout_height="wrap_content"
+      android:layout_height="71dp"
       android:background="@drawable/record_button"
       android:textOn=""
       android:textOff=""
@@ -25,7 +25,7 @@
   <!-- Button overlay -->
   <RelativeLayout android:id="@+id/record_button_overlay"
       android:layout_width="fill_parent"
-      android:layout_height="wrap_content"
+      android:layout_height="71dp"
       android:layout_marginTop="7dp"
       android:layout_marginLeft="34dp"
       android:layout_marginRight="17dp"

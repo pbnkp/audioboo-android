@@ -12,6 +12,8 @@ package fm.audioboo.app;
 import android.app.Activity;
 
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Message;
 
 import android.content.res.Configuration;
 
@@ -19,6 +21,7 @@ import android.widget.ToggleButton;
 import android.widget.CompoundButton;
 
 import fm.audioboo.widget.RecordButton;
+import fm.audioboo.widget.SpectralView;
 
 import android.util.Log;
 
@@ -34,13 +37,23 @@ public class RecordActivity extends Activity
   private static final String LTAG  = "RecordActivity";
 
   // Limit for the recording time we allow, in seconds.
-  private static final int    RECORDING_TIME_LIMIT = 1200;
+  private static final int    RECORDING_TIME_LIMIT        = 1200;
+
+  // Base file name for the current recording.
+  private static final String RECORDING_BASE_NAME         = "current";
+
+  // Extension for recordings.
+  private static final String RECORDING_EXTENSION         = ".flac";
 
 
   /***************************************************************************
    * Data members
    **/
+  // Recorder instance
   private FLACRecorder mFlacRecorder;
+
+  // Reference to the spectral view
+  private SpectralView mSpectralView;
 
 
   /***************************************************************************
@@ -62,7 +75,28 @@ public class RecordActivity extends Activity
     setContentView(R.layout.record);
 
     if (null == mFlacRecorder) {
-      mFlacRecorder = new FLACRecorder();
+      // Instanciate recorder. TODO need to check whether the file exists,
+      // and use a different name.
+      String filename = RECORDING_BASE_NAME + RECORDING_EXTENSION;
+      mFlacRecorder = new FLACRecorder(this, filename,
+        new Handler(new Handler.Callback()
+        {
+          public boolean handleMessage(Message m)
+          {
+            switch (m.what) {
+              case FLACRecorder.MSG_AMPLITUDES:
+                drawAmplitudes((FLACRecorder.Amplitudes) m.obj);
+                break;
+
+              default:
+                reportError(m.what);
+                break;
+            }
+
+            return true;
+          }
+        }
+      ));
       mFlacRecorder.start();
     }
 
@@ -75,14 +109,35 @@ public class RecordActivity extends Activity
         {
           if (isChecked) {
             Log.d(LTAG, "Resume recording!");
-//            mFlacRecorder.resumeRecording();
+            mFlacRecorder.resumeRecording();
+            mSpectralView.startAnimation();
           }
           else {
             Log.d(LTAG, "Pause recording!");
-//            mFlacRecorder.pauseRecording();
+            mFlacRecorder.pauseRecording();
+            mSpectralView.stopAnimation();
           }
         }
       });
+    }
+
+    mSpectralView = (SpectralView) findViewById(R.id.record_spectral_view);
+  }
+
+
+
+  @Override
+  public void onPause()
+  {
+    super.onPause();
+    // FIXME may need changes
+    if (null != mFlacRecorder) {
+      mFlacRecorder.pauseRecording();
+      mFlacRecorder.interrupt();
+    }
+
+    if (null != mSpectralView) {
+      mSpectralView.stopAnimation();
     }
   }
 
@@ -98,4 +153,15 @@ public class RecordActivity extends Activity
 
 
 
+  private void drawAmplitudes(FLACRecorder.Amplitudes amp)
+  {
+    mSpectralView.setAmplitudes(amp.mAverage, amp.mPeak);
+  }
+
+
+
+  private void reportError(int code)
+  {
+    Log.d(LTAG, "Error: " + code);
+  }
 }
