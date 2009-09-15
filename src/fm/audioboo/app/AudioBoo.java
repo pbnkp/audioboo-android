@@ -52,14 +52,6 @@ public class AudioBoo extends TabActivity
   {
     super.onCreate(savedInstanceState);
     setContentView(R.layout.main);
-  }
-
-
-
-  @Override
-  public void onStart()
-  {
-    super.onStart();
 
     // Load resources describing the tabs.
     String[] labels = getResources().getStringArray(R.array.main_tab_labels);
@@ -84,7 +76,15 @@ public class AudioBoo extends TabActivity
           )
         );
     }
-    host.setCurrentTab(0);
+    host.setCurrentTab(1); // FIXME
+  }
+
+
+
+  @Override
+  public void onStart()
+  {
+    super.onStart();
   }
 
 
