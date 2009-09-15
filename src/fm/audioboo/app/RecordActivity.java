@@ -17,6 +17,9 @@ import android.os.Message;
 
 import android.content.res.Configuration;
 
+import android.view.Menu;
+import android.view.MenuItem;
+
 import android.widget.ToggleButton;
 import android.widget.CompoundButton;
 
@@ -59,6 +62,10 @@ public class RecordActivity extends Activity
   private SpectralView  mSpectralView;
 
 
+  // Player instance
+  private FLACPlayer    mFlacPlayer;
+
+
   /***************************************************************************
    * Implementation
    **/
@@ -77,34 +84,6 @@ public class RecordActivity extends Activity
 
     setContentView(R.layout.record);
 
-    if (null == mFlacRecorder) {
-      // Instanciate recorder. TODO need to check whether the file exists,
-      // and use a different name.
-      String filename = RECORDING_BASE_NAME + RECORDING_EXTENSION;
-      mFlacRecorder = new FLACRecorder(this, filename,
-        new Handler(new Handler.Callback()
-        {
-          public boolean handleMessage(Message m)
-          {
-            switch (m.what) {
-              case FLACRecorder.MSG_AMPLITUDES:
-                FLACRecorder.Amplitudes amp = (FLACRecorder.Amplitudes) m.obj;
-                drawAmplitudes(amp);
-                mRecordButton.setProgress((int) (amp.mPosition / 1000));
-                break;
-
-              default:
-                reportError(m.what);
-                break;
-            }
-
-            return true;
-          }
-        }
-      ));
-      mFlacRecorder.start();
-    }
-
     mRecordButton = (RecordButton) findViewById(R.id.record_button);
     if (null != mRecordButton) {
       mRecordButton.setMax(RECORDING_TIME_LIMIT);
@@ -112,6 +91,10 @@ public class RecordActivity extends Activity
       mRecordButton.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
         public void onCheckedChanged(CompoundButton buttonView, boolean isChecked)
         {
+          if (null == mFlacRecorder) {
+            resetFLACRecorder();
+          }
+
           if (isChecked) {
             Log.d(LTAG, "Resume recording!");
             mFlacRecorder.resumeRecording();
@@ -141,6 +124,11 @@ public class RecordActivity extends Activity
       mFlacRecorder.interrupt();
     }
 
+    if (null != mFlacPlayer) {
+      mFlacPlayer.mShouldRun = false;
+      mFlacPlayer.interrupt();
+    }
+
     if (null != mSpectralView) {
       mSpectralView.stopAnimation();
     }
@@ -165,8 +153,80 @@ public class RecordActivity extends Activity
 
 
 
+  private void resetFLACRecorder()
+  {
+    if (null != mFlacRecorder) {
+      mFlacRecorder.mShouldRun = false;
+      mFlacRecorder.interrupt();
+      mFlacRecorder = null;
+    }
+
+    // Instanciate recorder. TODO need to check whether the file exists,
+    // and use a different name.
+    String filename = RECORDING_BASE_NAME + RECORDING_EXTENSION;
+    mFlacRecorder = new FLACRecorder(this, filename,
+      new Handler(new Handler.Callback()
+      {
+        public boolean handleMessage(Message m)
+        {
+          switch (m.what) {
+            case FLACRecorder.MSG_AMPLITUDES:
+              FLACRecorder.Amplitudes amp = (FLACRecorder.Amplitudes) m.obj;
+              drawAmplitudes(amp);
+              mRecordButton.setProgress((int) (amp.mPosition / 1000));
+              break;
+
+            default:
+              reportError(m.what);
+              break;
+          }
+
+          return true;
+        }
+      }
+    ));
+    mFlacRecorder.start();
+  }
+
+
+
   private void reportError(int code)
   {
     Log.d(LTAG, "Error: " + code);
+    // TODO
   }
+
+
+
+  @Override
+  public boolean onCreateOptionsMenu(Menu menu)
+  {
+//    String[] menu_titles = getResources().getStringArray(R.array.shelfoverview_menu_titles);
+//    final int[] menu_icons = {
+//      android.R.drawable.ic_menu_add,
+//      R.drawable.scan,
+//      android.R.drawable.ic_menu_search,
+//      android.R.drawable.ic_menu_info_details,
+//    };
+//    for (int i = 0 ; i < menu_titles.length ; ++i) {
+//      menu.add(0, i, 0, menu_titles[i]).setIcon(menu_icons[i]);
+//// FIXME item.setAlphabeticShortcut(SearchManager.MENU_KEY);
+//    }
+//    return true;
+    menu.add(0, 0, 0, "Play back");
+    return true;
+  }
+
+
+
+  @Override
+  public boolean onOptionsItemSelected(MenuItem item)
+  {
+    // FIXME: need to pause recording, etc.
+    mFlacPlayer = new FLACPlayer(this, RECORDING_BASE_NAME + RECORDING_EXTENSION);
+    mFlacPlayer.start();
+    return true;
+  }
+
+
 }
