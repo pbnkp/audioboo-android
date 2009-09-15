@@ -18,7 +18,11 @@
 #include "FLAC/metadata.h"
 #include "FLAC/stream_encoder.h"
 
+#include "util.h"
+
 #include <jni.h>
+
+namespace aj = audioboo::jni;
 
 namespace {
 
@@ -31,32 +35,6 @@ static char const * const FLACStreamEncoder_mObject     = "mObject";
 static char const * const IllegalArgumentException_classname  = "java.lang.IllegalArgumentException";
 
 static int COMPRESSION_LEVEL                            = 5;
-
-/*****************************************************************************
- * Very simple traits for int8_t/int16_t
- **/
-template <typename intT>
-struct type_traits
-{
-};
-
-
-template <>
-struct type_traits<int8_t>
-{
-  enum {
-    MAX = INT8_MAX,
-  };
-};
-
-
-template <>
-struct type_traits<int16_t>
-{
-  enum {
-    MAX = INT16_MAX,
-  };
-};
 
 
 
@@ -133,49 +111,12 @@ public:
     if (m_encoder) {
       FLAC__stream_encoder_finish(m_encoder);
       FLAC__stream_encoder_delete(m_encoder);
+      m_encoder = NULL;
     }
 
     if (m_outfile) {
       free(m_outfile);
       m_outfile = NULL;
-    }
-  }
-
-
-  /**
-   * Copies inbuf to outpuf, assuming that inbuf is really a buffer of
-   * sized_sampleT.
-   * As a side effect, m_max_amplitude, m_average_sum and m_average_count are
-   * modified.
-   **/
-  template <typename sized_sampleT>
-  void copyBuffer(FLAC__int32 * outbuf, char * inbuf, int inbufsize)
-  {
-    sized_sampleT * inbuf_sized = reinterpret_cast<sized_sampleT *>(inbuf);
-    for (int i = 0 ; i < inbufsize / sizeof(sized_sampleT) ; ++i) {
-      sized_sampleT cur = inbuf_sized[i];
-
-      // Convert sized sample to int32
-      outbuf[i] = cur;
-
-      // Convert to float on a range from 0..1
-      if (cur < 0) {
-        // Need to lose precision here, the positive value range is lower than
-        // the negative value range in a signed integer.
-        cur = -(cur + 1);
-      }
-      float amp = static_cast<float>(cur) / type_traits<sized_sampleT>::MAX;
-
-      // Store max amplitude
-      if (amp > m_max_amplitude) {
-        m_max_amplitude = amp;
-      }
-
-      // Sum average.
-      if (!(i % m_channels)) {
-        m_average_sum += amp;
-        ++m_average_count;
-      }
     }
   }
 
@@ -237,6 +178,44 @@ public:
 
 
 private:
+  /**
+   * Copies inbuf to outpuf, assuming that inbuf is really a buffer of
+   * sized_sampleT.
+   * As a side effect, m_max_amplitude, m_average_sum and m_average_count are
+   * modified.
+   **/
+  template <typename sized_sampleT>
+  void copyBuffer(FLAC__int32 * outbuf, char * inbuf, int inbufsize)
+  {
+    sized_sampleT * inbuf_sized = reinterpret_cast<sized_sampleT *>(inbuf);
+    for (int i = 0 ; i < inbufsize / sizeof(sized_sampleT) ; ++i) {
+      sized_sampleT cur = inbuf_sized[i];
+
+      // Convert sized sample to int32
+      outbuf[i] = cur;
+
+      // Convert to float on a range from 0..1
+      if (cur < 0) {
+        // Need to lose precision here, the positive value range is lower than
+        // the negative value range in a signed integer.
+        cur = -(cur + 1);
+      }
+      float amp = static_cast<float>(cur) / aj::type_traits<sized_sampleT>::MAX;
+
+      // Store max amplitude
+      if (amp > m_max_amplitude) {
+        m_max_amplitude = amp;
+      }
+
+      // Sum average.
+      if (!(i % m_channels)) {
+        m_average_sum += amp;
+        ++m_average_count;
+      }
+    }
+  }
+
+
   // Configuration values passed to ctor
   char *  m_outfile;
   int     m_sample_rate;
@@ -293,46 +272,6 @@ static void set_encoder(JNIEnv * env, jobject obj, FLACStreamEncoder * encoder)
 }
 
 
-
-/**
- * Convert a jstring to a UTF-8 char pointer. Ownership of the pointer goes
- * to the caller.
- **/
-static char * convert_jstring_path(JNIEnv * env, jstring input)
-{
-  char buf[PATH_MAX];
-
-  jboolean copy = false;
-  char const * str = env->GetStringUTFChars(input, &copy);
-  if (NULL == str) {
-    // OutOfMemoryError has already been thrown here.
-    return NULL;
-  }
-
-  char * ret = strdup(str);
-  env->ReleaseStringUTFChars(input, str);
-  return ret;
-}
-
-
-/**
- * Throws the given exception/message
- **/
-void throwByName(JNIEnv * env, const char * name, const char * msg)
-{
-  jclass cls = env->FindClass(name);
-
-  // If cls is NULL, an exception has already been thrown
-  if (NULL != cls) {
-    env->ThrowNew(cls, msg);
-    // Ignore return value of ThrowNew... all we could reasonably do is try and
-    // throw another exception, after all.
-  }
-
-  env->DeleteLocalRef(cls);
-}
-
-
 } // anonymous namespace
 
 
@@ -350,14 +289,14 @@ Java_fm_audioboo_jni_FLACStreamEncoder_init(JNIEnv * env, jobject obj,
   assert(sizeof(jlong) >= sizeof(FLACStreamEncoder *));
 
   FLACStreamEncoder * encoder = new FLACStreamEncoder(
-      convert_jstring_path(env, outfile), sample_rate, channels,
+      aj::convert_jstring_path(env, outfile), sample_rate, channels,
       bits_per_sample);
 
   char const * const error = encoder->init();
   if (NULL != error) {
     delete encoder;
 
-    throwByName(env, IllegalArgumentException_classname, error);
+    aj::throwByName(env, IllegalArgumentException_classname, error);
     return;
   }
 
@@ -376,14 +315,14 @@ Java_fm_audioboo_jni_FLACStreamEncoder_deinit(JNIEnv * env, jobject obj)
 
 
 
-int
+jint
 Java_fm_audioboo_jni_FLACStreamEncoder_write(JNIEnv * env, jobject obj,
     jbyteArray buffer, jint bufsize)
 {
   FLACStreamEncoder * encoder = get_encoder(env, obj);
 
   if (NULL == encoder) {
-    throwByName(env, IllegalArgumentException_classname,
+    aj::throwByName(env, IllegalArgumentException_classname,
         "Called without a valid encoder instance!");
     return 0;
   }
@@ -403,7 +342,7 @@ Java_fm_audioboo_jni_FLACStreamEncoder_getMaxAmplitude(JNIEnv * env, jobject obj
   FLACStreamEncoder * encoder = get_encoder(env, obj);
 
   if (NULL == encoder) {
-    throwByName(env, IllegalArgumentException_classname,
+    aj::throwByName(env, IllegalArgumentException_classname,
         "Called without a valid encoder instance!");
     return 0;
   }
@@ -419,7 +358,7 @@ Java_fm_audioboo_jni_FLACStreamEncoder_getAverageAmplitude(JNIEnv * env, jobject
   FLACStreamEncoder * encoder = get_encoder(env, obj);
 
   if (NULL == encoder) {
-    throwByName(env, IllegalArgumentException_classname,
+    aj::throwByName(env, IllegalArgumentException_classname,
         "Called without a valid encoder instance!");
     return 0;
   }
