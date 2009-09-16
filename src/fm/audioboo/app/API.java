@@ -12,6 +12,7 @@ package fm.audioboo.app;
 import android.os.Handler;
 import android.os.Message;
 
+import android.net.Uri;
 import java.net.URI;
 import java.net.URISyntaxException;
 
@@ -41,6 +42,8 @@ import java.io.InputStreamReader;
 
 import java.util.StringTokenizer;
 import java.text.SimpleDateFormat;
+import java.util.Map;
+import java.util.HashMap;
 
 import android.util.Log;
 
@@ -79,7 +82,7 @@ public class API
   private static final String API_RECENT  = "audio_clips";
 
   // API version parameter
-  private static final int KEY_API_VERSION  = "version";
+  private static final String KEY_API_VERSION  = "version";
 
   // HTTP Client parameters
   private static final int          HTTP_TIMEOUT = 60 * 1000;
@@ -233,6 +236,7 @@ public class API
   public void fetchRecentBoos(final Handler result_handler)
   {
     String uri_string = getApiUrl(API_RECENT);
+    Log.d(LTAG, "uri: " + uri_string);
 
     if (null != mFetcher) {
       mFetcher.keepRunning = false;
@@ -281,8 +285,18 @@ public class API
   {
     params.put(KEY_API_VERSION, String.valueOf(API_VERSION));
 
-    // :w
-    // :
+    String param_string = "";
+    for (Map.Entry<String, String> param : params.entrySet()) {
+      param_string += Uri.encode(param.getKey())
+        + "="
+        + Uri.encode(param.getValue())
+        + "&";
+    }
+    if (0 < param_string.length()) {
+      param_string = param_string.substring(0, param_string.length() - 1);
+    }
+
+    return BASE_URL + api + FORMAT + "?" + param_string;
   }
 
 
