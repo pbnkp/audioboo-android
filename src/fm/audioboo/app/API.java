@@ -271,6 +271,8 @@ public class API
     ResponseParser parser = new ResponseParser();
     BooList boos = parser.parseBooList(response);
 
+    // FIXME can't handle errors this way, needs to be extended.
+    result_handler.obtainMessage(ERR_SUCCESS, boos).sendToTarget();
   }
 
 

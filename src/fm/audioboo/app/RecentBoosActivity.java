@@ -40,8 +40,10 @@ public class RecentBoosActivity extends ListActivity
    * Data members
    **/
   // API instance
-  private API mApi;
+  private API     mApi;
 
+  // Content
+  private BooList mBoos;
 
   /***************************************************************************
    * Implementation
@@ -74,6 +76,9 @@ public class RecentBoosActivity extends ListActivity
     Log.d(LTAG, "Resume");
 
     // FIXME only if no boos have been loaded yet.
+    if (null != mBoos) {
+      return;
+    }
 
     // Start loading recent Boos.
     if (null == mApi) {
@@ -83,7 +88,7 @@ public class RecentBoosActivity extends ListActivity
       public boolean handleMessage(Message msg)
       {
         if (API.ERR_SUCCESS == msg.what) {
-          onReceiveRecentBoos((LinkedList<Boo>) msg.obj);
+          onReceiveRecentBoos((BooList) msg.obj);
         }
         else {
           onRecentBoosError(msg.what, (String) msg.obj);
@@ -106,8 +111,15 @@ public class RecentBoosActivity extends ListActivity
 
 
 
-  private void onReceiveRecentBoos(LinkedList<Boo> boos)
+  private void onReceiveRecentBoos(BooList boos)
   {
+    Log.d(LTAG, "Got response!");
+
+    mBoos = boos;
+
+    BooListAdapter adapter = new BooListAdapter(this, R.layout.recent_boos_item, mBoos);
+    setListAdapter(adapter);
+//    getListView().setTextFilterEnabled(true);
   }
 
 
