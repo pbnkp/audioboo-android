@@ -21,6 +21,12 @@
   <!--
     Recent boos tab
   -->
+  <!-- Author string to use when the boo was posted anonymously -->
   <string name="recent_boos_anonymous_author">The BooBot</string>
+
+  <!-- Name for the menu action for refreshing boos. -->
+  <string-array name="recent_boos_actions">
+    <item>Refresh</item>
+  </string-array>
 
 </resources>
