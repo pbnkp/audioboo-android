@@ -62,6 +62,18 @@ public class RecentBoosActivity extends ListActivity
   public void onStart()
   {
     super.onStart();
+    Log.d(LTAG, "Start");
+  }
+
+
+
+  @Override
+  public void onResume()
+  {
+    super.onResume();
+    Log.d(LTAG, "Resume");
+
+    // FIXME only if no boos have been loaded yet.
 
     // Start loading recent Boos.
     if (null == mApi) {
