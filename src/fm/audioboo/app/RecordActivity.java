@@ -142,6 +142,20 @@ public class RecordActivity extends Activity
     // Ignore when the keyboard opens to the extent that we don't fetch boos
     // again.
     super.onConfigurationChanged(config);
+
+    Log.d(LTAG, "RecordActivity: onConfiguratioNChanged");
+    // XXX ? maybe that's all that's required to load the landscape
+    // layout.
+    // FIXME: no, need to attach buttons to actions, and all that.
+    // FIXME:
+    //  - also need to do the whole shebang if the tab was selected, because the
+    //    following would lead to the wrong layout being used:
+    //    - switch to another tab
+    //    - open or close the keyboard
+    //    - switch back
+    //  - doesn't need to create data objects, but reinitialize the button view to
+    //    update the current recording state, etc
+    setContentView(R.layout.record);
   }
 
 
