@@ -235,6 +235,8 @@ public class API
    **/
   public void fetchRecentBoos(final Handler result_handler)
   {
+    // TODO add parameter that specifies we want 25 results, because
+    // the iPhone apparently does.
     String uri_string = getApiUrl(API_RECENT);
     Log.d(LTAG, "uri: " + uri_string);
 
@@ -267,6 +269,7 @@ public class API
   {
     Log.d(LTAG, "Response: " + response);
     ResponseParser parser = new ResponseParser();
+    BooList boos = parser.parseBooList(response);
 
   }
 
