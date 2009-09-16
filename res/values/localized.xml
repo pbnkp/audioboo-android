@@ -18,4 +18,9 @@
     <item>Account</item>
   </string-array>
 
+  <!--
+    Recent boos tab
+  -->
+  <string name="recent_boos_anonymous_author">The BooBot</string>
+
 </resources>

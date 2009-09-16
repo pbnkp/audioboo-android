@@ -15,6 +15,7 @@
     android:padding="2dp"
   >
 
+  <!-- Boo thumbnail -->
   <ImageView android:id="@+id/recent_boos_item_image"
       android:layout_width="60dp"
       android:layout_height="60dp"
@@ -23,6 +24,7 @@
       android:background="@color/recent_boos_image_background"
     />
 
+  <!-- Metadata -->
   <LinearLayout
       android:layout_width="fill_parent"
       android:layout_height="wrap_content"
@@ -32,6 +34,7 @@
       android:gravity="center_vertical"
     >
 
+    <!-- Author -->
     <TextView android:id="@+id/recent_boos_item_author"
         android:layout_width="fill_parent"
         android:layout_height="wrap_content"
@@ -41,9 +44,10 @@
         android:ellipsize="end"
         android:lines="1"
         android:singleLine="true"
-        android:text="The BooBot"
-      /> <!-- FIXME text should be referenced -->
+        android:text="@string/recent_boos_anonymous_author"
+      />
 
+    <!-- Title -->
     <TextView android:id="@+id/recent_boos_item_title"
         android:layout_width="fill_parent"
         android:layout_height="wrap_content"
@@ -54,6 +58,7 @@
         android:singleLine="true"
       />
 
+    <!-- Location -->
     <TextView android:id="@+id/recent_boos_item_location"
         android:layout_width="fill_parent"
         android:layout_height="wrap_content"
@@ -63,8 +68,7 @@
         android:ellipsize="end"
         android:lines="1"
         android:singleLine="true"
-        android:text="Location!"
-      /> <!-- FIXME text -->
+      />
 
   </LinearLayout>
 </LinearLayout>
