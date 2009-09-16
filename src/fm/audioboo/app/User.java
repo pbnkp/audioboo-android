@@ -31,4 +31,11 @@ public class User
   public int    mFollowers;   // # users following this one
   public int    mFollowings;  // # users this one follows
   public int    mAudioClips;  // # clips this user uploaded
+
+
+  public String toString()
+  {
+    return String.format("<%d:%s:%d/%d/%d>", mId, mUsername, mFollowers,
+        mFollowings, mAudioClips);
+  }
 }

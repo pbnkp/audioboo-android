@@ -26,7 +26,7 @@ public class Boo
   public int                mId;
   public String             mTitle;
 
-  public float              mDuration;
+  public double             mDuration;
 
   public LinkedList<String> mTags;
 
@@ -46,4 +46,10 @@ public class Boo
   // Usage statistics.
   public int                mPlays;
   public int                mComments;
+
+
+  public String toString()
+  {
+    return String.format("<%d:%s:%f:[%s]>", mId, mTitle, mDuration, mUser);
+  }
 }
