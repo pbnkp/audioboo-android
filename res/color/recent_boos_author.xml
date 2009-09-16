@@ -9,19 +9,19 @@
 -->
 <selector xmlns:android="http://schemas.android.com/apk/res/android">
   <!-- Pressed from trackball -->
-  <item android:color="#14ffffff"
+  <item android:color="#ccffffff"
       android:state_selected="true"
       android:state_pressed="true"
     />
 
   <!-- No idea -->
-  <item android:color="#14ffffff"
+  <item android:color="#ccffffff"
       android:state_selected="true"
       android:state_focused="true"
     />
 
   <!-- Pressed via screen -->
-  <item android:color="#14ffffff"
+  <item android:color="#ccffffff"
       android:state_selected="false"
       android:state_pressed="true"
     />
