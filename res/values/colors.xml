@@ -12,10 +12,10 @@
     Colors for the Recent Boos view. Also see res/color
   -->
   <color name="recent_boos_author_selected">#14ffffff</color> <!-- 12 -->
-  <color name="recent_boos_title_selected">@color/white</color> <!-- 16 -->
+  <color name="recent_boos_title_selected">@android:color/white</color> <!-- 16 -->
   <color name="recent_boos_location_selected">#11ffffff</color>
 
-  <color name="recent_boos_background_even">@color/black</color>
+  <color name="recent_boos_background_even">@android:color/black</color>
   <color name="recent_boos_background_odd">#111111</color>
 
   <!--
