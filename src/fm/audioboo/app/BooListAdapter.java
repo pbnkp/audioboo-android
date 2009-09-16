@@ -22,7 +22,7 @@ import android.widget.TextView;
 import android.util.Log;
 
 /**
- * FIXME
+ * Adapter for presenting a BooList in a ListView, Gallery or similar.
  **/
 public class BooListAdapter extends BaseAdapter
 {
@@ -67,12 +67,12 @@ public class BooListAdapter extends BaseAdapter
       view = inflater.inflate(mBooLayoutId, null);
     }
 
-    // FIXME if position % 2 set background
+    // Set alternating background colors.
     if (0 == position % 2) {
-      view.setBackgroundResource(R.color.recent_boos_background_even);
+      view.setBackgroundResource(R.drawable.recent_boos_background_odd);
     }
     else {
-      view.setBackgroundResource(R.color.recent_boos_background_odd);
+      view.setBackgroundResource(R.drawable.recent_boos_background_even);
     }
 
     Boo boo = mBoos.mClips.get(position);
