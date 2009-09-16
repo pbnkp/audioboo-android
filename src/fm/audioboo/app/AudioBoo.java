@@ -40,6 +40,7 @@ public class AudioBoo extends TabActivity
   private static final Class TAB_CONTENT_CLASSES[] = {
     RecentBoosActivity.class,
     RecordActivity.class,
+    AccountActivity.class,
   };
 
 

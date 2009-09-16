@@ -23,12 +23,17 @@
     <activity android:name=".AudioBoo"
         android:label="@string/app_name"
         android:icon="@drawable/icon"
-        android:configChanges="orientation|keyboardHidden"
         android:theme="@android:style/Theme.NoTitleBar"
       >
       <intent-filter>
         <action android:name="android.intent.action.MAIN" />
         <category android:name="android.intent.category.LAUNCHER" />
+      </intent-filter>
+      <intent-filter>
+        <action android:name="android.intent.action.VIEW" />
+        <category android:name="android.intent.category.DEFAULT" />
+        <category android:name="android.intent.category.BROWSABLE" />
+        <data android:scheme="http" android:host="boos.audioboo.fm" /> <!-- audio_clip_id -->
       </intent-filter>
     </activity>
 
@@ -39,5 +44,10 @@
     <activity android:name=".RecordActivity"
         android:configChanges="orientation|keyboardHidden"
       />
+
+    <activity android:name=".AccountActivity"
+        android:configChanges="orientation|keyboardHidden"
+      />
+
   </application>
 </manifest>

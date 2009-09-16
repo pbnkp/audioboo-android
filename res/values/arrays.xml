@@ -15,6 +15,7 @@
   <array name="main_tab_drawables">
     <item>@drawable/tabbar_boos</item>
     <item>@drawable/tabbar_record</item>
+    <item>@drawable/tabbar_account</item>
   </array>
 
 </resources>
