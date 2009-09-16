@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+ This file is part of AudioBoo, an android program for audio blogging.
+ Copyright (C) 2009 BestBefore Media Ltd. All rights reserved.
+
+ Author: Jens Finkhaeuser <jens@finkhaeuser.de>
+
+ $Id$
+-->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="fill_parent"
+    android:layout_height="wrap_content"
+    android:orientation="horizontal"
+    android:gravity="left|center_vertical"
+    android:padding="2dp"
+  >
+
+  <ImageView android:id="@+id/recent_boos_item_image"
+      android:layout_width="60dp"
+      android:layout_height="60dp"
+      android:src="@drawable/anonymous_boo"
+      android:padding="1dp"
+      android:background="@color/recent_boos_image_background"
+    />
+
+  <LinearLayout
+      android:layout_width="fill_parent"
+      android:layout_height="wrap_content"
+      android:layout_marginRight="10dp"
+      android:layout_marginLeft="7dp"
+      android:orientation="vertical"
+      android:gravity="center_vertical"
+    >
+
+    <TextView android:id="@+id/recent_boos_item_author"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:textSize="12dp"
+        android:textColor="@color/recent_boos_author"
+        android:textStyle="bold"
+        android:ellipsize="end"
+        android:lines="1"
+        android:singleLine="true"
+        android:text="The BooBot"
+      /> <!-- FIXME text should be referenced -->
+
+    <TextView android:id="@+id/recent_boos_item_title"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:textSize="16dp"
+        android:textColor="@color/recent_boos_title"
+        android:ellipsize="end"
+        android:lines="1"
+        android:singleLine="true"
+      />
+
+    <TextView android:id="@+id/recent_boos_item_location"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:textSize="10dp"
+        android:textColor="@color/recent_boos_location"
+        android:textStyle="bold"
+        android:ellipsize="end"
+        android:lines="1"
+        android:singleLine="true"
+        android:text="Location!"
+      /> <!-- FIXME text -->
+
+  </LinearLayout>
+</LinearLayout>
