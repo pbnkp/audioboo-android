@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+ This file is part of AudioBoo, an android program for audio blogging.
+ Copyright (C) 2009 BestBefore Media Ltd. All rights reserved.
+
+ Author: Jens Finkhaeuser <jens@finkhaeuser.de>
+
+ $Id$
+-->
+<resources>
+  <!--
+    Colors for the Recent Boos view. Also see res/color
+  -->
+  <color name="recent_boos_author_selected">#14ffffff</color> <!-- 12 -->
+  <color name="recent_boos_title_selected">@color/white</color> <!-- 16 -->
+  <color name="recent_boos_location_selected">#11ffffff</color>
+
+  <color name="recent_boos_background_even">@color/black</color>
+  <color name="recent_boos_background_odd">#111111</color>
+
+  <!--
+    Colors for the Record view. Also see res/color
+  -->
+  <color name="record_button_text_shadow">#cc000000</color>
+
+
+</resources>
