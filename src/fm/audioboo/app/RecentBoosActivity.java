@@ -47,10 +47,16 @@ public class RecentBoosActivity extends ListActivity
    * Data members
    **/
   // API instance
-  private API     mApi;
+  private API             mApi;
+
+  // Flag, set to true when a request is in progress.
+  private boolean         mRequesting;
 
   // Content
-  private BooList mBoos;
+  private BooList         mBoos;
+
+  // Adapter
+  private BooListAdapter  mAdapter;
 
   /***************************************************************************
    * Implementation
@@ -105,9 +111,16 @@ public class RecentBoosActivity extends ListActivity
     if (null == mApi) {
       mApi = new API();
     }
+
+    if (mRequesting) {
+      // Wait for the previous request to finish
+    }
+
+    mRequesting = true;
     mApi.fetchRecentBoos(new Handler(new Handler.Callback() {
       public boolean handleMessage(Message msg)
       {
+        mRequesting = false;
         if (API.ERR_SUCCESS == msg.what) {
           onReceiveRecentBoos((BooList) msg.obj);
         }
@@ -128,9 +141,8 @@ public class RecentBoosActivity extends ListActivity
 
     mBoos = boos;
 
-    BooListAdapter adapter = new BooListAdapter(this, R.layout.recent_boos_item, mBoos);
-    setListAdapter(adapter);
-//    getListView().setTextFilterEnabled(true);
+    mAdapter = new BooListAdapter(this, R.layout.recent_boos_item, mBoos);
+    setListAdapter(mAdapter);
   }
 
 
@@ -165,7 +177,8 @@ public class RecentBoosActivity extends ListActivity
     switch (item.getItemId()) {
       case ACTION_REFRESH:
         // Refresh Boos! While we do that, we want to empty the listview
-        setListAdapter(null);
+        mAdapter = null;
+        setListAdapter(mAdapter);
         refreshBoos();
         break;
 

@@ -56,10 +56,12 @@ public class API
    * Public constants
    **/
   // Error constants.
-  public static final int ERR_SUCCESS         = 0;
-  public static final int ERR_INVALID_URI     = 1001;
-  public static final int ERR_EMPTY_RESPONSE  = 1002;
-  public static final int ERR_TRANSMISSION    = 1003;
+  public static final int ERR_SUCCESS           = 0;
+  public static final int ERR_INVALID_URI       = 1001;
+  public static final int ERR_EMPTY_RESPONSE    = 1002;
+  public static final int ERR_TRANSMISSION      = 1003;
+  public static final int ERR_VERSION_MISMATCH  = 1004;
+  public static final int ERR_PARSE_ERROR       = 1005;
   // TODO move to Error class; read localized descriptions
 
   // API version we're requesting
@@ -269,10 +271,12 @@ public class API
   {
     Log.d(LTAG, "Response: " + response);
     ResponseParser parser = new ResponseParser();
-    BooList boos = parser.parseBooList(response);
-
-    // FIXME can't handle errors this way, needs to be extended.
-    result_handler.obtainMessage(ERR_SUCCESS, boos).sendToTarget();
+    BooList boos = parser.parseBooList(response, result_handler);
+    if (null != boos) {
+      // If boos were null, then the ResponseParser would already have sent an
+      // error message to the result_handler.
+      result_handler.obtainMessage(ERR_SUCCESS, boos).sendToTarget();
+    }
   }
 
 
