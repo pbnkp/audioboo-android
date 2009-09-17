@@ -90,6 +90,13 @@ public class BooListAdapter extends BaseAdapter
       text_view.setText(boo.mTitle);
     }
 
+    if (null != boo.mLocation && null != boo.mLocation.mDescription) {
+      text_view = (TextView) view.findViewById(R.id.recent_boos_item_location);
+      if (null != text_view) {
+        text_view.setText(boo.mLocation.mDescription);
+      }
+    }
+
     // TODO add more
 
     return view;

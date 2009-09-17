@@ -9,6 +9,8 @@
 
 package fm.audioboo.app;
 
+import android.os.Handler;
+
 import android.net.Uri;
 
 import org.json.JSONArray;
@@ -16,6 +18,8 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.util.Date;
+import java.text.SimpleDateFormat;
+import java.text.ParseException;
 
 import android.util.Log;
 
@@ -71,13 +75,23 @@ class ResponseParser
   private static final String BOO_COUNTS_COMMENTS     = "comments";
   private static final String BOO_DURATION            = "duration";
 
-  private static final String BOO_LOCATION            = "location";
+  private static final String LOCATION                = "location";
+  private static final String LOCATION_LONGITUDE      = "longitude";
+  private static final String LOCATION_LATITUDE       = "latitude";
+  private static final String LOCATION_ACCURACY       = "accuracy";
+  private static final String LOCATION_DESCRIPTION    = "description";
+
 
 
   /***************************************************************************
    * Implementation
    **/
-  public BooList parseBooList(String response)
+
+  /**
+   * Returns a filled BooList or null. If null is returned, the Handler will
+   * have been sent an error code from the API.ERR_* list.
+   **/
+  public BooList parseBooList(String response, Handler handler)
   {
     try {
       JSONObject object = new JSONObject(response);
@@ -87,7 +101,7 @@ class ResponseParser
       int version = object.getInt(VERSION);
       if (EXPECTED_VERSION != version) {
         Log.e(LTAG, "Response version did not match our expectations.");
-        // FIXME use handler
+        handler.obtainMessage(API.ERR_VERSION_MISMATCH).sendToTarget();
         return null;
       }
 
@@ -114,7 +128,20 @@ class ResponseParser
 
     } catch (JSONException ex) {
       Log.e(LTAG, "Could not parse JSON response: " + ex);
-      // FIXME use handler
+      handler.obtainMessage(API.ERR_PARSE_ERROR).sendToTarget();
+      return null;
+    }
+  }
+
+
+
+  private Date parseTimestamp(String str)
+  {
+    SimpleDateFormat format = API.ISO8601Format();
+    try {
+      return format.parse(str);
+    } catch (ParseException ex) {
+      Log.e(LTAG, "Could not parse timestamp: " + str);
       return null;
     }
   }
@@ -129,10 +156,12 @@ class ResponseParser
     result.mUser = parseUser(boo.getJSONObject(USER));
 
     // Parse location data
-    // TODO
+    if (boo.has(LOCATION)) {
+      result.mLocation = parseLocation(boo.getJSONObject(LOCATION));
+    }
 
     // Parse Boo metadata
-//    result.mId  = boo.getInt(BOO_ID);
+    result.mId  = boo.getInt(BOO_ID);
     result.mTitle = boo.getString(BOO_TITLE);
 
     result.mDuration = boo.getDouble(BOO_DURATION);
@@ -140,8 +169,8 @@ class ResponseParser
     // TODO result.mTags;
 
     // Timestamps
-//     result.mRecordedAt = new Date(boo.getInt(BOO_RECORDED_AT));
-//     result.mUploadedAt = new Date(boo.getInt(BOO_UPLOADED_AT));
+    result.mRecordedAt = parseTimestamp(boo.getString(BOO_RECORDED_AT));
+    result.mUploadedAt = parseTimestamp(boo.getString(BOO_UPLOADED_AT));
 
     // URLs
     JSONObject urls = boo.getJSONObject(BOO_URLS);
@@ -156,7 +185,7 @@ class ResponseParser
     result.mPlays = stats.getInt(BOO_COUNTS_PLAYS);
     result.mComments = stats.getInt(BOO_COUNTS_COMMENTS);
 
-    Log.d(LTAG, "result: " + result);
+    // Log.d(LTAG, "result: " + result);
 
     return result;
   }
@@ -187,6 +216,23 @@ class ResponseParser
     result.mAudioClips = counts.getInt(USER_COUNTS_AUDIO_CLIPS);
 
 //    Log.d(LTAG, "User: " + result);
+
+    return result;
+  }
+
+
+
+  private Location parseLocation(JSONObject location) throws JSONException
+  {
+    Location result = new Location();
+
+    result.mLongitude = location.getDouble(LOCATION_LONGITUDE);
+    result.mLatitude = location.getDouble(LOCATION_LATITUDE);
+    result.mAccuracy = location.getDouble(LOCATION_ACCURACY);
+
+    result.mDescription = location.getString(LOCATION_DESCRIPTION);
+
+    // Log.d(LTAG, "Location: " + result);
 
     return result;
   }
