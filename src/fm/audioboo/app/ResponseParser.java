@@ -20,6 +20,7 @@ import org.json.JSONObject;
 import java.util.Date;
 import java.text.SimpleDateFormat;
 import java.text.ParseException;
+import java.util.LinkedList;
 
 import android.util.Log;
 
@@ -63,7 +64,6 @@ class ResponseParser
 
   private static final String BOO_ID                  = "id";
   private static final String BOO_TITLE               = "title";
-  private static final String BOO_TAGS                = "tags";
   private static final String BOO_URLS                = "urls";
   private static final String BOO_URLS_HIGH_MP3       = "high_mp3";
   private static final String BOO_URLS_IMAGE          = "image";
@@ -81,6 +81,10 @@ class ResponseParser
   private static final String LOCATION_ACCURACY       = "accuracy";
   private static final String LOCATION_DESCRIPTION    = "description";
 
+  private static final String TAGS                    = "tags";
+  private static final String TAG_DISPLAY             = "display_tag";
+  private static final String TAG_NORMALISED          = "normalised_tag";
+  private static final String TAG_URL                 = "url";
 
 
   /***************************************************************************
@@ -166,7 +170,8 @@ class ResponseParser
 
     result.mDuration = boo.getDouble(BOO_DURATION);
 
-    // TODO result.mTags;
+    // Parse tags
+    result.mTags = parseTags(boo.getJSONArray(TAGS));
 
     // Timestamps
     result.mRecordedAt = parseTimestamp(boo.getString(BOO_RECORDED_AT));
@@ -233,6 +238,38 @@ class ResponseParser
     result.mDescription = location.getString(LOCATION_DESCRIPTION);
 
     // Log.d(LTAG, "Location: " + result);
+
+    return result;
+  }
+
+
+
+  private LinkedList<Tag> parseTags(JSONArray tags) throws JSONException
+  {
+    if (0 == tags.length()) {
+      return null;
+    }
+
+    LinkedList<Tag> result = new LinkedList<Tag>();
+
+    for (int i = 0 ; i < tags.length() ; ++i) {
+      result.add(parseTag(tags.getJSONObject(i)));
+    }
+
+    return result;
+  }
+
+
+
+  private Tag parseTag(JSONObject tag) throws JSONException
+  {
+    Tag result = new Tag();
+
+    result.mDisplay = tag.getString(TAG_DISPLAY);
+    result.mNormalised = tag.getString(TAG_NORMALISED);
+    result.mUrl = Uri.parse(tag.getString(TAG_URL));
+
+    // Log.d(LTAG, "Tag: " + result);
 
     return result;
   }

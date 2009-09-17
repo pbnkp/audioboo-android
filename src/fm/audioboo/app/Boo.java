@@ -28,7 +28,7 @@ public class Boo
 
   public double             mDuration;
 
-  public LinkedList<String> mTags;
+  public LinkedList<Tag>    mTags;
 
   public User               mUser;
 
