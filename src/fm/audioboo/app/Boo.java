@@ -36,7 +36,8 @@ public class Boo
   public Date               mRecordedAt;
   public Date               mUploadedAt;
 
-  // TODO location!
+  // Boo location
+  public Location           mLocation;
 
   // URLs associated with the Boo.
   public Uri                mHighMP3Url;
