@@ -46,9 +46,6 @@ public class RecentBoosActivity extends ListActivity
   /***************************************************************************
    * Data members
    **/
-  // API instance
-  private API             mApi;
-
   // Flag, set to true when a request is in progress.
   private boolean         mRequesting;
 
@@ -69,6 +66,8 @@ public class RecentBoosActivity extends ListActivity
     setContentView(R.layout.recent_boos);
     View v = findViewById(R.id.recent_boos_empty);
     getListView().setEmptyView(v);
+
+
   }
 
 
@@ -108,16 +107,12 @@ public class RecentBoosActivity extends ListActivity
 
   private void refreshBoos()
   {
-    if (null == mApi) {
-      mApi = new API();
-    }
-
     if (mRequesting) {
       // Wait for the previous request to finish
     }
 
     mRequesting = true;
-    mApi.fetchRecentBoos(new Handler(new Handler.Callback() {
+    Globals.get().mAPI.fetchRecentBoos(new Handler(new Handler.Callback() {
       public boolean handleMessage(Message msg)
       {
         mRequesting = false;
@@ -137,11 +132,10 @@ public class RecentBoosActivity extends ListActivity
 
   private void onReceiveRecentBoos(BooList boos)
   {
-    Log.d(LTAG, "Got response!");
-
     mBoos = boos;
 
     mAdapter = new BooListAdapter(this, R.layout.recent_boos_item, mBoos);
+    getListView().setOnScrollListener(new BooListAdapter.ScrollListener(mAdapter));
     setListAdapter(mAdapter);
   }
 
@@ -150,6 +144,7 @@ public class RecentBoosActivity extends ListActivity
   private void onRecentBoosError(int code, String msg)
   {
     // FIXME add error view to layout and display that.
+    Log.e(LTAG, "Error: (" + code + ") " + msg);
   }
 
 
@@ -178,6 +173,7 @@ public class RecentBoosActivity extends ListActivity
       case ACTION_REFRESH:
         // Refresh Boos! While we do that, we want to empty the listview
         mAdapter = null;
+        getListView().setOnScrollListener(null);
         setListAdapter(mAdapter);
         refreshBoos();
         break;
