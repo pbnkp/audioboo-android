@@ -8,21 +8,14 @@
  $Id$
 -->
 <selector xmlns:android="http://schemas.android.com/apk/res/android">
-  <!-- Pressed from trackball -->
+  <!-- Selected via trackball -->
   <item android:color="#ccffffff"
       android:state_selected="true"
-      android:state_pressed="true"
+      android:state_pressed="false"
     />
 
-  <!-- No idea -->
+  <!-- Pressed via screen or trackball -->
   <item android:color="#ccffffff"
-      android:state_selected="true"
-      android:state_focused="true"
-    />
-
-  <!-- Pressed via screen -->
-  <item android:color="#ccffffff"
-      android:state_selected="false"
       android:state_pressed="true"
     />
 

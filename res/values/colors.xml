@@ -20,8 +20,8 @@
   <color name="recent_boos_background_even_pressed">#002d46</color>
   <color name="recent_boos_background_odd_pressed">#00455a</color>
 
-  <color name="recent_boos_background_even_active">#005575</color>
-  <color name="recent_boos_background_odd_active">#004463</color>
+  <color name="recent_boos_background_even_active">#004463</color>
+  <color name="recent_boos_background_odd_active">#005575</color>
 
   <color name="recent_boos_image_background">#a1a7b2</color>
 
