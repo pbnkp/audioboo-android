@@ -39,6 +39,7 @@ import org.apache.http.HttpEntity;
 import java.io.BufferedReader;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.ByteArrayOutputStream;
 
 import java.util.StringTokenizer;
 import java.text.SimpleDateFormat;
@@ -75,27 +76,26 @@ public class API
   private static final String LTAG  = "API";
 
   // Base URL for API calls. XXX Trailing slash is expected.
-  private static final String BASE_URL    = "http://api.audioboo.fm/";
+  private static final String BASE_URL                    = "http://api.audioboo.fm/";
 
   // Request/response format for API calls. XXX Leading dot is expected.
-  private static final String FORMAT      = ".json";
+  private static final String FORMAT                      = ".json";
 
   // URI snippets for various APIs
-  private static final String API_RECENT  = "audio_clips";
+  private static final String API_RECENT                  = "audio_clips";
 
   // API version parameter
-  private static final String KEY_API_VERSION  = "version";
+  private static final String KEY_API_VERSION             = "version";
 
   // HTTP Client parameters
-  private static final int          HTTP_TIMEOUT = 60 * 1000;
-  private static final HttpVersion  HTTP_VERSION = HttpVersion.HTTP_1_1;
-
-  // Response processing
-  private static final int          READ_BUFFER_SIZE  = 8192;
+  private static final int          HTTP_TIMEOUT          = 60 * 1000;
+  private static final HttpVersion  HTTP_VERSION          = HttpVersion.HTTP_1_1;
 
   // Fetcher startup delay. Avoids high load at startup that could impact UX.
-  private static final int      FETCHER_STARTUP_DELAY = 5 * 1000;
+  private static final int          FETCHER_STARTUP_DELAY = 5 * 1000;
 
+  // Chunk size to read responses in (in Bytes).
+  private static final int          READ_CHUNK_SIZE       = 8192;
 
   /***************************************************************************
    * Protected static data
@@ -177,28 +177,37 @@ public class API
    **/
   public static String readStream(InputStream is) throws IOException
   {
-    BufferedReader reader = new BufferedReader(new InputStreamReader(is),
-        READ_BUFFER_SIZE);
-    StringBuilder sb = new StringBuilder();
+    return new String(readStreamRaw(is));
+  }
 
-    String line = null;
+
+
+  /**
+   * Converts an InputStream to a byte array containing the InputStream's content.
+   **/
+  public static byte[] readStreamRaw(InputStream is) throws IOException
+  {
+    ByteArrayOutputStream os = new ByteArrayOutputStream(READ_CHUNK_SIZE);
+    byte[] bytes = new byte[READ_CHUNK_SIZE];
+
     try {
-      while (null != (line = reader.readLine())) {
-        sb.append(line + "\n");
+      // Read bytes from the input stream in chunks and write
+      // them into the output stream
+      int bytes_read = 0;
+      while (-1 != (bytes_read = is.read(bytes))) {
+        os.write(bytes, 0, bytes_read);
       }
-    } catch (IOException ex) {
-      Log.e(LTAG, "Failed to read from HTTP stream: " + ex);
-      throw ex;
-    } finally {
-      try {
-        is.close();
-      } catch (IOException ex) {
-        Log.e(LTAG, "Failed to close HTTP stream: " + ex);
-        throw ex;
-      }
-    }
 
-    return sb.toString();
+      byte[] retval = os.toByteArray();
+
+      is.close();
+      os.close();
+
+      return retval;
+    } catch (java.io.IOException ex) {
+      Log.e(LTAG, "Could not read input stream: " + ex.getMessage());
+    }
+    return null;
   }
 
 
@@ -269,7 +278,7 @@ public class API
    **/
   private void parseRecentBoosResponse(String response, Handler result_handler)
   {
-    Log.d(LTAG, "Response: " + response);
+    // Log.d(LTAG, "Response: " + response);
     ResponseParser parser = new ResponseParser();
     BooList boos = parser.parseBooList(response, result_handler);
     if (null != boos) {
@@ -313,17 +322,48 @@ public class API
   /**
    * Helper function for fetching API responses.
    **/
-  private void fetch(String uri_string, Handler handler)
+  public void fetch(String uri_string, Handler handler)
   {
-    Log.d(LTAG, "Fetching " + uri_string);
-    // Construct URI for recent boos.
+    byte[] data = fetchRawSynchronous(uri_string, handler);
+    if (null != data) {
+      handler.obtainMessage(ERR_SUCCESS, new String(data)).sendToTarget();
+    }
+  }
+
+
+
+  /**
+   * Helper function for fetching raw response data.
+   **/
+  public void fetchRaw(String uri_string, Handler handler)
+  {
+    byte[] data = fetchRawSynchronous(uri_string, handler);
+    if (null != data) {
+      handler.obtainMessage(ERR_SUCCESS, data).sendToTarget();
+    }
+  }
+
+
+
+  /**
+   * Synchronous version of fetchRaw, used in both fetch() and fetchRaw(). May
+   * send error messages, if the Handler is non-null, but always returns the
+   * result as a parameter.
+   **/
+  public byte[] fetchRawSynchronous(String uri_string, Handler handler)
+  {
+    // Log.d(LTAG, "Fetching " + uri_string);
+
+    // Construct URI instance
     URI request_uri = null;
     try {
       request_uri = new URI(uri_string);
     } catch (URISyntaxException ex) {
       Log.e(LTAG, "Invalid API URI: " + uri_string);
-      handler.obtainMessage(ERR_INVALID_URI, uri_string).sendToTarget();
-      return;
+      if (null != handler) {
+        handler.obtainMessage(ERR_INVALID_URI, uri_string).sendToTarget();
+      }
+      return null;
     }
 
     // Construct request
@@ -336,16 +376,21 @@ public class API
       HttpEntity entity = response.getEntity();
       if (null == entity) {
         Log.e(LTAG, "Response is empty: " + request_uri);
-        handler.obtainMessage(ERR_EMPTY_RESPONSE, uri_string).sendToTarget();
-        return;
+        if (null != handler) {
+          handler.obtainMessage(ERR_EMPTY_RESPONSE, uri_string).sendToTarget();
+        }
+        return null;
       }
 
-      String content = readStream(entity.getContent());
-      handler.obtainMessage(ERR_SUCCESS, content).sendToTarget();
+      return readStreamRaw(entity.getContent());
 
     } catch (IOException ex) {
       Log.e(LTAG, "An exception occurred when reading the API response: " + ex);
-      handler.obtainMessage(ERR_TRANSMISSION, ex.getMessage());
+      if (null != handler) {
+        handler.obtainMessage(ERR_TRANSMISSION, ex.getMessage()).sendToTarget();
+      }
+      return null;
     }
   }
+
 }
