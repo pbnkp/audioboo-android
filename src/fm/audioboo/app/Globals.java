@@ -24,6 +24,9 @@ public class Globals
    **/
   private static final String     LTAG = "Globals";
 
+  // Maxim number of items we want in the image cache.
+  private static final int        IMAGE_CACHE_MAX = 200;
+
 
   /***************************************************************************
    * Singleton data
@@ -81,7 +84,7 @@ public class Globals
     mContext = context;
 
     mAPI = new API();
-    mImageCache = new ImageCache(mContext);
+    mImageCache = new ImageCache(mContext, IMAGE_CACHE_MAX);
   }
 
 
