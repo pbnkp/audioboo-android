@@ -14,15 +14,27 @@
     android:gravity="left|center_vertical"
   >
 
-  <!-- Boo thumbnail -->
-  <ImageView android:id="@+id/recent_boos_item_image"
+  <RelativeLayout
       android:layout_width="60dp"
       android:layout_height="60dp"
       android:layout_margin="2dp"
-      android:src="@drawable/anonymous_boo"
-      android:padding="1dp"
-      android:background="@color/recent_boos_image_background"
-    />
+    >
+    <!-- Boo thumbnail -->
+    <ImageView android:id="@+id/recent_boos_item_image"
+        android:layout_width="60dp"
+        android:layout_height="60dp"
+        android:src="@drawable/anonymous_boo"
+        android:padding="1dp"
+        android:background="@color/recent_boos_image_background"
+      />
+
+    <!-- Play/Pause button -->
+    <fm.audioboo.widget.PlayPauseButton android:id="@+id/recent_boos_item_playpause"
+        android:layout_width="60dp"
+        android:layout_height="60dp"
+        android:visibility="gone"
+      />
+  </RelativeLayout>
 
   <!-- Metadata -->
   <LinearLayout
