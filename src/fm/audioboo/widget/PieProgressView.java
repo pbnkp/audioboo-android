@@ -99,7 +99,7 @@ public class PieProgressView extends View
 
 
 
-  private void initWithAttrs(AttributeSet attrs)
+  protected void initWithAttrs(AttributeSet attrs)
   {
     TypedArray a = mContext.obtainStyledAttributes(attrs, R.styleable.PieProgressView);
     mPieColor = a.getColorStateList(R.styleable.PieProgressView_pieColor);
@@ -123,9 +123,15 @@ public class PieProgressView extends View
     }
     mPiePaint.setColor(currentColor);
 
+    int rectWidth = this.getWidth() - this.getPaddingLeft() - this.getPaddingRight();
+    int x = this.getPaddingLeft();
+
+    int rectHeight = this.getHeight() - this.getPaddingTop() - this.getPaddingBottom();
+    int y = this.getPaddingTop();
+
     // Filled pie, no stroke width.
     int angle = (int) (((1.0 * mPieProgress) / mPieMax) * 360);
-    RectF arcRect = new RectF(0, 0, this.getWidth(), this.getHeight());
+    RectF arcRect = new RectF(x, y, rectWidth, rectHeight);
     canvas.drawArc(arcRect, -90, angle, true, mPiePaint);
   }
 }
