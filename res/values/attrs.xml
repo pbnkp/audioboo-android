@@ -24,6 +24,12 @@
     <attr name="pieColor" format="color" />
   </declare-styleable>
 
+  <!-- Custom PlayPauseProgressView attributes -->
+  <declare-styleable name="PlayPauseProgressView">
+    <!-- Drawable for the indeterminate state. -->
+    <attr name="indeterminateDrawable" format="reference" />
+  </declare-styleable>
+
   <!-- Custom SpectralView attributes -->
   <declare-styleable name="SpectralView">
     <!-- Number of bars -->
