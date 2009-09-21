@@ -28,14 +28,6 @@ import android.util.Log;
 
 /**
  * FIXME
- * The record button in the AudioBoo client is just complex enough that it's
- * easiest to keep it's state in it's own class.
- * It's essentially a ToggleButton, but
- * - It's got three states, where the first state is only entered when it's
- *   state machine is (re)initialized; after that it switches back and forth
- *   between the other two states.
- * - It's got a background graphic changing depending on state, two other
- *   graphics and two text labels.
  **/
 public class PlayPauseButton extends RelativeLayout
 {
@@ -150,6 +142,25 @@ public class PlayPauseButton extends RelativeLayout
 
 
 
+  public void setChecked(boolean newValue)
+  {
+    if (null != mToggle) {
+      mToggle.setChecked(newValue);
+    }
+  }
+
+
+
+  public boolean isChecked()
+  {
+    if (null == mToggle) {
+      return false;
+    }
+    return mToggle.isChecked();
+  }
+
+
+
   @Override
   protected void onFinishInflate()
   {
@@ -177,7 +188,6 @@ public class PlayPauseButton extends RelativeLayout
       mProgress.setMax(mProgressMax);
     }
 
-    setProgress(43);
     setIndeterminate(true);
   }
 
