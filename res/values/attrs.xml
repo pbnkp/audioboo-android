@@ -25,9 +25,11 @@
   </declare-styleable>
 
   <!-- Custom PlayPauseProgressView attributes -->
-  <declare-styleable name="PlayPauseProgressView">
-    <!-- Drawable for the indeterminate state. -->
-    <attr name="indeterminateDrawable" format="reference" />
+  <declare-styleable name="PlayPauseProgressView" parent="PieProgressView">
+    <!-- Bitmap for the indeterminate state. -->
+    <attr name="indeterminateBitmap" format="reference" />
+    <!-- Bitmap for the mask applied to the above bitmap. -->
+    <attr name="indeterminateMaskBitmap" format="reference" />
   </declare-styleable>
 
   <!-- Custom SpectralView attributes -->
