@@ -131,6 +131,25 @@ public class PlayPauseButton extends RelativeLayout
 
 
 
+  public void setIndeterminate(boolean newValue)
+  {
+    if (null != mProgress) {
+      mProgress.setIndeterminate(newValue);
+    }
+  }
+
+
+
+  public boolean getIndeterminate()
+  {
+    if (null == mProgress) {
+      return false;
+    }
+    return mProgress.getIndeterminate();
+  }
+
+
+
   @Override
   protected void onFinishInflate()
   {
@@ -159,6 +178,7 @@ public class PlayPauseButton extends RelativeLayout
     }
 
     setProgress(43);
+    setIndeterminate(true);
   }
 
 
