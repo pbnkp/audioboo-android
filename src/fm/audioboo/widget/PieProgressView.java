@@ -48,11 +48,11 @@ public class PieProgressView extends View
   // Pie color
   private ColorStateList  mPieColor;
 
-  // Context
-  private Context         mContext;
-
   // Pie paint
   private Paint           mPiePaint;
+
+  // Context - protected, for the use of derived classes
+  protected Context       mContext;
 
 
   /***************************************************************************
@@ -92,9 +92,23 @@ public class PieProgressView extends View
 
 
 
+  public int getProgress()
+  {
+    return mPieProgress;
+  }
+
+
+
   public void setMax(int max)
   {
     mPieMax = max;
+  }
+
+
+
+  public int getMax()
+  {
+    return mPieMax;
   }
 
 
@@ -123,11 +137,11 @@ public class PieProgressView extends View
     }
     mPiePaint.setColor(currentColor);
 
-    int rectWidth = this.getWidth() - this.getPaddingLeft() - this.getPaddingRight();
-    int x = this.getPaddingLeft();
+    int rectWidth = getWidth() - getPaddingLeft() - getPaddingRight();
+    int x = getPaddingLeft();
 
-    int rectHeight = this.getHeight() - this.getPaddingTop() - this.getPaddingBottom();
-    int y = this.getPaddingTop();
+    int rectHeight = getHeight() - getPaddingTop() - getPaddingBottom();
+    int y = getPaddingTop();
 
     // Filled pie, no stroke width.
     int angle = (int) (((1.0 * mPieProgress) / mPieMax) * 360);
