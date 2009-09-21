@@ -9,7 +9,8 @@
 
 package fm.audioboo.app;
 
-import android.app.ListActivity;
+//import android.app.ListActivity;
+import android.app.Activity;
 
 import android.os.Bundle;
 
@@ -20,13 +21,15 @@ import android.content.res.Configuration;
 
 // FIXME import android.view.View;
 // FIXME import java.util.LinkedList;
+//
+import fm.audioboo.widget.PlayPauseProgressView;
 
 import android.util.Log;
 
 /**
  * FIXME
  **/
-public class AccountActivity extends ListActivity
+public class AccountActivity extends Activity
 {
   /***************************************************************************
    * Private constants
@@ -48,9 +51,11 @@ public class AccountActivity extends ListActivity
   {
     super.onCreate(savedInstanceState);
 
-//     setContentView(R.layout.recent_boos);
+     setContentView(R.layout.account);
 //     View v = findViewById(R.id.recent_boos_empty);
 //     getListView().setEmptyView(v);
+    PlayPauseProgressView v = (PlayPauseProgressView) findViewById(R.id.foo);
+    v.setIndeterminate(true);
   }
 
 
