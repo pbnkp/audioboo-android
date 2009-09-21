@@ -21,11 +21,14 @@ import android.content.res.Configuration;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.TextView;
+import android.widget.CompoundButton;
 
 import android.view.Menu;
 import android.view.MenuItem;
 
 import java.util.LinkedList;
+
+import fm.audioboo.widget.PlayPauseButton;
 
 import android.util.Log;
 
@@ -100,6 +103,17 @@ public class RecentBoosActivity extends ListActivity
     if (null == mBoos) {
       refreshBoos();
     }
+  }
+
+
+
+  @Override
+  public void onPause()
+  {
+    super.onPause();
+
+    // FIXME install notification instead.
+    Globals.get().mPlayer.stopPlaying();
   }
 
 
@@ -197,7 +211,7 @@ public class RecentBoosActivity extends ListActivity
 
 
 
-  private void onItemSelected(View view, int id)
+  private void onItemSelected(final View view, final int id)
   {
     // First, deal with the visual stuff. It's complex enough for it's own
     // function.
@@ -205,8 +219,54 @@ public class RecentBoosActivity extends ListActivity
 
     // Next, we'll need to kill the audio player and restart it, but only if
     // it's a different view that's been selected.
-    // TODO
-    Log.d(LTAG, "on item selecteD: " + id);
+    Boo boo = mBoos.mClips.get(id);
 
+    // Grab the play/pause button from the View. That's handed to the
+    // BooPlayer.
+    final PlayPauseButton button = (PlayPauseButton) view.findViewById(R.id.recent_boos_item_playpause);
+    button.setChecked(false);
+    button.setIndeterminate(true);
+    button.setMax((int) (boo.mDuration * 1000)); // FIXME
+
+    Globals.get().mPlayer.setOnStateChangeListener(new BooPlayer.OnStateChangeListener() {
+      public void onStateChanged(int state, float progress)
+      {
+        switch (state) {
+          case BooPlayer.STATE_PLAYBACK:
+            button.setIndeterminate(false);
+            button.setProgress((int) (progress * 1000)); // FIXME
+            break;
+
+          case BooPlayer.STATE_BUFFERING:
+            button.setIndeterminate(true);
+            break;
+
+          case BooPlayer.STATE_FINISHED:
+            onItemUnselected(view, id);
+            break;
+        }
+      }
+    });
+    Globals.get().mPlayer.play(boo);
+
+    // Install handler for listening to the toggle.
+    button.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+      public void onCheckedChanged(CompoundButton buttonView, boolean isChecked)
+      {
+        onItemUnselected(view, id);
+      }
+    });
+  }
+
+
+
+  void onItemUnselected(final View view, final int id)
+  {
+     // We don't care here whether the button is checked or not, we just
+     // stop playback.
+     Globals.get().mPlayer.stopPlaying();
+
+     // And also switch the view to unselected.
+     mAdapter.unselect(view, id);
   }
 }
