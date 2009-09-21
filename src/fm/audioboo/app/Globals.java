@@ -40,6 +40,7 @@ public class Globals
   public Context      mContext;
   public API          mAPI;
   public ImageCache   mImageCache;
+  public BooPlayer    mPlayer;
 
 
   /***************************************************************************
@@ -85,6 +86,8 @@ public class Globals
 
     mAPI = new API();
     mImageCache = new ImageCache(mContext, IMAGE_CACHE_MAX);
+    mPlayer = new BooPlayer(mContext);
+    mPlayer.start();
   }
 
 
@@ -93,5 +96,9 @@ public class Globals
   {
     mAPI = null;
     mImageCache = null;
+
+    mPlayer.mShouldRun = false;
+    mPlayer.interrupt();
+    mPlayer = null;
   }
 }
