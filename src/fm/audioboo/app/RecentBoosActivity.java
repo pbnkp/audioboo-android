@@ -17,8 +17,6 @@ import android.os.Handler;
 import android.os.Message;
 
 import android.content.res.Configuration;
-import android.content.res.Resources;
-import android.content.res.ColorStateList;
 
 import android.view.View;
 import android.widget.AdapterView;
@@ -47,40 +45,6 @@ public class RecentBoosActivity extends ListActivity
   private static final int  ACTION_REFRESH  = 0;
 
 
-  // Text view IDs in list items
-  private static final int TEXT_VIEW_IDS[] = {
-    R.id.recent_boos_item_author,
-    R.id.recent_boos_item_title,
-    R.id.recent_boos_item_location,
-  };
-
-
-  // Color IDs for the above text view IDs for the regular, unselected state
-  private static final int TEXT_VIEW_COLORS_REGULAR[] = {
-    R.color.recent_boos_author,
-    R.color.recent_boos_title,
-    R.color.recent_boos_location,
-  };
-
-  // Color IDs for the above text view IDs for the selected state
-  private static final int TEXT_VIEW_COLORS_SELECTED[] = {
-    R.color.recent_boos_author_selected,
-    R.color.recent_boos_title_selected,
-    R.color.recent_boos_location_selected,
-  };
-
-  // Color IDs for the item background for the regular, unselected state
-  private static final int BACKGROUND_RESOURCE_REGULAR[] = {
-    R.drawable.recent_boos_background_odd,
-    R.drawable.recent_boos_background_even,
-  };
-
-  // Color IDs for the item background for the selected state
-  private static final int BACKGROUND_RESOURCE_SELECTED[] = {
-    R.color.recent_boos_background_odd_active,
-    R.color.recent_boos_background_even_active,
-  };
-
   /***************************************************************************
    * Data members
    **/
@@ -93,11 +57,6 @@ public class RecentBoosActivity extends ListActivity
   // Adapter
   private BooListAdapter  mAdapter;
 
-  // State required for restoring the last selected view to it's original
-  // looks.
-  private View            mLastView;
-  private int             mLastId;
-  private Boo             mLastBoo;
 
   /***************************************************************************
    * Implementation
@@ -114,6 +73,7 @@ public class RecentBoosActivity extends ListActivity
     getListView().setOnItemClickListener(new AdapterView.OnItemClickListener() {
       public void onItemClick(AdapterView<?> parent, View view, int position, long id)
       {
+        // Use id rather than position, because of (future?) filtering.
         onItemSelected(view, (int) id);
       }
     });
@@ -125,7 +85,7 @@ public class RecentBoosActivity extends ListActivity
   public void onStart()
   {
     super.onStart();
-    Log.d(LTAG, "Start");
+    //Log.d(LTAG, "Start");
   }
 
 
@@ -134,7 +94,7 @@ public class RecentBoosActivity extends ListActivity
   public void onResume()
   {
     super.onResume();
-    Log.d(LTAG, "Resume");
+    //Log.d(LTAG, "Resume");
 
     // Load boos, but only if that hasn't happened yet..
     if (null == mBoos) {
@@ -237,99 +197,16 @@ public class RecentBoosActivity extends ListActivity
 
 
 
-  private void highlightSelectedView(View view, int id)
-  {
-    // Set view attributes
-    drawViewInternal(view, id, BACKGROUND_RESOURCE_SELECTED,
-        TEXT_VIEW_COLORS_SELECTED);
-
-    // Fade in play/pause button
-    View v = view.findViewById(R.id.recent_boos_item_image);
-    v.setVisibility(View.GONE);
-    v = view.findViewById(R.id.recent_boos_item_playpause);
-    v.setVisibility(View.VISIBLE);
-  }
-
-
-
-  private void drawViewInternal(View view, int id, int[] backgrounds, int[] text_colors)
-  {
-    // First, set the background according to whether or not id points to an
-    // odd or even cell.
-    view.setBackgroundResource(backgrounds[id % 2]);
-
-    // Next, iterate over the known text views, and set their colors.
-    Resources r = getResources();
-    for (int i = 0 ; i < TEXT_VIEW_IDS.length ; ++i) {
-      int viewId = TEXT_VIEW_IDS[i];
-      TextView text_view = (TextView) view.findViewById(viewId);
-      if (null != text_view) {
-        text_view.setTextColor(r.getColorStateList(text_colors[i]));
-      }
-    }
-  }
-
-
-
-  private void restoreLastView(View view, int id)
-  {
-    if (null == view) {
-      return;
-    }
-
-    // This turns out to be fairly hard, because views are re-used. We can only
-    // be certain that the last selected view needs to be re-coloured if it
-    // hasn't been re-used in the meantime.
-    //
-    // Since all cell views have a unique tag that corresponds to the Boo they're
-    // representing, all we need to do is remember the tag and the view
-    // separately. If the last view's current tag is identical to the one we
-    // remembered, then the view hasn't been re-used and needs to be coloured
-    // again.
-    if (mLastBoo != (Boo) view.getTag()) {
-      return;
-    }
-
-    drawViewInternal(view, id, BACKGROUND_RESOURCE_REGULAR,
-        TEXT_VIEW_COLORS_REGULAR);
-
-    // Fade out play/pause button.
-//    View v = view.findViewById(R.id.recent_boos_item_image);
-//    v.setVisibility(View.VISIBLE);
-//    v = view.findViewById(R.id.recent_boos_item_playpause);
-//    v.setVisibility(View.GONE);
-  }
-
-
-
-  private void switchSelectedItems(View view, int id)
-  {
-
-    // Highlight the view that's just been selected.
-    highlightSelectedView(view, id);
-
-    // If that was all we did, we would end up colouring all views in the
-    // same selected colour, so we also need to reset the previously
-    // selected view to it's previous colour.
-    restoreLastView(mLastView, mLastId);
-
-    // Now remember the currently selected view, it's id, and it's tag.
-    mLastView = view;
-    mLastId = id;
-    mLastBoo = (Boo) view.getTag();
-  }
-
-
-
   private void onItemSelected(View view, int id)
   {
     // First, deal with the visual stuff. It's complex enough for it's own
     // function.
-    switchSelectedItems(view, id);
+    mAdapter.markSelected(view, id);
 
     // Next, we'll need to kill the audio player and restart it, but only if
     // it's a different view that's been selected.
     // TODO
     Log.d(LTAG, "on item selecteD: " + id);
+
   }
 }

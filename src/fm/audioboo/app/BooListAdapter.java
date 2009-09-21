@@ -13,6 +13,8 @@ import android.widget.BaseAdapter;
 
 import android.app.ListActivity;
 
+import android.content.res.Resources;
+
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.LayoutInflater;
@@ -25,6 +27,9 @@ import android.net.Uri;
 
 import android.graphics.Bitmap;
 import android.graphics.drawable.BitmapDrawable;
+
+import android.view.animation.Animation;
+import android.view.animation.AnimationUtils;
 
 import android.os.Handler;
 import android.os.Message;
@@ -44,6 +49,40 @@ public class BooListAdapter extends BaseAdapter
   // Log ID
   private static final String LTAG  = "BooListAdapter";
 
+
+  // Text view IDs in list items
+  private static final int TEXT_VIEW_IDS[] = {
+    R.id.recent_boos_item_author,
+    R.id.recent_boos_item_title,
+    R.id.recent_boos_item_location,
+  };
+
+
+  // Color IDs for the above text view IDs for the regular, unselected state
+  private static final int TEXT_VIEW_COLORS_REGULAR[] = {
+    R.color.recent_boos_author,
+    R.color.recent_boos_title,
+    R.color.recent_boos_location,
+  };
+
+  // Color IDs for the above text view IDs for the selected state
+  private static final int TEXT_VIEW_COLORS_SELECTED[] = {
+    R.color.recent_boos_author_selected,
+    R.color.recent_boos_title_selected,
+    R.color.recent_boos_location_selected,
+  };
+
+  // Color IDs for the item background for the regular, unselected state
+  private static final int BACKGROUND_RESOURCE_REGULAR[] = {
+    R.drawable.recent_boos_background_odd,
+    R.drawable.recent_boos_background_even,
+  };
+
+  // Color IDs for the item background for the selected state
+  private static final int BACKGROUND_RESOURCE_SELECTED[] = {
+    R.color.recent_boos_background_odd_active,
+    R.color.recent_boos_background_even_active,
+  };
 
   /***************************************************************************
    * Helper class. Makes the BooListAdapter aware of relevant changes in
@@ -107,6 +146,12 @@ public class BooListAdapter extends BaseAdapter
   // this adapter fills, all Boo images are to be displayed at the same size.
   private int           mDimensions = -1;
 
+  // State required for restoring the last selected view to it's original
+  // looks.
+  private View          mLastView;
+  private int           mLastId = -1;
+  private Boo           mLastBoo;
+
 
   /***************************************************************************
    * Implementation
@@ -129,18 +174,20 @@ public class BooListAdapter extends BaseAdapter
       view = inflater.inflate(mBooLayoutId, null);
     }
 
-    // Set alternating background colors.
-    if (0 == position % 2) {
-      view.setBackgroundResource(R.drawable.recent_boos_background_odd);
-    }
-    else {
-      view.setBackgroundResource(R.drawable.recent_boos_background_even);
-    }
-
     // Set the view's tag to the Boo we want to display. This is for later
     // identification.
     Boo boo = mBoos.mClips.get(position);
     view.setTag(boo);
+
+    // Make sure the view is properly selected/deselected
+    if (mLastId == position) {
+      drawViewAsHighlighted(view, position, true);
+      mLastView = view;
+      mLastBoo = boo;
+    }
+    else {
+      drawViewAsRegular(view, position, true);
+    }
 
     // Fill view with data.
     if (null != boo.mUser) {
@@ -195,6 +242,148 @@ public class BooListAdapter extends BaseAdapter
     }
 
     return view;
+  }
+
+
+
+  public void markSelected(View view, int id)
+  {
+    // XXX Enabling animation can make view selection hiccup occasionally
+//    markSelected(view, id, false);
+    markSelected(view, id, true);
+  }
+
+
+
+  public void markSelected(View view, int id, boolean skipAnimation)
+  {
+    //Log.d(LTAG, "switch selected");
+
+    // Highlight the view that's just been selected.
+    drawViewAsHighlighted(view, id, skipAnimation);
+
+    // If that was all we did, we would end up colouring all views in the
+    // same selected colour, so we also need to reset the previously
+    // selected view to it's previous colour.
+    //
+    // This turns out to be fairly hard, because views are re-used. We can only
+    // be certain that the last selected view needs to be re-coloured if it
+    // hasn't been re-used in the meantime.
+    //
+    // Since all cell views have a unique tag that corresponds to the Boo they're
+    // representing, all we need to do is remember the tag and the view
+    // separately. If the last view's current tag is identical to the one we
+    // remembered, then the view hasn't been re-used and needs to be coloured
+    // again.
+    if (mLastBoo != (Boo) view.getTag()) {
+      drawViewAsRegular(mLastView, mLastId, skipAnimation);
+    }
+
+    // Now remember the currently selected view, it's id, and it's tag.
+    mLastView = view;
+    mLastId = id;
+    mLastBoo = (Boo) view.getTag();
+  }
+
+
+
+  public void unselect(View view, int id)
+  {
+    // XXX Enabling animation can make view selection hiccup occasionally
+//    unselect(view, id, false);
+    unselect(view, id, true);
+  }
+
+
+
+  public void unselect(View view, int id, boolean skipAnimation)
+  {
+    drawViewAsRegular(view, id, skipAnimation);
+
+    mLastView = null;
+    mLastId = -1;
+    mLastBoo = null;
+  }
+
+
+
+  public void drawViewAsHighlighted(View view, int id, boolean skipAnimation)
+  {
+    if (null == view) {
+      return;
+    }
+
+    // Set view attributes
+    drawViewInternal(view, id, BACKGROUND_RESOURCE_SELECTED,
+        TEXT_VIEW_COLORS_SELECTED);
+
+    if (skipAnimation) {
+      // Instantly switch alpha values
+      View v = view.findViewById(R.id.recent_boos_item_image);
+      v.setVisibility(View.INVISIBLE);
+      v = view.findViewById(R.id.recent_boos_item_playpause);
+      v.setVisibility(View.VISIBLE);
+    }
+    else {
+      // Fade in play/pause button
+      View v = view.findViewById(R.id.recent_boos_item_image);
+      Animation animation = AnimationUtils.loadAnimation(mActivity, R.anim.fade_out);
+      v.startAnimation(animation);
+
+      v = view.findViewById(R.id.recent_boos_item_playpause);
+      animation = AnimationUtils.loadAnimation(mActivity, R.anim.fade_in);
+      v.startAnimation(animation);
+    }
+  }
+
+
+
+  public void drawViewAsRegular(View view, int id, boolean skipAnimation)
+  {
+    if (null == view) {
+      return;
+    }
+
+    // Set view attributes
+    drawViewInternal(view, id, BACKGROUND_RESOURCE_REGULAR,
+        TEXT_VIEW_COLORS_REGULAR);
+
+    if (skipAnimation) {
+      // Instantly switch alpha values
+      View v = view.findViewById(R.id.recent_boos_item_image);
+      v.setVisibility(View.VISIBLE);
+      v = view.findViewById(R.id.recent_boos_item_playpause);
+      v.setVisibility(View.INVISIBLE);
+    }
+    else {
+      // Fade out play/pause button.
+      View v = view.findViewById(R.id.recent_boos_item_image);
+      Animation animation = AnimationUtils.loadAnimation(mActivity, R.anim.fade_in);
+      v.startAnimation(animation);
+
+      v = view.findViewById(R.id.recent_boos_item_playpause);
+      animation = AnimationUtils.loadAnimation(mActivity, R.anim.fade_out);
+      v.startAnimation(animation);
+    }
+  }
+
+
+
+  private void drawViewInternal(View view, int id, int[] backgrounds, int[] text_colors)
+  {
+    // First, set the background according to whether or not id points to an
+    // odd or even cell.
+    view.setBackgroundResource(backgrounds[id % 2]);
+
+    // Next, iterate over the known text views, and set their colors.
+    Resources r = mActivity.getResources();
+    for (int i = 0 ; i < TEXT_VIEW_IDS.length ; ++i) {
+      int viewId = TEXT_VIEW_IDS[i];
+      TextView text_view = (TextView) view.findViewById(viewId);
+      if (null != text_view) {
+        text_view.setTextColor(r.getColorStateList(text_colors[i]));
+      }
+    }
   }
 
 
