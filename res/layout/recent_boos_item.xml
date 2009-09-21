@@ -37,7 +37,7 @@
       android:layout_margin="2dp"
       android:layout_alignParentTop="true"
       android:layout_alignParentLeft="true"
-      android:visibility="gone"
+      android:visibility="invisible"
     />
 
   <!-- Metadata -->
