@@ -246,10 +246,12 @@ public class API
    **/
   public void fetchRecentBoos(final Handler result_handler)
   {
-    // TODO add parameter that specifies we want 25 results, because
-    // the iPhone apparently does.
-    String uri_string = getApiUrl(API_RECENT);
-    Log.d(LTAG, "uri: " + uri_string);
+    // XXX The params map below doesn't seem to work.
+    HashMap<String, String> params = new HashMap<String, String>();
+    params.put("find[limit]", "25");
+    params.put("find[pg_rated]", "1");
+    String uri_string = getApiUrl(API_RECENT, params);
+    //Log.d(LTAG, "uri: " + uri_string);
 
     if (null != mFetcher) {
       mFetcher.keepRunning = false;
