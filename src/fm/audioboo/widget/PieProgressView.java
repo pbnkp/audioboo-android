@@ -88,6 +88,7 @@ public class PieProgressView extends View
   public void setProgress(int progress)
   {
     mPieProgress = progress;
+    postInvalidate();
   }
 
 
@@ -102,6 +103,7 @@ public class PieProgressView extends View
   public void setMax(int max)
   {
     mPieMax = max;
+    postInvalidate();
   }
 
 

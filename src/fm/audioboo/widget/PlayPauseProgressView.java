@@ -112,7 +112,7 @@ public class PlayPauseProgressView extends PieProgressView
   public void setIndeterminate(boolean newValue)
   {
     if (mIsIndeterminate != newValue) {
-      invalidate();
+      postInvalidate();
     }
     mIsIndeterminate = newValue;
   }

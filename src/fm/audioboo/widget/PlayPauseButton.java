@@ -106,6 +106,7 @@ public class PlayPauseButton extends RelativeLayout
     if (null != mProgress) {
       mProgress.setProgress(progress);
     }
+    postInvalidate();
   }
 
 
@@ -119,6 +120,7 @@ public class PlayPauseButton extends RelativeLayout
     if (null != mProgress) {
       mProgress.setMax(max);
     }
+    postInvalidate();
   }
 
 
@@ -135,6 +137,7 @@ public class PlayPauseButton extends RelativeLayout
     if (null != mProgress) {
       mProgress.setIndeterminate(newValue);
     }
+    postInvalidate();
   }
 
 
@@ -154,6 +157,7 @@ public class PlayPauseButton extends RelativeLayout
     if (null != mToggle) {
       mToggle.setChecked(newValue);
     }
+    postInvalidate();
   }
 
 
