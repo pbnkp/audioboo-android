@@ -128,11 +128,12 @@ public class RecentBoosActivity extends ListActivity
     if (null == mBoos) {
       refreshBoos();
     }
-
-    // Resume playback.
-    BooPlayerView player = (BooPlayerView) findViewById(R.id.recent_boos_player);
-    if (null != player) {
-      player.resume();
+    else {
+      // Resume playback.
+      BooPlayerView player = (BooPlayerView) findViewById(R.id.recent_boos_player);
+      if (null != player) {
+        player.resume();
+      }
     }
 
   }
