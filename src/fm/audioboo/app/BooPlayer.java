@@ -83,14 +83,8 @@ public class BooPlayer extends Thread
   private ProgressListener      mListener;
 
   // Tick timer, for tracking progress
-  private Timer                 mTimer = new Timer();
-  private TimerTask             mTimerTask = new TimerTask()
-  {
-    public void run()
-    {
-      onTimer();
-    }
-  };
+  private Timer                 mTimer;
+  private TimerTask             mTimerTask;
 
   // Used for progress tracking
   private double                mPlaybackProgress;
@@ -176,12 +170,16 @@ public class BooPlayer extends Thread
       mMediaPlayer.release();
       mMediaPlayer = null;
     }
-    mTimer.cancel();
+    if (null != mTimer) {
+      mTimer.cancel();
+      mTimer = null;
+      mTimerTask = null;
+    }
   }
 
 
 
-  private void startPlaying(final Boo boo)
+  private void startPlaying(Boo boo)
   {
     // Log.d(LTAG, "Start playing: " + boo.mHighMP3Url);
     mMediaPlayer = new MediaPlayer();
@@ -219,8 +217,17 @@ public class BooPlayer extends Thread
         mTimestamp = System.currentTimeMillis();
 
         try {
+          mTimer = new Timer();
+          mTimerTask = new TimerTask()
+          {
+            public void run()
+            {
+              onTimer();
+            }
+          };
           mTimer.scheduleAtFixedRate(mTimerTask, 0, TIMER_TASK_INTERVAL);
         } catch (java.lang.IllegalStateException ex) {
+          Log.e(LTAG, "Could not start timer: " + ex);
           // Ignore.
         }
       }
@@ -233,7 +240,7 @@ public class BooPlayer extends Thread
           return;
         }
 
-        mListener.onProgress(STATE_FINISHED, boo.mDuration);
+        mListener.onProgress(STATE_FINISHED, mPlaybackProgress);
       }
     });
 
