@@ -45,6 +45,11 @@ public class PlayPauseProgressView extends PieProgressView
   // Log ID
   private static final String LTAG  = "PlayPauseProgressView";
 
+  // Number of milliseconds for an indeterminate animation to complete
+  private static final int ANIMATION_TIME         = 2000;
+
+  // Frame delay for animation; this isn't exact.
+  private static final int ANIMATION_FRAME_DELAY  = 200;
 
   /***************************************************************************
    * Data members
@@ -54,7 +59,11 @@ public class PlayPauseProgressView extends PieProgressView
   private Bitmap    mMask;
 
   // Flag, determines whether we display an indeterminate view or the pie view
-  private boolean         mIsIndeterminate = false;
+  private boolean   mIsIndeterminate = false;
+
+  // Current rotation angle, based on animation time.
+  private float     mAngle;
+  private long      mAnimationTimestamp;
 
   /***************************************************************************
    * Implementation
@@ -130,7 +139,15 @@ public class PlayPauseProgressView extends PieProgressView
       return;
     }
 
-    float rotation = ((float) getProgress() / getMax()) * 360f;
+    float factor = 0f;
+    if (0 != mAnimationTimestamp) {
+      long diff = System.currentTimeMillis() - mAnimationTimestamp;
+      factor = (float) diff / ANIMATION_TIME;
+    }
+
+    float rotation = (int) (mAngle - (360 * factor)) % 360;
+    mAngle = rotation;
+    mAnimationTimestamp = System.currentTimeMillis();
 
     // The constraints in which we're drawing.
     int width = getWidth() - getPaddingLeft() - getPaddingRight();
@@ -172,5 +189,8 @@ public class PlayPauseProgressView extends PieProgressView
     int y = getPaddingTop();
     paint.setXfermode(null);
     canvas.drawBitmap(b, x, y, paint);
+
+    // Schedule next frame
+    postInvalidateDelayed(ANIMATION_FRAME_DELAY);
   }
 }
