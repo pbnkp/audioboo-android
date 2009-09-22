@@ -47,6 +47,9 @@ public class RecentBoosActivity extends ListActivity
   // "recent_boos_actions" in res/values/localized.xml
   private static final int  ACTION_REFRESH  = 0;
 
+  // Multiplier applied to boo playback progress (in seconds) before it's
+  // used as max/current in the progress display.
+  private static final int  PROGRESS_MULTIPLIER = 5000;
 
   /***************************************************************************
    * Data members
@@ -112,7 +115,8 @@ public class RecentBoosActivity extends ListActivity
   {
     super.onPause();
 
-    // FIXME install notification instead.
+    // TODO: In future, we'd like to install a notification here that'll allow
+    //       us to access a player UI, and continue playback.
     Globals.get().mPlayer.stopPlaying();
   }
 
@@ -226,15 +230,15 @@ public class RecentBoosActivity extends ListActivity
     final PlayPauseButton button = (PlayPauseButton) view.findViewById(R.id.recent_boos_item_playpause);
     button.setChecked(false);
     button.setIndeterminate(true);
-    button.setMax((int) (boo.mDuration * 1000)); // FIXME
+    button.setMax((int) (boo.mDuration * PROGRESS_MULTIPLIER));
 
-    Globals.get().mPlayer.setOnStateChangeListener(new BooPlayer.OnStateChangeListener() {
-      public void onStateChanged(int state, float progress)
+    Globals.get().mPlayer.setProgressListener(new BooPlayer.ProgressListener() {
+      public void onProgress(int state, double progress)
       {
         switch (state) {
           case BooPlayer.STATE_PLAYBACK:
             button.setIndeterminate(false);
-            button.setProgress((int) (progress * 1000)); // FIXME
+            button.setProgress((int) (progress * PROGRESS_MULTIPLIER));
             break;
 
           case BooPlayer.STATE_BUFFERING:
