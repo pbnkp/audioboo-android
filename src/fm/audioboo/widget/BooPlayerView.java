@@ -189,6 +189,30 @@ public class BooPlayerView extends LinearLayout
 
 
 
+  public void stop()
+  {
+    // Stops playback.
+    Globals.get().mPlayer.stopPlaying();
+  }
+
+
+
+  public void pause()
+  {
+    // Pauses playback.
+    Globals.get().mPlayer.pausePlaying();
+  }
+
+
+
+  public void resume()
+  {
+    // Pauses playback.
+    Globals.get().mPlayer.resumePlaying();
+  }
+
+
+
   @Override
   protected void onFinishInflate()
   {
