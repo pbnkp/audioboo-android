@@ -33,4 +33,9 @@
   <color name="record_button_text_shadow">#cc000000</color>
 
 
+  <!--
+    Colors for the player view
+  -->
+  <color name="boo_player_background">#cc222222</color>
+
 </resources>

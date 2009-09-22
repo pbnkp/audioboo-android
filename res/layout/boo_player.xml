@@ -11,9 +11,8 @@
     android:layout_width="fill_parent"
     android:layout_height="wrap_content"
     android:orientation="vertical"
-    android:background="#cc222222"
-  > <!-- FIXME background color -->
-
+    android:background="@color/boo_player_background"
+  >
   <!-- Separator -->
   <ImageView
       android:src="@android:drawable/divider_horizontal_dark"
@@ -25,7 +24,6 @@
       android:layout_width="fill_parent"
       android:layout_height="wrap_content"
       android:orientation="horizontal"
-      android:clickable="true"
     >
     <!-- Play/pause button -->
     <fm.audioboo.widget.PlayPauseButton android:id="@+id/boo_player_button"
