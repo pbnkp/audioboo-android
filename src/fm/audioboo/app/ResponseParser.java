@@ -126,7 +126,7 @@ class ResponseParser
       for (int i = 0 ; i < boos.length() ; ++i) {
         result.mClips.add(parseBoo(boos.getJSONObject(i)));
       }
-      Log.d(LTAG, "# clips: " + result.mClips.size());
+      // Log.d(LTAG, "# clips: " + result.mClips.size());
 
       return result;
 
