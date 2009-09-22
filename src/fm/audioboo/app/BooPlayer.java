@@ -85,6 +85,7 @@ public class BooPlayer extends Thread
   // Tick timer, for tracking progress
   private Timer                 mTimer;
   private TimerTask             mTimerTask;
+  private boolean               mPaused;
 
   // Used for progress tracking
   private double                mPlaybackProgress;
@@ -114,6 +115,26 @@ public class BooPlayer extends Thread
   public void stopPlaying()
   {
     play(null);
+  }
+
+
+
+  public void pausePlaying()
+  {
+    if (null != mMediaPlayer) {
+      mMediaPlayer.pause();
+    }
+    mPaused = true;
+  }
+
+
+
+  public void resumePlaying()
+  {
+    if (null != mMediaPlayer) {
+      mMediaPlayer.start();
+    }
+    mPaused = false;
   }
 
 
@@ -158,6 +179,9 @@ public class BooPlayer extends Thread
         // pass
       }
     }
+
+    // Right, make sure to finish playback.
+    play(null);
   }
 
 
@@ -174,6 +198,7 @@ public class BooPlayer extends Thread
       mTimer.cancel();
       mTimer = null;
       mTimerTask = null;
+      mPaused = true;
     }
   }
 
@@ -225,6 +250,7 @@ public class BooPlayer extends Thread
               onTimer();
             }
           };
+          mPaused = false;
           mTimer.scheduleAtFixedRate(mTimerTask, 0, TIMER_TASK_INTERVAL);
         } catch (java.lang.IllegalStateException ex) {
           Log.e(LTAG, "Could not start timer: " + ex);
@@ -278,6 +304,10 @@ public class BooPlayer extends Thread
     long current = System.currentTimeMillis();
     long diff = current - mTimestamp;
     mTimestamp = current;
+
+    if (mPaused) {
+      return;
+    }
 
     // Log.d(LTAG, "timestamp: " + mTimestamp);
     // Log.d(LTAG, "diff: " + diff);
