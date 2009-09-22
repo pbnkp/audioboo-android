@@ -29,7 +29,8 @@ import fm.audioboo.app.R;
 import android.util.Log;
 
 /**
- * FIXME
+ * Displays a player window, and uses the BooPlayer in Globals to play back
+ * Boos.
  **/
 public class BooPlayerView extends LinearLayout
 {
@@ -42,6 +43,9 @@ public class BooPlayerView extends LinearLayout
   // Multiplier applied to boo playback progress (in seconds) before it's
   // used as max/current in the progress display.
   private static final int  PROGRESS_MULTIPLIER = 5000;
+
+  // The type of stream Boos play in.
+  private static final int  STREAM_TYPE         = AudioManager.STREAM_MUSIC;
 
 
   /***************************************************************************
@@ -62,6 +66,8 @@ public class BooPlayerView extends LinearLayout
   }
 
 
+
+
   /***************************************************************************
    * Data members
    **/
@@ -80,6 +86,8 @@ public class BooPlayerView extends LinearLayout
   // Listener
   private PlaybackEndListener mListener;
 
+  // Audio manager - used in more than one place.
+  private AudioManager        mAudioManager;
 
 
   /***************************************************************************
@@ -186,22 +194,21 @@ public class BooPlayerView extends LinearLayout
   {
     super.onFinishInflate();
 
+    // Grab and remember the audio manager
+    mAudioManager = (AudioManager) mContext.getSystemService(Context.AUDIO_SERVICE);
+
     LinearLayout content = (LinearLayout) inflate(mContext, R.layout.boo_player, this);
 
     // Set up seekbar
     mSeekBar = (SeekBar) content.findViewById(R.id.boo_player_volume);
     if (null != mSeekBar) {
-      AudioManager am = (AudioManager) mContext.getSystemService(Context.AUDIO_SERVICE);
-      mSeekBar.setMax(am.getStreamMaxVolume(AudioManager.STREAM_MUSIC));
-      mSeekBar.setProgress(am.getStreamVolume(AudioManager.STREAM_MUSIC));
+      mSeekBar.setMax(mAudioManager.getStreamMaxVolume(STREAM_TYPE));
+      mSeekBar.setProgress(mAudioManager.getStreamVolume(STREAM_TYPE));
 
       mSeekBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
         public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser)
         {
-          // FIXME only when tracking stops ?
-          AudioManager am = (AudioManager) mContext.getSystemService(Context.AUDIO_SERVICE);
-          am.setStreamVolume(AudioManager.STREAM_MUSIC,
-            progress, 0);
+          mAudioManager.setStreamVolume(STREAM_TYPE, progress, 0);
         }
 
         public void onStartTrackingTouch(SeekBar seekBar)
