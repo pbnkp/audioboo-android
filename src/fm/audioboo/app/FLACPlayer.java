@@ -15,7 +15,6 @@ import android.os.Environment;
 
 import android.media.AudioTrack;
 import android.media.AudioFormat;
-import android.media.AudioManager;
 
 import java.io.File;
 
@@ -95,12 +94,6 @@ public class FLACPlayer extends Thread
 
     // Create AudioTrack.
     try {
-      // FIXME Manager code should move outside.
-      AudioManager manager = (AudioManager) mContext.getSystemService(Context.AUDIO_SERVICE);
-      manager.setStreamVolume(AudioManager.STREAM_MUSIC,
-          manager.getStreamMaxVolume(AudioManager.STREAM_MUSIC),
-          AudioManager.FLAG_SHOW_UI);
-
       mAudioTrack = new AudioTrack(AudioManager.STREAM_MUSIC, sampleRate,
           channelConfig, format, bufsize, AudioTrack.MODE_STREAM);
       mAudioTrack.play();
