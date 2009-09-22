@@ -35,7 +35,7 @@ public class BooPlayer extends Thread
   private static final int SLEEP_TIME           = 60 * 1000;
 
   // Interval at which we notify the user of playback progress (msec)
-  private static final int TIMER_TASK_INTERVAL  = 200;
+  private static final int TIMER_TASK_INTERVAL  = 500;
 
   /***************************************************************************
    * Public constants
