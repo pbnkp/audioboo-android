@@ -16,14 +16,10 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
 
-import android.content.Context;
 import android.content.res.Configuration;
 
 import android.view.View;
 import android.widget.AdapterView;
-import android.widget.TextView;
-import android.widget.CompoundButton;
-import android.widget.SeekBar;
 
 import android.view.Menu;
 import android.view.MenuItem;
@@ -31,12 +27,9 @@ import android.view.MenuItem;
 import android.view.animation.Animation;
 import android.view.animation.AnimationUtils;
 
-// FIXME
-import android.media.AudioManager;
-
 import java.util.LinkedList;
 
-import fm.audioboo.widget.PlayPauseButton;
+import fm.audioboo.widget.BooPlayerView;
 
 import android.util.Log;
 
@@ -55,9 +48,6 @@ public class RecentBoosActivity extends ListActivity
   // "recent_boos_actions" in res/values/localized.xml
   private static final int  ACTION_REFRESH  = 0;
 
-  // Multiplier applied to boo playback progress (in seconds) before it's
-  // used as max/current in the progress display.
-  private static final int  PROGRESS_MULTIPLIER = 5000;
 
   /***************************************************************************
    * Data members
@@ -73,66 +63,27 @@ public class RecentBoosActivity extends ListActivity
 
 
   /***************************************************************************
-   * Boo Progress Listener
+   * Helper for respoding to playback end.
    **/
-  private class BooProgressListener extends BooPlayer.ProgressListener
-                                    implements CompoundButton.OnCheckedChangeListener
+  private class PlaybackEndListener extends BooPlayerView.PlaybackEndListener
   {
-    private View            mView;
-    private int             mId;
-    private Boo             mBoo;
-
-    private PlayPauseButton mButton;
+    private View  mView;
+    private int   mId;
 
 
-    BooProgressListener(View view, int id, Boo boo)
+    public PlaybackEndListener(View view, int id)
     {
       mView = view;
       mId = id;
-      mBoo = boo;
-
-//      mButton = (PlayPauseButton) mView.findViewById(R.id.recent_boos_item_playpause);
-      mButton = (PlayPauseButton) findViewById(R.id.recent_boost_play_pause_button);
-      mButton.setChecked(false);
-      mButton.setIndeterminate(true);
-      mButton.setMax((int) (mBoo.mDuration * PROGRESS_MULTIPLIER));
-      mButton.setProgress(0);
-
-      // Install handler for listening to the toggle.
-      mButton.setOnCheckedChangeListener(this);
     }
 
 
-    public void onProgress(int state, double progress)
+    public void onPlaybackEnded(BooPlayerView view, int endState)
     {
-      switch (state) {
-        case BooPlayer.STATE_PLAYBACK:
-          mButton.setIndeterminate(false);
-          mButton.setProgress((int) (progress * PROGRESS_MULTIPLIER));
-          break;
-
-        case BooPlayer.STATE_BUFFERING:
-          mButton.setIndeterminate(true);
-          break;
-
-        case BooPlayer.STATE_FINISHED:
-          onItemUnselected(mView, mId);
-          break;
-
-        case BooPlayer.STATE_ERROR:
-          onItemUnselected(mView, mId);
-          // FIXME toast
-          break;
-      }
-    }
-
-
-    public void onCheckedChanged(CompoundButton buttonView, boolean isChecked)
-    {
+      // FIXME toast if endState != success
       onItemUnselected(mView, mId);
     }
   }
-
 
 
   /***************************************************************************
@@ -296,65 +247,50 @@ public class RecentBoosActivity extends ListActivity
     // it's a different view that's been selected.
     Boo boo = mBoos.mClips.get(id);
 
-    // Grab the play/pause button from the View. That's handed to the
-    // BooPlayer.
-    Globals.get().mPlayer.setProgressListener(new BooProgressListener(view, id, boo));
-    Globals.get().mPlayer.play(boo);
-
     // Fade in player view
-    View v = findViewById(R.id.recent_boos_player);
-    if (null != v) {
+    BooPlayerView player = (BooPlayerView) findViewById(R.id.recent_boos_player);
+    if (null != player) {
+      // Capture clicks for the whole window, so that underlying views don't receive
+      // them.
+      player.setClickable(true);
+
       Animation animation = AnimationUtils.loadAnimation(this, R.anim.fade_in);
-      v.startAnimation(animation);
+      player.startAnimation(animation);
+
+      player.setPlaybackEndListener(new PlaybackEndListener(view, id));
+      player.play(boo);
     }
-
-    // XXX This really should go into a widget of it's own.
-    SeekBar s = (SeekBar) findViewById(R.id.recent_boos_volume);
-    if (null != s) {
-      AudioManager am = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
-      s.setMax(am.getStreamMaxVolume(AudioManager.STREAM_MUSIC));
-      s.setProgress(am.getStreamVolume(AudioManager.STREAM_MUSIC));
-
-      s.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
-        public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser)
-        {
-          // FIXME only when tracking stops ?
-          AudioManager am = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
-          am.setStreamVolume(AudioManager.STREAM_MUSIC,
-            progress, 0);
-        }
-
-        public void onStartTrackingTouch(SeekBar seekBar)
-        {
-          // Ignore
-        }
-
-
-        public void onStopTrackingTouch(SeekBar seekBar)
-        {
-          // Ignore
-        }
-      });
-    }
-
   }
 
 
 
   void onItemUnselected(View view, int id)
   {
-     // We don't care here whether the button is checked or not, we just
-     // stop playback.
-     Globals.get().mPlayer.stopPlaying();
-
-     // And also switch the view to unselected.
-     mAdapter.unselect(view, id);
+    // And also switch the view to unselected.
+    mAdapter.unselect(view, id);
 
     // Fade out player view
-    View v = findViewById(R.id.recent_boos_player);
-    if (null != v) {
+    final View player = findViewById(R.id.recent_boos_player);
+    if (null != player) {
       Animation animation = AnimationUtils.loadAnimation(this, R.anim.fade_out);
-      v.startAnimation(animation);
+      animation.setAnimationListener(new Animation.AnimationListener() {
+        public void onAnimationEnd(Animation animation)
+        {
+          // When the player finished fading out, stop capturing clicks.
+          player.setClickable(false);
+        }
+
+        public void onAnimationRepeat(Animation animation)
+        {
+          // pass
+        }
+
+        public void onAnimationStart(Animation animation)
+        {
+          // pass
+        }
+      });
+      player.startAnimation(animation);
     }
   }
 }
