@@ -123,6 +123,13 @@ public class PlayPauseButton extends RelativeLayout
 
 
 
+  public int getMax()
+  {
+    return mProgressMax;
+  }
+
+
+
   public void setIndeterminate(boolean newValue)
   {
     if (null != mProgress) {
