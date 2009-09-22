@@ -182,12 +182,12 @@ public class BooListAdapter extends BaseAdapter
 
     // Make sure the view is properly selected/deselected
     if (mLastId == position) {
-      drawViewAsHighlighted(view, position, true);
+      drawViewAsHighlighted(view, position);
       mLastView = view;
       mLastBoo = boo;
     }
     else {
-      drawViewAsRegular(view, position, true);
+      drawViewAsRegular(view, position);
     }
 
     // Fill view with data.
@@ -249,19 +249,10 @@ public class BooListAdapter extends BaseAdapter
 
   public void markSelected(View view, int id)
   {
-    // XXX Enabling animation can make view selection hiccup occasionally
-//    markSelected(view, id, false);
-    markSelected(view, id, true);
-  }
-
-
-
-  public void markSelected(View view, int id, boolean skipAnimation)
-  {
     //Log.d(LTAG, "switch selected");
 
     // Highlight the view that's just been selected.
-    drawViewAsHighlighted(view, id, skipAnimation);
+    drawViewAsHighlighted(view, id);
 
     // If that was all we did, we would end up colouring all views in the
     // same selected colour, so we also need to reset the previously
@@ -277,7 +268,7 @@ public class BooListAdapter extends BaseAdapter
     // remembered, then the view hasn't been re-used and needs to be coloured
     // again.
     if (mLastBoo != (Boo) view.getTag()) {
-      drawViewAsRegular(mLastView, mLastId, skipAnimation);
+      drawViewAsRegular(mLastView, mLastId);
     }
 
     // Now remember the currently selected view, it's id, and it's tag.
@@ -290,16 +281,7 @@ public class BooListAdapter extends BaseAdapter
 
   public void unselect(View view, int id)
   {
-    // XXX Enabling animation can make view selection hiccup occasionally
-//    unselect(view, id, false);
-    unselect(view, id, true);
-  }
-
-
-
-  public void unselect(View view, int id, boolean skipAnimation)
-  {
-    drawViewAsRegular(view, id, skipAnimation);
+    drawViewAsRegular(view, id);
 
     mLastView = null;
     mLastId = -1;
@@ -308,7 +290,7 @@ public class BooListAdapter extends BaseAdapter
 
 
 
-  public void drawViewAsHighlighted(View view, int id, boolean skipAnimation)
+  public void drawViewAsHighlighted(View view, int id)
   {
     if (null == view) {
       return;
@@ -317,29 +299,11 @@ public class BooListAdapter extends BaseAdapter
     // Set view attributes
     drawViewInternal(view, id, BACKGROUND_RESOURCE_SELECTED,
         TEXT_VIEW_COLORS_SELECTED);
-//
-//    if (skipAnimation) {
-//      // Instantly switch alpha values
-//      View v = view.findViewById(R.id.recent_boos_item_image);
-//      v.setVisibility(View.INVISIBLE);
-//      v = view.findViewById(R.id.recent_boos_item_playpause);
-//      v.setVisibility(View.VISIBLE);
-//    }
-//    else {
-//      // Fade in play/pause button
-//      View v = view.findViewById(R.id.recent_boos_item_image);
-//      Animation animation = AnimationUtils.loadAnimation(mActivity, R.anim.fade_out);
-//      v.startAnimation(animation);
-//
-//      v = view.findViewById(R.id.recent_boos_item_playpause);
-//      animation = AnimationUtils.loadAnimation(mActivity, R.anim.fade_in);
-//      v.startAnimation(animation);
-//    }
   }
 
 
 
-  public void drawViewAsRegular(View view, int id, boolean skipAnimation)
+  public void drawViewAsRegular(View view, int id)
   {
     if (null == view) {
       return;
@@ -348,24 +312,6 @@ public class BooListAdapter extends BaseAdapter
     // Set view attributes
     drawViewInternal(view, id, BACKGROUND_RESOURCE_REGULAR,
         TEXT_VIEW_COLORS_REGULAR);
-//
-//    if (skipAnimation) {
-//      // Instantly switch alpha values
-//      View v = view.findViewById(R.id.recent_boos_item_image);
-//      v.setVisibility(View.VISIBLE);
-//      v = view.findViewById(R.id.recent_boos_item_playpause);
-//      v.setVisibility(View.INVISIBLE);
-//    }
-//    else {
-//      // Fade out play/pause button.
-//      View v = view.findViewById(R.id.recent_boos_item_image);
-//      Animation animation = AnimationUtils.loadAnimation(mActivity, R.anim.fade_in);
-//      v.startAnimation(animation);
-//
-//      v = view.findViewById(R.id.recent_boos_item_playpause);
-//      animation = AnimationUtils.loadAnimation(mActivity, R.anim.fade_out);
-//      v.startAnimation(animation);
-//    }
   }
 
 
