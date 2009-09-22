@@ -78,7 +78,6 @@ public class AudioBoo extends TabActivity
         );
     }
     setDefaultTab(0);
-    host.setCurrentTab(1); // FIXME
   }
 
 
