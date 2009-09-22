@@ -15,6 +15,7 @@ import android.os.Environment;
 
 import android.media.AudioTrack;
 import android.media.AudioFormat;
+import android.media.AudioManager;
 
 import java.io.File;
 
