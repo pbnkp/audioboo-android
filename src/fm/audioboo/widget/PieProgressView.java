@@ -147,7 +147,7 @@ public class PieProgressView extends View
 
     // Filled pie, no stroke width.
     int angle = (int) (((1.0 * mPieProgress) / mPieMax) * 360);
-    RectF arcRect = new RectF(x, y, rectWidth, rectHeight);
+    RectF arcRect = new RectF(x, y, x + rectWidth, y + rectHeight);
     canvas.drawArc(arcRect, -90, angle, true, mPiePaint);
   }
 }
