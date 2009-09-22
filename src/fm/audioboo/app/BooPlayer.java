@@ -13,10 +13,15 @@ import android.content.Context;
 
 import android.media.MediaPlayer;
 
+import java.util.TimerTask;
+import java.util.Timer;
+
 import android.util.Log;
 
 /**
- * Plays Boos.
+ * Plays Boos. Abstracts out all the differences between streaming MP3s from the
+ * web and playing local FLAC files.
+ * TODO FLAC files not (yet) supported.
  **/
 public class BooPlayer extends Thread
 {
@@ -27,13 +32,17 @@ public class BooPlayer extends Thread
   private static final String LTAG  = "BooPlayer";
 
   // Sleep time, if the thread's not woken.
-  private static final int SLEEP_TIME = 60 * 1000;
+  private static final int SLEEP_TIME           = 60 * 1000;
 
+  // Interval at which we notify the user of playback progress (msec)
+  private static final int TIMER_TASK_INTERVAL  = 200;
 
   /***************************************************************************
    * Public constants
    **/
-  // Three states: either buffering, or playing, or finished
+  // Three states: either buffering, or playing, or finished. If the state is
+  // STATE_PLAYBACK or STATE_FINISHED, then ProgressListener's second
+  // parameter (below) contains the current playback position.
   public static final int STATE_BUFFERING = 0;
   public static final int STATE_PLAYBACK  = 1;
   public static final int STATE_FINISHED  = 2;
@@ -42,9 +51,9 @@ public class BooPlayer extends Thread
   /***************************************************************************
    * Listener to state changes
    **/
-  public static abstract class OnStateChangeListener
+  public static abstract class ProgressListener
   {
-    public abstract void onStateChanged(int state, float progress);
+    public abstract void onProgress(int state, double progress);
   }
 
 
@@ -70,7 +79,21 @@ public class BooPlayer extends Thread
   private MediaPlayer           mMediaPlayer;
 
   // Listener for state changes
-  private OnStateChangeListener mListener;
+  private ProgressListener      mListener;
+
+  // Tick timer, for tracking progress
+  private Timer                 mTimer = new Timer();
+  private TimerTask             mTimerTask = new TimerTask()
+  {
+    public void run()
+    {
+      onTimer();
+    }
+  };
+
+  // Used for progress tracking
+  private double                mPlaybackProgress;
+  private long                  mTimestamp;
 
   /***************************************************************************
    * Implementation
@@ -100,7 +123,7 @@ public class BooPlayer extends Thread
 
 
 
-  public void setOnStateChangeListener(OnStateChangeListener listener)
+  public void setProgressListener(ProgressListener listener)
   {
     mListener = listener;
   }
@@ -146,21 +169,24 @@ public class BooPlayer extends Thread
 
   private void stopPlaying(Boo boo)
   {
-    Log.d(LTAG, "Stop playing: " + boo);
+    // Log.d(LTAG, "Stop playing: " + boo);
     if (null != mMediaPlayer) {
       mMediaPlayer.stop();
       mMediaPlayer.release();
       mMediaPlayer = null;
     }
+    mTimer.cancel();
   }
 
 
 
-  private void startPlaying(Boo boo)
+  private void startPlaying(final Boo boo)
   {
-    Log.d(LTAG, "Start playing: " + boo.mHighMP3Url);
+    // Log.d(LTAG, "Start playing: " + boo.mHighMP3Url);
     mMediaPlayer = new MediaPlayer();
 
+    // Attach listeners to the player, for propagating state up to the users of this
+    // class.
     mMediaPlayer.setOnBufferingUpdateListener(new MediaPlayer.OnBufferingUpdateListener() {
       public void onBufferingUpdate(MediaPlayer mp, int percent)
       {
@@ -168,11 +194,11 @@ public class BooPlayer extends Thread
           return;
         }
 
-        if (100 == percent) {
-          mListener.onStateChanged(STATE_PLAYBACK, 0f); // FIXME
+        if (mp.isPlaying()) {
+          mListener.onProgress(STATE_PLAYBACK, mPlaybackProgress);
         }
         else {
-          mListener.onStateChanged(STATE_BUFFERING, 0f);
+          mListener.onProgress(STATE_BUFFERING, 0f);
         }
       }
     });
@@ -184,7 +210,18 @@ public class BooPlayer extends Thread
           return;
         }
 
-        mListener.onStateChanged(STATE_PLAYBACK, 0f); // FIXME
+        mListener.onProgress(STATE_PLAYBACK, mPlaybackProgress);
+
+        // If we made it here, then we'll start a tick timer for sending
+        // continuous progress to the users of this class.
+        mPlaybackProgress = 0f;
+        mTimestamp = System.currentTimeMillis();
+
+        try {
+          mTimer.scheduleAtFixedRate(mTimerTask, 0, TIMER_TASK_INTERVAL);
+        } catch (java.lang.IllegalStateException ex) {
+          // Ignore.
+        }
       }
     });
 
@@ -196,19 +233,41 @@ public class BooPlayer extends Thread
           return;
         }
 
-        mListener.onStateChanged(STATE_FINISHED, 0f); // FIXME
+        mListener.onProgress(STATE_FINISHED, boo.mDuration);
       }
     });
 
 
+    // Now try playing back!
     try {
       mMediaPlayer.setDataSource(mContext, boo.mHighMP3Url);
       mMediaPlayer.prepare();
+
       mMediaPlayer.start();
     } catch (java.io.IOException ex) {
       Log.e(LTAG, "Error playing back '" + boo.mHighMP3Url + "': " + ex);
       mMediaPlayer.release();
       mMediaPlayer = null;
+      return;
+    }
+
+  }
+
+
+
+  private void onTimer()
+  {
+    long current = System.currentTimeMillis();
+    long diff = current - mTimestamp;
+    mTimestamp = current;
+
+    // Log.d(LTAG, "timestamp: " + mTimestamp);
+    // Log.d(LTAG, "diff: " + diff);
+    // Log.d(LTAG, "progress: " + mPlaybackProgress);
+    mPlaybackProgress += (double) diff / 1000.0;
+
+    if (null != mListener) {
+      mListener.onProgress(STATE_PLAYBACK, mPlaybackProgress);
     }
   }
 }
