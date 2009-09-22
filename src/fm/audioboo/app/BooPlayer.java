@@ -46,6 +46,7 @@ public class BooPlayer extends Thread
   public static final int STATE_BUFFERING = 0;
   public static final int STATE_PLAYBACK  = 1;
   public static final int STATE_FINISHED  = 2;
+  public static final int STATE_ERROR     = 3;
 
 
   /***************************************************************************
@@ -225,7 +226,6 @@ public class BooPlayer extends Thread
       }
     });
 
-
     mMediaPlayer.setOnCompletionListener(new MediaPlayer.OnCompletionListener() {
       public void onCompletion(MediaPlayer mp)
       {
@@ -237,6 +237,17 @@ public class BooPlayer extends Thread
       }
     });
 
+    mMediaPlayer.setOnErrorListener(new MediaPlayer.OnErrorListener() {
+      public boolean onError(MediaPlayer mp, int what, int extra)
+      {
+        if (null == mListener) {
+          return false;
+        }
+
+        mListener.onProgress(STATE_ERROR, 0f);
+        return true;
+      }
+    });
 
     // Now try playing back!
     try {

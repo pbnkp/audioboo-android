@@ -246,6 +246,7 @@ public class RecentBoosActivity extends ListActivity
             break;
 
           case BooPlayer.STATE_FINISHED:
+          case BooPlayer.STATE_ERROR:
             onItemUnselected(view, id);
             break;
         }
