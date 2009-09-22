@@ -37,5 +37,6 @@
     Colors for the player view
   -->
   <color name="boo_player_background">#cc222222</color>
+  <color name="boo_player_title">#ccffffff</color>
 
 </resources>
