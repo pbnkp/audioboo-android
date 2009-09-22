@@ -343,9 +343,9 @@ public class SpectralView extends RelativeLayout
     int width = getWidth() - mBarPaddingLeft - mBarPaddingRight;
     int height = getHeight() - mBarPaddingTop - mBarPaddingBottom;;
 
-    float bar_width = width / mNumberOfBars;
-    int x = mBarPaddingLeft;
-    int y = mBarPaddingTop;
+    float bar_width = (float) width / mNumberOfBars;
+    float x = mBarPaddingLeft;
+    float y = mBarPaddingTop;
 
 
     // Draw the bars
@@ -373,7 +373,7 @@ public class SpectralView extends RelativeLayout
       }
 //      Log.d(LTAG, "Level: " + level);
 
-      d.setBounds(x, y, (int) (x + bar_width), height);
+      d.setBounds((int) x, (int) y, (int) (x + bar_width), height);
       d.setLevel(level);
       d.draw(canvas);
     }
@@ -426,16 +426,16 @@ public class SpectralView extends RelativeLayout
     ClipDrawable cd = new ClipDrawable(new ColorDrawable(currentColor),
         Gravity.FILL, ClipDrawable.VERTICAL);
 
-    x = (int) (mBarPaddingLeft + (bar_width - 1));
+    x = mBarPaddingLeft + (bar_width - 1);
     for (int i = 0 ; i < (mNumberOfBars - 1) ; ++i, x += bar_width) {
-      cd.setBounds(x, 0, x + 2, getHeight());
+      cd.setBounds((int) x, 0, (int) x + 2, getHeight());
       cd.setLevel(MAX_LEVEL);
       cd.draw(canvas);
     }
-    y = (int) (mBarPaddingTop + (bar_width - 1));
+    y = mBarPaddingTop + (bar_width - 1);
     int numSquares = (int) (height / bar_width);
     for ( ; y < width ; y += bar_width) {
-      cd.setBounds(0, y, getWidth(), y + 2);
+      cd.setBounds(0, (int) y, getWidth(), (int) y + 2);
       cd.setLevel(MAX_LEVEL);
       cd.draw(canvas);
     }
