@@ -17,6 +17,7 @@ import android.view.View;
 import android.widget.LinearLayout;
 import android.widget.CompoundButton;
 import android.widget.SeekBar;
+import android.widget.TextView;
 
 import android.media.AudioManager;
 
@@ -79,6 +80,9 @@ public class BooPlayerView extends LinearLayout
 
   // Button instance
   private PlayPauseButton     mButton;
+
+  // Title
+  private TextView            mTitle;
 
   // Boo to be played.
   private Boo                 mBoo;
@@ -185,6 +189,8 @@ public class BooPlayerView extends LinearLayout
     mButton.setMax((int) (boo.mDuration * PROGRESS_MULTIPLIER));
     mButton.setProgress(0);
 
+    // Set title
+    mTitle.setText(boo.mTitle);
   }
 
 
@@ -255,6 +261,9 @@ public class BooPlayerView extends LinearLayout
       mButton.setChecked(false);
       mButton.setIndeterminate(true);
     }
+
+    // Remember
+    mTitle = (TextView) content.findViewById(R.id.boo_player_title);
   }
 
 
