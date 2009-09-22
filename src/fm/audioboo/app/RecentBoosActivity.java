@@ -16,15 +16,23 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
 
+import android.content.Context;
 import android.content.res.Configuration;
 
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.TextView;
 import android.widget.CompoundButton;
+import android.widget.SeekBar;
 
 import android.view.Menu;
 import android.view.MenuItem;
+
+import android.view.animation.Animation;
+import android.view.animation.AnimationUtils;
+
+// FIXME
+import android.media.AudioManager;
 
 import java.util.LinkedList;
 
@@ -62,6 +70,69 @@ public class RecentBoosActivity extends ListActivity
 
   // Adapter
   private BooListAdapter  mAdapter;
+
+
+  /***************************************************************************
+   * Boo Progress Listener
+   **/
+  private class BooProgressListener extends BooPlayer.ProgressListener
+                                    implements CompoundButton.OnCheckedChangeListener
+  {
+    private View            mView;
+    private int             mId;
+    private Boo             mBoo;
+
+    private PlayPauseButton mButton;
+
+
+    BooProgressListener(View view, int id, Boo boo)
+    {
+      mView = view;
+      mId = id;
+      mBoo = boo;
+
+//      mButton = (PlayPauseButton) mView.findViewById(R.id.recent_boos_item_playpause);
+      mButton = (PlayPauseButton) findViewById(R.id.recent_boost_play_pause_button);
+      mButton.setChecked(false);
+      mButton.setIndeterminate(true);
+      mButton.setMax((int) (mBoo.mDuration * PROGRESS_MULTIPLIER));
+      mButton.setProgress(0);
+
+      // Install handler for listening to the toggle.
+      mButton.setOnCheckedChangeListener(this);
+    }
+
+
+    public void onProgress(int state, double progress)
+    {
+      switch (state) {
+        case BooPlayer.STATE_PLAYBACK:
+          mButton.setIndeterminate(false);
+          mButton.setProgress((int) (progress * PROGRESS_MULTIPLIER));
+          break;
+
+        case BooPlayer.STATE_BUFFERING:
+          mButton.setIndeterminate(true);
+          break;
+
+        case BooPlayer.STATE_FINISHED:
+          onItemUnselected(mView, mId);
+          break;
+
+        case BooPlayer.STATE_ERROR:
+          onItemUnselected(mView, mId);
+          // FIXME toast
+          break;
+      }
+    }
+
+
+    public void onCheckedChanged(CompoundButton buttonView, boolean isChecked)
+    {
+      onItemUnselected(mView, mId);
+    }
+  }
+
 
 
   /***************************************************************************
@@ -215,7 +286,7 @@ public class RecentBoosActivity extends ListActivity
 
 
 
-  private void onItemSelected(final View view, final int id)
+  private void onItemSelected(View view, int id)
   {
     // First, deal with the visual stuff. It's complex enough for it's own
     // function.
@@ -227,45 +298,50 @@ public class RecentBoosActivity extends ListActivity
 
     // Grab the play/pause button from the View. That's handed to the
     // BooPlayer.
-    final PlayPauseButton button = (PlayPauseButton) view.findViewById(R.id.recent_boos_item_playpause);
-    button.setChecked(false);
-    button.setIndeterminate(true);
-    button.setMax((int) (boo.mDuration * PROGRESS_MULTIPLIER));
-
-    Globals.get().mPlayer.setProgressListener(new BooPlayer.ProgressListener() {
-      public void onProgress(int state, double progress)
-      {
-        switch (state) {
-          case BooPlayer.STATE_PLAYBACK:
-            button.setIndeterminate(false);
-            button.setProgress((int) (progress * PROGRESS_MULTIPLIER));
-            break;
-
-          case BooPlayer.STATE_BUFFERING:
-            button.setIndeterminate(true);
-            break;
-
-          case BooPlayer.STATE_FINISHED:
-          case BooPlayer.STATE_ERROR:
-            onItemUnselected(view, id);
-            break;
-        }
-      }
-    });
+    Globals.get().mPlayer.setProgressListener(new BooProgressListener(view, id, boo));
     Globals.get().mPlayer.play(boo);
 
-    // Install handler for listening to the toggle.
-    button.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
-      public void onCheckedChanged(CompoundButton buttonView, boolean isChecked)
-      {
-        onItemUnselected(view, id);
-      }
-    });
+    // Fade in player view
+    View v = findViewById(R.id.recent_boos_player);
+    if (null != v) {
+      Animation animation = AnimationUtils.loadAnimation(this, R.anim.fade_in);
+      v.startAnimation(animation);
+    }
+
+    // XXX This really should go into a widget of it's own.
+    SeekBar s = (SeekBar) findViewById(R.id.recent_boos_volume);
+    if (null != s) {
+      AudioManager am = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
+      s.setMax(am.getStreamMaxVolume(AudioManager.STREAM_MUSIC));
+      s.setProgress(am.getStreamVolume(AudioManager.STREAM_MUSIC));
+
+      s.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+        public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser)
+        {
+          // FIXME only when tracking stops ?
+          AudioManager am = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
+          am.setStreamVolume(AudioManager.STREAM_MUSIC,
+            progress, 0);
+        }
+
+        public void onStartTrackingTouch(SeekBar seekBar)
+        {
+          // Ignore
+        }
+
+
+        public void onStopTrackingTouch(SeekBar seekBar)
+        {
+          // Ignore
+        }
+      });
+    }
+
   }
 
 
 
-  void onItemUnselected(final View view, final int id)
+  void onItemUnselected(View view, int id)
   {
      // We don't care here whether the button is checked or not, we just
      // stop playback.
@@ -273,5 +349,12 @@ public class RecentBoosActivity extends ListActivity
 
      // And also switch the view to unselected.
      mAdapter.unselect(view, id);
+
+    // Fade out player view
+    View v = findViewById(R.id.recent_boos_player);
+    if (null != v) {
+      Animation animation = AnimationUtils.loadAnimation(this, R.anim.fade_out);
+      v.startAnimation(animation);
+    }
   }
 }

@@ -28,6 +28,7 @@ import android.net.Uri;
 import android.graphics.Bitmap;
 import android.graphics.drawable.BitmapDrawable;
 
+// FIXME?
 import android.view.animation.Animation;
 import android.view.animation.AnimationUtils;
 
@@ -316,24 +317,24 @@ public class BooListAdapter extends BaseAdapter
     // Set view attributes
     drawViewInternal(view, id, BACKGROUND_RESOURCE_SELECTED,
         TEXT_VIEW_COLORS_SELECTED);
-
-    if (skipAnimation) {
-      // Instantly switch alpha values
-      View v = view.findViewById(R.id.recent_boos_item_image);
-      v.setVisibility(View.INVISIBLE);
-      v = view.findViewById(R.id.recent_boos_item_playpause);
-      v.setVisibility(View.VISIBLE);
-    }
-    else {
-      // Fade in play/pause button
-      View v = view.findViewById(R.id.recent_boos_item_image);
-      Animation animation = AnimationUtils.loadAnimation(mActivity, R.anim.fade_out);
-      v.startAnimation(animation);
-
-      v = view.findViewById(R.id.recent_boos_item_playpause);
-      animation = AnimationUtils.loadAnimation(mActivity, R.anim.fade_in);
-      v.startAnimation(animation);
-    }
+//
+//    if (skipAnimation) {
+//      // Instantly switch alpha values
+//      View v = view.findViewById(R.id.recent_boos_item_image);
+//      v.setVisibility(View.INVISIBLE);
+//      v = view.findViewById(R.id.recent_boos_item_playpause);
+//      v.setVisibility(View.VISIBLE);
+//    }
+//    else {
+//      // Fade in play/pause button
+//      View v = view.findViewById(R.id.recent_boos_item_image);
+//      Animation animation = AnimationUtils.loadAnimation(mActivity, R.anim.fade_out);
+//      v.startAnimation(animation);
+//
+//      v = view.findViewById(R.id.recent_boos_item_playpause);
+//      animation = AnimationUtils.loadAnimation(mActivity, R.anim.fade_in);
+//      v.startAnimation(animation);
+//    }
   }
 
 
@@ -347,24 +348,24 @@ public class BooListAdapter extends BaseAdapter
     // Set view attributes
     drawViewInternal(view, id, BACKGROUND_RESOURCE_REGULAR,
         TEXT_VIEW_COLORS_REGULAR);
-
-    if (skipAnimation) {
-      // Instantly switch alpha values
-      View v = view.findViewById(R.id.recent_boos_item_image);
-      v.setVisibility(View.VISIBLE);
-      v = view.findViewById(R.id.recent_boos_item_playpause);
-      v.setVisibility(View.INVISIBLE);
-    }
-    else {
-      // Fade out play/pause button.
-      View v = view.findViewById(R.id.recent_boos_item_image);
-      Animation animation = AnimationUtils.loadAnimation(mActivity, R.anim.fade_in);
-      v.startAnimation(animation);
-
-      v = view.findViewById(R.id.recent_boos_item_playpause);
-      animation = AnimationUtils.loadAnimation(mActivity, R.anim.fade_out);
-      v.startAnimation(animation);
-    }
+//
+//    if (skipAnimation) {
+//      // Instantly switch alpha values
+//      View v = view.findViewById(R.id.recent_boos_item_image);
+//      v.setVisibility(View.VISIBLE);
+//      v = view.findViewById(R.id.recent_boos_item_playpause);
+//      v.setVisibility(View.INVISIBLE);
+//    }
+//    else {
+//      // Fade out play/pause button.
+//      View v = view.findViewById(R.id.recent_boos_item_image);
+//      Animation animation = AnimationUtils.loadAnimation(mActivity, R.anim.fade_in);
+//      v.startAnimation(animation);
+//
+//      v = view.findViewById(R.id.recent_boos_item_playpause);
+//      animation = AnimationUtils.loadAnimation(mActivity, R.anim.fade_out);
+//      v.startAnimation(animation);
+//    }
   }
 
 
