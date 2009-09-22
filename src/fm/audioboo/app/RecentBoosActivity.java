@@ -128,6 +128,13 @@ public class RecentBoosActivity extends ListActivity
     if (null == mBoos) {
       refreshBoos();
     }
+
+    // Resume playback.
+    BooPlayerView player = (BooPlayerView) findViewById(R.id.recent_boos_player);
+    if (null != player) {
+      player.resume();
+    }
+
   }
 
 
@@ -137,9 +144,11 @@ public class RecentBoosActivity extends ListActivity
   {
     super.onPause();
 
-    // TODO: In future, we'd like to install a notification here that'll allow
-    //       us to access a player UI, and continue playback.
-    Globals.get().mPlayer.stopPlaying();
+    // Pause playback.
+    BooPlayerView player = (BooPlayerView) findViewById(R.id.recent_boos_player);
+    if (null != player) {
+      player.pause();
+    }
   }
 
 
@@ -270,7 +279,7 @@ public class RecentBoosActivity extends ListActivity
     mAdapter.unselect(view, id);
 
     // Fade out player view
-    final View player = findViewById(R.id.recent_boos_player);
+    final BooPlayerView player = (BooPlayerView) findViewById(R.id.recent_boos_player);
     if (null != player) {
       Animation animation = AnimationUtils.loadAnimation(this, R.anim.fade_out);
       animation.setAnimationListener(new Animation.AnimationListener() {
@@ -291,6 +300,8 @@ public class RecentBoosActivity extends ListActivity
         }
       });
       player.startAnimation(animation);
+
+      player.stop();
     }
   }
 }
