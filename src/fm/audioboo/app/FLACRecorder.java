@@ -12,13 +12,10 @@ package fm.audioboo.app;
 import android.content.Context;
 
 import android.os.Handler;
-import android.os.Environment;
 
 import android.media.AudioFormat;
 import android.media.AudioRecord;
 import android.media.MediaRecorder;
-
-import java.io.File;
 
 import fm.audioboo.jni.FLACStreamEncoder;
 
@@ -90,23 +87,22 @@ public class FLACRecorder extends Thread
   private FLACStreamEncoder mEncoder;
 
   // File path for the output file.
-  private String            mRelativeFilePath;
-
-  // Base path, prepended before mRelativeFilePath. It's on the external
-  // storage and includes the file bundle.
-  private String            mBasePath;
+  private String            mPath;
 
   // Handler to notify at the above report interval
   private Handler           mHandler;
+
+  // Remember the duration of the recording. This is in msec.
+  private double            mDuration;
 
 
   /***************************************************************************
    * Implementation
    **/
-  public FLACRecorder(Context context, String relativeFilePath, Handler handler)
+  public FLACRecorder(Context context, String path, Handler handler)
   {
     mContext = context;
-    mRelativeFilePath = relativeFilePath;
+    mPath = path;
     mHandler = handler;
   }
 
@@ -122,6 +118,15 @@ public class FLACRecorder extends Thread
   public void pauseRecording()
   {
     mShouldRecord = false;
+  }
+
+
+
+  public double getDuration()
+  {
+    // Duration for Boos is normally in secs, and we're remembering msecs here,
+    // so we'll need to convert.
+    return mDuration / 1000;
   }
 
 
@@ -189,13 +194,10 @@ public class FLACRecorder extends Thread
       int bytesPerSecond = SAMPLE_RATE * (format / 8) * channels;
 
       // Set up encoder. Create path for the file if it doesn't yet exist.
-      String path = getBasePath() + File.separator + mRelativeFilePath;
-      File f = new File(path);
-      f.getParentFile().mkdirs();
-      mEncoder = new FLACStreamEncoder(path, SAMPLE_RATE, channels, format);
+      mEncoder = new FLACStreamEncoder(mPath, SAMPLE_RATE, channels, format);
 
       // Start recording loop
-      float position = 0.0f;
+      mDuration = 0.0;
       byte[] buffer = new byte[bufsize];
       boolean oldShouldRecord = mShouldRecord;
       while (mShouldRun) {
@@ -230,8 +232,8 @@ public class FLACRecorder extends Thread
             default:
               if (result > 0) {
                 // Compute time recorded
-                float read_ms = (1000.0f * result) / bytesPerSecond;
-                position += read_ms;
+                double read_ms = (1000.0 * result) / bytesPerSecond;
+                mDuration += read_ms;
 
                 int write_result = mEncoder.write(buffer, result);
                 if (write_result != result) {
@@ -241,7 +243,7 @@ public class FLACRecorder extends Thread
                 }
                 else {
                   Amplitudes amp = new Amplitudes();
-                  amp.mPosition = (long) position;
+                  amp.mPosition = (long) mDuration;
                   amp.mPeak = mEncoder.getMaxAmplitude();
                   amp.mAverage = mEncoder.getAverageAmplitude();
 
@@ -266,13 +268,4 @@ public class FLACRecorder extends Thread
 
 
 
-  private String getBasePath()
-  {
-    if (null == mBasePath) {
-      String base = Environment.getExternalStorageDirectory().getPath();
-      base += File.separator + "data" + File.separator + mContext.getPackageName();
-      mBasePath = base;
-    }
-    return mBasePath;
-  }
 }
