@@ -21,7 +21,6 @@ import android.util.Log;
 /**
  * Plays Boos. Abstracts out all the differences between streaming MP3s from the
  * web and playing local FLAC files.
- * TODO FLAC files not (yet) supported.
  **/
 public class BooPlayer extends Thread
 {
@@ -67,6 +66,191 @@ public class BooPlayer extends Thread
 
 
   /***************************************************************************
+   * Base class for a tiny class hierarchy that lets us abstract some of the
+   * logic differences between playing back MP3s (remote) and FLACs (local)
+   * into subclasses. XXX Note that for simplicity, we always assume FLAC
+   * files to be local; MP3s on the other hand are streamed from any URI the
+   * underlying API can handle.
+   **/
+  private abstract class PlayerBase
+  {
+    // Pauses/resumes playback. Can only be called after start() has been
+    // called.
+    abstract void pause();
+    abstract void resume();
+
+    // Sets up the player and starts playback.
+    abstract void start(Boo boo);
+
+    // Stops playback and also releases player resources; after this call
+    // pause()/resume() won't work any longer.
+    abstract void stop();
+  }
+
+
+  /***************************************************************************
+   * Player for MP3 files; since it can play more than MP3s through the
+   * underlying Android API, we'll call it API player.
+   **/
+  private class APIPlayer extends PlayerBase
+  {
+    // Player API
+    private MediaPlayer mMediaPlayer;
+
+
+    void pause()
+    {
+      if (null != mMediaPlayer) {
+        mMediaPlayer.pause();
+      }
+    }
+
+
+
+    void resume()
+    {
+      if (null != mMediaPlayer) {
+        mMediaPlayer.start();
+      }
+    }
+
+
+
+    void start(Boo boo)
+    {
+      // Log.d(LTAG, "Start playing: " + boo.mHighMP3Url);
+      mMediaPlayer = new MediaPlayer();
+
+      // Attach listeners to the player, for propagating state up to the users of this
+      // class.
+      mMediaPlayer.setOnBufferingUpdateListener(new MediaPlayer.OnBufferingUpdateListener() {
+        public void onBufferingUpdate(MediaPlayer mp, int percent)
+        {
+          if (mp.isPlaying()) {
+            sendStatePlayback();
+          }
+          else {
+            sendStateBuffering();
+          }
+        }
+      });
+
+      mMediaPlayer.setOnPreparedListener(new MediaPlayer.OnPreparedListener() {
+        public void onPrepared(MediaPlayer mp)
+        {
+          startPlaybackState();
+        }
+      });
+
+      mMediaPlayer.setOnCompletionListener(new MediaPlayer.OnCompletionListener() {
+        public void onCompletion(MediaPlayer mp)
+        {
+          sendStateEnded();
+        }
+      });
+
+      mMediaPlayer.setOnErrorListener(new MediaPlayer.OnErrorListener() {
+        public boolean onError(MediaPlayer mp, int what, int extra)
+        {
+          sendStateError();
+          return true;
+        }
+      });
+
+      // Now try playing back!
+      try {
+        mMediaPlayer.setDataSource(mContext, boo.mHighMP3Url);
+        mMediaPlayer.prepare();
+
+        mMediaPlayer.start();
+      } catch (java.io.IOException ex) {
+        Log.e(LTAG, "Error playing back '" + boo.mHighMP3Url + "': " + ex);
+        mMediaPlayer.release();
+        mMediaPlayer = null;
+        return;
+      }
+    }
+
+
+
+    void stop()
+    {
+      // Log.d(LTAG, "Stop playing: " + boo);
+      if (null != mMediaPlayer) {
+        mMediaPlayer.stop();
+        mMediaPlayer.release();
+        mMediaPlayer = null;
+      }
+    }
+  }
+
+
+
+  /***************************************************************************
+   * Player for FLAC files, which are assumed to be local
+   **/
+  private class FLACPlayerWrapper extends PlayerBase
+  {
+    // Player instance
+    private FLACPlayer  mFlacPlayer;
+
+
+    void pause()
+    {
+      if (null != mFlacPlayer) {
+        mFlacPlayer.pausePlayback();
+      }
+    }
+
+
+
+    void resume()
+    {
+      if (null != mFlacPlayer) {
+        mFlacPlayer.resumePlayback();
+      }
+    }
+
+
+
+    void start(Boo boo)
+    {
+      String filename = boo.mHighMP3Url.getPath();
+      mFlacPlayer = new FLACPlayer(mContext, filename);
+
+      mFlacPlayer.setListener(new FLACPlayer.PlayerListener() {
+        public void onError()
+        {
+          sendStateError();
+        }
+
+
+        public void onFinished()
+        {
+          sendStateEnded();
+        }
+      });
+
+      mFlacPlayer.start();
+
+      // There's no buffering for local files, so we'll
+      // immediately enter playback state.
+      startPlaybackState();
+    }
+
+
+
+    void stop()
+    {
+      mFlacPlayer.mShouldRun = false;
+      mFlacPlayer.interrupt();
+      mFlacPlayer = null;
+    }
+  }
+
+
+
+  /***************************************************************************
    * Private data
    **/
   // Context in which this object was created
@@ -75,6 +259,9 @@ public class BooPlayer extends Thread
   // Boo that's currently being played
   private Object                mBooLock = new Object();
   private Boo                   mBoo;
+
+  // Player instance.
+  private PlayerBase            mPlayer;
 
   // Player for MP3 Boos streamed from the Web.
   private MediaPlayer           mMediaPlayer;
@@ -121,8 +308,8 @@ public class BooPlayer extends Thread
 
   public void pausePlaying()
   {
-    if (null != mMediaPlayer) {
-      mMediaPlayer.pause();
+    if (null != mPlayer) {
+      mPlayer.pause();
     }
     mPaused = true;
   }
@@ -131,10 +318,17 @@ public class BooPlayer extends Thread
 
   public void resumePlaying()
   {
-    if (null != mMediaPlayer) {
-      mMediaPlayer.start();
+    if (null != mPlayer) {
+      mPlayer.resume();
     }
     mPaused = false;
+  }
+
+
+
+  public boolean hasStarted()
+  {
+    return (mPlayer != null);
   }
 
 
@@ -146,6 +340,9 @@ public class BooPlayer extends Thread
 
 
 
+  /**
+   * Thread's run function.
+   **/
   public void run()
   {
     mShouldRun = true;
@@ -163,13 +360,13 @@ public class BooPlayer extends Thread
 
         if (currentBoo != playingBoo) {
           if (null != playingBoo) {
-            stopPlaying(playingBoo);
+            stopPlayingInternal();
           }
 
           playingBoo = currentBoo;
 
           if (null != playingBoo) {
-            startPlaying(playingBoo);
+            startPlayingInternal(playingBoo);
           }
         }
 
@@ -186,14 +383,17 @@ public class BooPlayer extends Thread
 
 
 
-  private void stopPlaying(Boo boo)
+  /**
+   * Used in the run() function; stops playback and tears down the player
+   * instance.
+   **/
+  private void stopPlayingInternal()
   {
-    // Log.d(LTAG, "Stop playing: " + boo);
-    if (null != mMediaPlayer) {
-      mMediaPlayer.stop();
-      mMediaPlayer.release();
-      mMediaPlayer = null;
+    if (null != mPlayer) {
+      mPlayer.stop();
+      mPlayer = null;
     }
+
     if (null != mTimer) {
       mTimer.cancel();
       mTimer = null;
@@ -204,101 +404,140 @@ public class BooPlayer extends Thread
 
 
 
-  private void startPlaying(Boo boo)
+  /**
+   * Used in the run() function; sets up the player instance and starts
+   * playback.
+   **/
+  private void startPlayingInternal(Boo boo)
   {
-    // Log.d(LTAG, "Start playing: " + boo.mHighMP3Url);
-    mMediaPlayer = new MediaPlayer();
+    // Examine the Boo's Uri. From that we determine what player to instanciate.
+    String path = boo.mHighMP3Url.getPath();
+    int ext_sep = path.lastIndexOf(".");
+    String ext = path.substring(ext_sep).toLowerCase();
 
-    // Attach listeners to the player, for propagating state up to the users of this
-    // class.
-    mMediaPlayer.setOnBufferingUpdateListener(new MediaPlayer.OnBufferingUpdateListener() {
-      public void onBufferingUpdate(MediaPlayer mp, int percent)
-      {
-        if (null == mListener) {
-          return;
-        }
-
-        if (mp.isPlaying()) {
-          mListener.onProgress(STATE_PLAYBACK, mPlaybackProgress);
-        }
-        else {
-          mListener.onProgress(STATE_BUFFERING, 0f);
-        }
-      }
-    });
-
-    mMediaPlayer.setOnPreparedListener(new MediaPlayer.OnPreparedListener() {
-      public void onPrepared(MediaPlayer mp)
-      {
-        if (null == mListener) {
-          return;
-        }
-
-        mListener.onProgress(STATE_PLAYBACK, mPlaybackProgress);
-
-        // If we made it here, then we'll start a tick timer for sending
-        // continuous progress to the users of this class.
-        mPlaybackProgress = 0f;
-        mTimestamp = System.currentTimeMillis();
-
-        try {
-          mTimer = new Timer();
-          mTimerTask = new TimerTask()
-          {
-            public void run()
-            {
-              onTimer();
-            }
-          };
-          mPaused = false;
-          mTimer.scheduleAtFixedRate(mTimerTask, 0, TIMER_TASK_INTERVAL);
-        } catch (java.lang.IllegalStateException ex) {
-          Log.e(LTAG, "Could not start timer: " + ex);
-          // Ignore.
-        }
-      }
-    });
-
-    mMediaPlayer.setOnCompletionListener(new MediaPlayer.OnCompletionListener() {
-      public void onCompletion(MediaPlayer mp)
-      {
-        if (null == mListener) {
-          return;
-        }
-
-        mListener.onProgress(STATE_FINISHED, mPlaybackProgress);
-      }
-    });
-
-    mMediaPlayer.setOnErrorListener(new MediaPlayer.OnErrorListener() {
-      public boolean onError(MediaPlayer mp, int what, int extra)
-      {
-        if (null == mListener) {
-          return false;
-        }
-
-        mListener.onProgress(STATE_ERROR, 0f);
-        return true;
-      }
-    });
-
-    // Now try playing back!
-    try {
-      mMediaPlayer.setDataSource(mContext, boo.mHighMP3Url);
-      mMediaPlayer.prepare();
-
-      mMediaPlayer.start();
-    } catch (java.io.IOException ex) {
-      Log.e(LTAG, "Error playing back '" + boo.mHighMP3Url + "': " + ex);
-      mMediaPlayer.release();
-      mMediaPlayer = null;
-      return;
+    if (ext.equals(".flac")) {
+      // Start FLAC player.
+      mPlayer = new FLACPlayerWrapper();
+    }
+    else {
+      // Handle everything else via the APIPlayer
+      mPlayer = new APIPlayer();
     }
 
+    // Now we can use the base API to start playback.
+    mPlayer.start(boo);
   }
 
 
 
+  /**
+   * Switches the progress listener to playback state, and starts the timer
+   * that'll inform the listener on a regular basis that progress is being made.
+   **/
+  private void startPlaybackState()
+  {
+    //Log.d(LTAG, "Starting playback state.");
+
+    if (null == mListener) {
+      return;
+    }
+
+    mListener.onProgress(STATE_PLAYBACK, mPlaybackProgress);
+
+    // If we made it here, then we'll start a tick timer for sending
+    // continuous progress to the users of this class.
+    mPlaybackProgress = 0f;
+    mTimestamp = System.currentTimeMillis();
+
+    try {
+      mTimer = new Timer();
+      mTimerTask = new TimerTask()
+      {
+        public void run()
+        {
+          onTimer();
+        }
+      };
+      mPaused = false;
+      mTimer.scheduleAtFixedRate(mTimerTask, 0, TIMER_TASK_INTERVAL);
+    } catch (java.lang.IllegalStateException ex) {
+      Log.e(LTAG, "Could not start timer: " + ex);
+      sendStateError();
+    }
+  }
+
+
+
+  /**
+   * Notifies the listener that playback has ended.
+   **/
+  private void sendStateEnded()
+  {
+    // Log.d(LTAG, "Send end state");
+
+    if (null == mListener) {
+      return;
+    }
+
+    mListener.onProgress(STATE_FINISHED, mPlaybackProgress);
+  }
+
+
+
+  /**
+   * Notifies the listener that the player is in buffering state.
+   **/
+  private void sendStateBuffering()
+  {
+    //Log.d(LTAG, "Send buffering state");
+
+    if (null == mListener) {
+      return;
+    }
+
+    mListener.onProgress(STATE_BUFFERING, 0f);
+  }
+
+
+
+  /**
+   * Notifies the listener that the player is playing back; this is really
+   * only used after a sendStateBuffering() has been sent. Under normal
+   * conditions, onTimer() below sends updates.
+   **/
+  private void sendStatePlayback()
+  {
+    //Log.d(LTAG, "Send playback state");
+
+    if (null == mListener) {
+      return;
+    }
+
+    mListener.onProgress(STATE_PLAYBACK, mPlaybackProgress);
+  }
+
+
+
+  /**
+   * Sends an error state to the listener.
+   **/
+  private void sendStateError()
+  {
+    //Log.d(LTAG, "Send error state");
+
+    if (null == mListener) {
+      return;
+    }
+
+    mListener.onProgress(STATE_ERROR, 0f);
+  }
+
+
+
+  /**
+   * Invoked periodically; tracks progress and notifies the listener
+   * accordingly.
+   **/
   private void onTimer()
   {
     long current = System.currentTimeMillis();
@@ -314,8 +553,6 @@ public class BooPlayer extends Thread
     // Log.d(LTAG, "progress: " + mPlaybackProgress);
     mPlaybackProgress += (double) diff / 1000.0;
 
-    if (null != mListener) {
-      mListener.onProgress(STATE_PLAYBACK, mPlaybackProgress);
-    }
+    sendStatePlayback();
   }
 }
