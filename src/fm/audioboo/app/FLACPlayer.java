@@ -34,12 +34,26 @@ public class FLACPlayer extends Thread
   // Log ID
   private static final String LTAG  = "FLACPlayer";
 
+  // Sleep time (in msec) when playback is paused. Will be interrupted, so
+  // this can be arbitrarily large.
+  private static final int PAUSED_SLEEP_TIME  = 10 * 60 * 1000;
+
 
   /***************************************************************************
    * Public data
    **/
   // Flag that keeps the thread running when true.
   public boolean mShouldRun;
+
+
+  /***************************************************************************
+   * Listener that informs the user of errors and end of playback.
+   **/
+  public static abstract class PlayerListener
+  {
+    public abstract void onError();
+    public abstract void onFinished();
+  }
 
 
   /***************************************************************************
@@ -55,21 +69,43 @@ public class FLACPlayer extends Thread
   private AudioTrack        mAudioTrack;
 
   // File path for the output file.
-  private String            mRelativeFilePath;
+  private String            mPath;
 
-  // Base path, prepended before mRelativeFilePath. It's on the external
-  // storage and includes the file bundle.
-  private String            mBasePath;
+  // Flag; determines whether playback is paused or not.
+  private boolean           mPaused;
 
+  // Listener.
+  private PlayerListener    mListener;
 
 
   /***************************************************************************
    * Implementation
    **/
-  public FLACPlayer(Context context, String relativeFilePath)
+  public FLACPlayer(Context context, String path)
   {
     mContext = context;
-    mRelativeFilePath = relativeFilePath;
+    mPath = path;
+  }
+
+
+
+  public void pausePlayback()
+  {
+    mPaused = true;
+  }
+
+
+
+  public void resumePlayback()
+  {
+    mPaused = false;
+  }
+
+
+
+  public void setListener(PlayerListener listener)
+  {
+    mListener = listener;
   }
 
 
@@ -77,10 +113,10 @@ public class FLACPlayer extends Thread
   public void run()
   {
     mShouldRun = true;
+    mPaused = false;
 
     // Try to initialize the decoder.
-    String path = getBasePath() + File.separator + mRelativeFilePath;
-    mDecoder = new FLACStreamDecoder(path);
+    mDecoder = new FLACStreamDecoder(mPath);
 
     // Map channel config & format
     int sampleRate = mDecoder.sampleRate();
@@ -99,16 +135,28 @@ public class FLACPlayer extends Thread
           channelConfig, format, bufsize, AudioTrack.MODE_STREAM);
       mAudioTrack.play();
 
-
       byte[] buffer = new byte[bufsize];
-      do {
-        int read = mDecoder.read(buffer, bufsize);
-        if (read <= 0) {
-          break;
-        }
+      while (mShouldRun) {
+        try {
+          // If we're paused, just sleep the thread
+          if (mPaused) {
+            sleep(PAUSED_SLEEP_TIME);
+            continue;
+          }
 
-        mAudioTrack.write(buffer, 0, read);
-      } while (true);
+          // Otherwise, play back a chunk.
+          int read = mDecoder.read(buffer, bufsize);
+          if (read <= 0) {
+            // We're done with playing back!
+            break;
+          }
+          mAudioTrack.write(buffer, 0, read);
+        } catch (InterruptedException ex) {
+          // We'll pass through to the next iteration. If mShouldRun has
+          // been set to false, the thread will terminate. If mPause has
+          // been set to true, we'll sleep in the next interation.
+        }
+      }
 
       mAudioTrack.stop();
       mAudioTrack.release();
@@ -116,8 +164,16 @@ public class FLACPlayer extends Thread
       mDecoder.release();
       mDecoder = null;
 
+      if (null != mListener) {
+        mListener.onFinished();
+      }
+
     } catch (IllegalArgumentException ex) {
       Log.e(LTAG, "Could not initialize AudioTrack.");
+
+      if (null != mListener) {
+        mListener.onError();
+      }
     }
   }
 
@@ -152,18 +208,4 @@ public class FLACPlayer extends Thread
         throw new IllegalArgumentException("Only supporting 8 or 16 bit samples!");
     }
   }
-
-
-
-  private String getBasePath()
-  {
-    if (null == mBasePath) {
-      String base = Environment.getExternalStorageDirectory().getPath();
-      base += File.separator + "data" + File.separator + mContext.getPackageName();
-      mBasePath = base;
-    }
-    return mBasePath;
-  }
-
-
 }
