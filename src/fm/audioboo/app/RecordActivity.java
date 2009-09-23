@@ -14,9 +14,11 @@ import android.app.Activity;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
+import android.os.Environment;
 
 import android.content.res.Configuration;
 
+import android.view.View;
 import android.view.Menu;
 import android.view.MenuItem;
 
@@ -25,11 +27,22 @@ import android.widget.CompoundButton;
 
 import fm.audioboo.widget.RecordButton;
 import fm.audioboo.widget.SpectralView;
+import fm.audioboo.widget.BooPlayerView;
+
+import android.view.animation.Animation;
+import android.view.animation.AnimationUtils;
+
+import android.net.Uri;
+
+import java.util.Date;
+
+import java.io.File;
 
 import android.util.Log;
 
 /**
- * FIXME
+ * The RecordActivity allows for recording (and playing back) of Boos, and
+ * launches UploadAcitivity.
  **/
 public class RecordActivity extends Activity
 {
@@ -55,15 +68,22 @@ public class RecordActivity extends Activity
   // Recorder instance
   private FLACRecorder  mFlacRecorder;
 
+  // The record activity essentially represents a Boo, even though it's not
+  // filled with all possible bits of information yet. We (re-)create this
+  // Boo whenever we reset the recorder.
+  private Boo           mBoo;
+
+  // Base path, prepended before mRelativeFilePath. It's on the external
+  // storage and includes the file bundle.
+  private String        mBasePath;
+
+
+
   // Reference to the record button
   private RecordButton  mRecordButton;
 
   // Reference to the spectral view
   private SpectralView  mSpectralView;
-
-
-  // Player instance
-  private FLACPlayer    mFlacPlayer;
 
 
   /***************************************************************************
@@ -84,6 +104,11 @@ public class RecordActivity extends Activity
 
     setContentView(R.layout.record);
 
+    if (null == mFlacRecorder) {
+      resetFLACRecorder();
+    }
+
+
     mRecordButton = (RecordButton) findViewById(R.id.record_button);
     if (null != mRecordButton) {
       mRecordButton.setMax(RECORDING_TIME_LIMIT);
@@ -91,19 +116,11 @@ public class RecordActivity extends Activity
       mRecordButton.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
         public void onCheckedChanged(CompoundButton buttonView, boolean isChecked)
         {
-          if (null == mFlacRecorder) {
-            resetFLACRecorder();
-          }
-
           if (isChecked) {
-            Log.d(LTAG, "Resume recording!");
-            mFlacRecorder.resumeRecording();
-            mSpectralView.startAnimation();
+            startRecording();
           }
           else {
-            Log.d(LTAG, "Pause recording!");
-            mFlacRecorder.pauseRecording();
-            mSpectralView.stopAnimation();
+            stopRecording();
           }
         }
       });
@@ -114,24 +131,51 @@ public class RecordActivity extends Activity
 
 
 
+  private void startRecording()
+  {
+    Log.d(LTAG, "Resume recording!");
+    mFlacRecorder.resumeRecording();
+    mSpectralView.startAnimation();
+
+    // Stop playback, regardless where it's been started from.
+    Globals.get().mPlayer.stopPlaying();
+    stopPlayer();
+  }
+
+
+
+  private void stopRecording()
+  {
+    Log.d(LTAG, "Pause recording!");
+    mFlacRecorder.pauseRecording();
+    mSpectralView.stopAnimation();
+
+    // Every time we stop recording, we really want the current recording
+    // duration to be remembered in the Boo we're holding.
+    mBoo.mDuration = mFlacRecorder.getDuration();
+
+    // Show player.
+    showPlayer();
+  }
+
+
+
   @Override
   public void onPause()
   {
     super.onPause();
-    // FIXME may need changes
+
+    // Pause recording in onPause
     if (null != mFlacRecorder) {
       mFlacRecorder.pauseRecording();
       mFlacRecorder.interrupt();
     }
 
-    if (null != mFlacPlayer) {
-      mFlacPlayer.mShouldRun = false;
-      mFlacPlayer.interrupt();
-    }
-
     if (null != mSpectralView) {
       mSpectralView.stopAnimation();
     }
+
+    stopPlayer();
   }
 
 
@@ -167,6 +211,37 @@ public class RecordActivity extends Activity
 
 
 
+  private void showPlayer()
+  {
+    // Fade in player
+    BooPlayerView player = (BooPlayerView) findViewById(R.id.record_player);
+    if (null != player) {
+      Animation animation = AnimationUtils.loadAnimation(this, R.anim.fade_in);
+      player.startAnimation(animation);
+      player.setVisibility(View.VISIBLE);
+
+      Log.d(LTAG, "Playing: " + mBoo);
+      // Tell the player to lay the boo we remember.
+      player.play(mBoo, false);
+    }
+  }
+
+
+
+  private void stopPlayer()
+  {
+    // If the player view is showing, fade it out.
+    BooPlayerView player = (BooPlayerView) findViewById(R.id.record_player);
+    if (null != player && View.VISIBLE == player.getVisibility()) {
+      Animation animation = AnimationUtils.loadAnimation(this, R.anim.fade_out);
+      player.startAnimation(animation);
+
+      player.stop();
+    }
+  }
+
+
+
   private void resetFLACRecorder()
   {
     if (null != mFlacRecorder) {
@@ -177,7 +252,10 @@ public class RecordActivity extends Activity
 
     // Instanciate recorder. TODO need to check whether the file exists,
     // and use a different name.
-    String filename = RECORDING_BASE_NAME + RECORDING_EXTENSION;
+    String filename = getBasePath() + File.separator + RECORDING_BASE_NAME + RECORDING_EXTENSION;
+    File f = new File(filename);
+    f.getParentFile().mkdirs();
+
     mFlacRecorder = new FLACRecorder(this, filename,
       new Handler(new Handler.Callback()
       {
@@ -200,6 +278,14 @@ public class RecordActivity extends Activity
       }
     ));
     mFlacRecorder.start();
+
+
+    // Also recrete the Boo we're remembering. We can at least set the "recorded
+    // at" date, and hijack the mHighMP3Url to point to our flac file.
+    mBoo = new Boo();
+    mBoo.mRecordedAt = new Date();
+    mBoo.mHighMP3Url = Uri.parse(String.format("file://%s", filename));
+    Log.d(LTAG, "New boo: " + mBoo);
   }
 
 
@@ -227,7 +313,7 @@ public class RecordActivity extends Activity
 //// FIXME item.setAlphabeticShortcut(SearchManager.MENU_KEY);
 //    }
 //    return true;
-    menu.add(0, 0, 0, "Play back");
+    menu.add(0, 0, 0, "Will contain upload and reset");
     return true;
   }
 
@@ -236,11 +322,19 @@ public class RecordActivity extends Activity
   @Override
   public boolean onOptionsItemSelected(MenuItem item)
   {
-    // FIXME: need to pause recording, etc.
-    mFlacPlayer = new FLACPlayer(this, RECORDING_BASE_NAME + RECORDING_EXTENSION);
-    mFlacPlayer.start();
     return true;
   }
 
+
+
+  private String getBasePath()
+  {
+    if (null == mBasePath) {
+      String base = Environment.getExternalStorageDirectory().getPath();
+      base += File.separator + "data" + File.separator + getPackageName();
+      mBasePath = base;
+    }
+    return mBasePath;
+  }
 
 }
