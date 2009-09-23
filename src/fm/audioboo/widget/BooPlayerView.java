@@ -95,20 +95,28 @@ public class BooPlayerView extends LinearLayout
 
 
   /***************************************************************************
+   * Button Listener
+   **/
+  private class ButtonListener implements CompoundButton.OnCheckedChangeListener
+  {
+    public void onCheckedChanged(CompoundButton buttonView, boolean isChecked)
+    {
+      if (isChecked) {
+        onStop(END_STATE_SUCCESS);
+      }
+      else {
+        onStart();
+      }
+    }
+  }
+
+
+
+  /***************************************************************************
    * Boo Progress Listener
    **/
   private class BooProgressListener extends BooPlayer.ProgressListener
-                                    implements CompoundButton.OnCheckedChangeListener
   {
-    BooProgressListener()
-    {
-      super();
-
-      // Install handler for listening to the toggle.
-      mButton.setOnCheckedChangeListener(this);
-    }
-
-
     public void onProgress(int state, double progress)
     {
       switch (state) {
@@ -122,19 +130,13 @@ public class BooPlayerView extends LinearLayout
           break;
 
         case BooPlayer.STATE_FINISHED:
-          onPlaybackEnded(END_STATE_SUCCESS);
+          onStop(END_STATE_SUCCESS);
           break;
 
         case BooPlayer.STATE_ERROR:
-          onPlaybackEnded(END_STATE_ERROR);
+          onStop(END_STATE_ERROR);
           break;
       }
-    }
-
-
-    public void onCheckedChanged(CompoundButton buttonView, boolean isChecked)
-    {
-      onPlaybackEnded(END_STATE_SUCCESS);
     }
   }
 
@@ -176,8 +178,40 @@ public class BooPlayerView extends LinearLayout
 
   public void play(Boo boo)
   {
+    play(boo, true);
+  }
+
+
+
+  public void play(Boo boo, boolean playImmediately)
+  {
     mBoo = boo;
 
+    // Set title
+    if (null == mBoo.mTitle) {
+      setTitle("New recording"); // FIXME
+    }
+    else {
+      setTitle(mBoo.mTitle);
+    }
+
+    // Set the button to a neutral state. startPlaying() will set it to a
+    // indeterminate state, and actual playback will mean it'll switch to
+    // a playback state.
+    mButton.setChecked(true);
+    mButton.setIndeterminate(false);
+    mButton.setProgress(0);
+
+    // If we're supposed to play back immediately, then do so.
+    if (playImmediately) {
+      startPlaying();
+    }
+  }
+
+
+
+  private void startPlaying()
+  {
     // Grab the play/pause button from the View. That's handed to the
     // BooPlayer.
     Globals.get().mPlayer.setProgressListener(new BooProgressListener());
@@ -186,19 +220,32 @@ public class BooPlayerView extends LinearLayout
     // Initialize button state
     mButton.setChecked(false);
     mButton.setIndeterminate(true);
-    mButton.setMax((int) (boo.mDuration * PROGRESS_MULTIPLIER));
+    mButton.setMax((int) (mBoo.mDuration * PROGRESS_MULTIPLIER));
     mButton.setProgress(0);
+  }
 
-    // Set title
-    mTitle.setText(boo.mTitle);
+
+
+  public void setTitle(String title)
+  {
+    if (null != mTitle) {
+      mTitle.setText(title);
+    }
   }
 
 
 
   public void stop()
   {
+    // Set button to a neutral state
+    mButton.setChecked(true);
+    mButton.setIndeterminate(false);
+    mButton.setProgress(0);
+
     // Stops playback.
-    Globals.get().mPlayer.stopPlaying();
+    if (null != mBoo) {
+      Globals.get().mPlayer.stopPlaying();
+    }
   }
 
 
@@ -206,15 +253,19 @@ public class BooPlayerView extends LinearLayout
   public void pause()
   {
     // Pauses playback.
-    Globals.get().mPlayer.pausePlaying();
+    if (null != mBoo) {
+      Globals.get().mPlayer.pausePlaying();
+    }
   }
 
 
 
   public void resume()
   {
-    // Pauses playback.
-    Globals.get().mPlayer.resumePlaying();
+    // Resumes playback.
+    if (null != mBoo) {
+      Globals.get().mPlayer.resumePlaying();
+    }
   }
 
 
@@ -260,6 +311,9 @@ public class BooPlayerView extends LinearLayout
     if (null != mButton) {
       mButton.setChecked(false);
       mButton.setIndeterminate(true);
+
+
+      mButton.setOnCheckedChangeListener(new ButtonListener());
     }
 
     // Remember
@@ -268,15 +322,29 @@ public class BooPlayerView extends LinearLayout
 
 
 
-  private void onPlaybackEnded(int state)
+  private void onStop(int state)
   {
+    // isChecked == true is sent once before we've actually started playback;
+    // it's best to ignore that.
+    if (!Globals.get().mPlayer.hasStarted()) {
+      // Log.d(LTAG, "ignore first onStop");
+      return;
+    }
+
     // We don't care here whether the button is checked or not, we just
     // stop playback.
-    Globals.get().mPlayer.stopPlaying();
+    stop();
 
     // Propagate this event to the user
     if (null != mListener) {
       mListener.onPlaybackEnded(this, state);
     }
+  }
+
+
+
+  private void onStart()
+  {
+    startPlaying();
   }
 }
