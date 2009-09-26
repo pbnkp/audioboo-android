@@ -15,6 +15,8 @@
 #include <alloca.h>
 #include <limits.h>
 
+#include <sys/stat.h>
+
 #include "FLAC/metadata.h"
 #include "FLAC/stream_encoder.h"
 
@@ -38,6 +40,32 @@ static char const * const IllegalArgumentException_classname  = "java.lang.Illeg
 /*****************************************************************************
  * FLAC callbacks forward declarations
  **/
+
+
+FLAC__StreamDecoderReadStatus flac_read_helper(
+    FLAC__StreamDecoder const * decoder,
+    FLAC__byte buffer[],
+    size_t * bytes,
+    void * client_data);
+
+FLAC__StreamDecoderSeekStatus flac_seek_helper(
+    FLAC__StreamDecoder const * decoder,
+    FLAC__uint64 absolute_byte_offset,
+    void * client_data);
+
+FLAC__StreamDecoderTellStatus flac_tell_helper(
+    FLAC__StreamDecoder const * decoder,
+    FLAC__uint64 * absolute_byte_offset,
+    void * client_data);
+
+FLAC__StreamDecoderLengthStatus flac_length_helper(
+    FLAC__StreamDecoder const * decoder,
+    FLAC__uint64 * stream_length,
+    void * client_data);
+
+FLAC__bool flac_eof_helper(
+    FLAC__StreamDecoder const * decoder,
+    void * client_data);
 
 FLAC__StreamDecoderWriteStatus flac_write_helper(
     FLAC__StreamDecoder const * decoder,
@@ -67,12 +95,14 @@ public:
    * Takes ownership of the infile.
    **/
   FLACStreamDecoder(char * infile)
-    : m_infile(infile)
+    : m_infile_name(infile)
+    , m_infile(NULL)
     , m_sample_rate(-1)
     , m_channels(-1)
     , m_bits_per_sample(-1)
     , m_min_buffer_size(-1)
     , m_decoder(NULL)
+    , m_finished(false)
   {
   }
 
@@ -83,7 +113,7 @@ public:
    **/
   char const * const init()
   {
-    if (!m_infile) {
+    if (!m_infile_name) {
       return "No file name given!";
     }
 
@@ -94,10 +124,17 @@ public:
       return "Could not create FLAC__StreamDecoder!";
     }
 
+    // Open file.
+    m_infile = fopen(m_infile_name, "r");
+    if (!m_infile) {
+      return "Could not open file!";
+    }
+
     // Try initializing the file stream.
-    FLAC__StreamDecoderInitStatus init_status = FLAC__stream_decoder_init_file(
-        m_decoder, m_infile, flac_write_helper, flac_metadata_helper,
-        flac_error_helper, this);
+    FLAC__StreamDecoderInitStatus init_status = FLAC__stream_decoder_init_stream(
+        m_decoder, flac_read_helper, flac_seek_helper, flac_tell_helper,
+        flac_length_helper, flac_eof_helper, flac_write_helper,
+        flac_metadata_helper, flac_error_helper, this);
 
     if (FLAC__STREAM_DECODER_INIT_STATUS_OK != init_status) {
       return "Could not initialize FLAC__StreamDecoder for the given file!";
@@ -125,66 +162,15 @@ public:
       m_decoder = NULL;
     }
 
+    if (m_infile_name) {
+      free(m_infile_name);
+      m_infile_name = NULL;
+    }
+
     if (m_infile) {
-      free(m_infile);
+      fclose(m_infile);
       m_infile = NULL;
     }
-  }
-
-
-
-  FLAC__StreamDecoderWriteStatus write(
-      FLAC__StreamDecoder const * decoder,
-      FLAC__Frame const * frame,
-      FLAC__int32 const * const buffer[])
-  {
-    assert(decoder == m_decoder);
-    assert(m_buffer);
-
-    if (8 == m_bits_per_sample) {
-      return write_internal<int8_t>(frame->header.blocksize, buffer);
-    }
-    else if (16 == m_bits_per_sample) {
-      return write_internal<int16_t>(frame->header.blocksize, buffer);
-    }
-    else {
-      // Should not happen, just return an error.
-      return FLAC__STREAM_DECODER_WRITE_STATUS_ABORT;
-    }
-  }
-
-
-
-  void metadata(
-      FLAC__StreamDecoder const * decoder,
-      FLAC__StreamMetadata const * metadata)
-  {
-    assert(decoder == m_decoder);
-
-    if (!metadata || FLAC__METADATA_TYPE_STREAMINFO != metadata->type) {
-      return;
-    }
-
-    m_sample_rate = metadata->data.stream_info.sample_rate;
-    m_channels = metadata->data.stream_info.channels;
-    m_bits_per_sample = metadata->data.stream_info.bits_per_sample;
-
-    // We report the maximum block size, because a buffer that size will hold
-    // any block. Yes, that's somewhat lazy, but blocks aren't *that* large.
-    m_min_buffer_size = metadata->data.stream_info.max_blocksize
-      * (m_bits_per_sample / 8)
-      * m_channels;
-  }
-
-
-
-  void error(
-      FLAC__StreamDecoder const * decoder,
-      FLAC__StreamDecoderErrorStatus status)
-  {
-    assert(decoder == m_decoder);
-
-    // FIXME
   }
 
 
@@ -195,6 +181,12 @@ public:
    **/
   int read(char * buffer, int bufsize)
   {
+    // If the decoder is at the end of the stream, exit immediately.
+    int ret = checkState();
+    if (0 != ret) {
+      return ret;
+    }
+
     // These are set temporarily - this object does not own the buffer.
     m_buffer = buffer;
     m_buf_size = bufsize / (m_bits_per_sample / 8);
@@ -204,12 +196,13 @@ public:
     do {
       result = FLAC__stream_decoder_process_single(m_decoder);
     } while (result && m_buf_used < m_buf_size);
+    ret = checkState();
 
     // Clear m_buffer, just to be extra-paranoid that it won't accidentally
     // be freed.
     m_buffer = NULL;
     m_buf_size = 0;
-    return result ? m_buf_used * (m_bits_per_sample / 8) : -1;
+    return (result ? m_buf_used * (m_bits_per_sample / 8) : ret);
   }
 
 
@@ -239,6 +232,149 @@ public:
   {
     return m_min_buffer_size;
   }
+
+
+  /**
+   * Callbacks for FLAC decoder.
+   **/ 
+  FLAC__StreamDecoderReadStatus cb_read(
+      FLAC__StreamDecoder const * decoder,
+      FLAC__byte buffer[],
+      size_t * bytes)
+  {
+    size_t expected = *bytes;
+
+    if (expected <= 0) {
+      return FLAC__STREAM_DECODER_READ_STATUS_ABORT;
+    }
+
+    *bytes = fread(buffer, sizeof(FLAC__byte), expected, m_infile);
+
+    if (ferror(m_infile)) {
+      return FLAC__STREAM_DECODER_READ_STATUS_ABORT;
+    }
+    else if (feof(m_infile)) {
+      m_finished = true;
+      return FLAC__STREAM_DECODER_READ_STATUS_END_OF_STREAM;
+    }
+
+    return FLAC__STREAM_DECODER_READ_STATUS_CONTINUE;
+  }
+
+
+
+  FLAC__StreamDecoderSeekStatus cb_seek(
+      FLAC__StreamDecoder const * decoder,
+      FLAC__uint64 absolute_byte_offset)
+  {
+    if (0 > fseeko(m_infile, static_cast<off_t>(absolute_byte_offset), SEEK_SET)) {
+      return FLAC__STREAM_DECODER_SEEK_STATUS_ERROR;
+    }
+
+    return FLAC__STREAM_DECODER_SEEK_STATUS_OK;
+  }
+
+
+
+  FLAC__StreamDecoderTellStatus cb_tell(
+      FLAC__StreamDecoder const * decoder,
+      FLAC__uint64 * absolute_byte_offset)
+  {
+    off_t pos = 0;
+
+    if (0 > (pos = ftello(m_infile))) {
+      return FLAC__STREAM_DECODER_TELL_STATUS_ERROR;
+    }
+
+    *absolute_byte_offset = static_cast<FLAC__uint64>(pos);
+
+    return FLAC__STREAM_DECODER_TELL_STATUS_OK;
+  }
+
+
+
+  FLAC__StreamDecoderLengthStatus cb_length(
+      FLAC__StreamDecoder const * decoder,
+      FLAC__uint64 * stream_length)
+  {
+    struct stat filestats;
+
+    if (0 != fstat(fileno(m_infile), &filestats)) {
+      return FLAC__STREAM_DECODER_LENGTH_STATUS_ERROR;
+    }
+    else {
+      *stream_length = static_cast<FLAC__uint64>(filestats.st_size);
+      return FLAC__STREAM_DECODER_LENGTH_STATUS_OK;
+    }
+  }
+
+
+
+  FLAC__bool cb_eof(
+      FLAC__StreamDecoder const * decoder)
+  {
+    if (feof(m_infile)) {
+      m_finished = true;
+    }
+    return m_finished;
+  }
+
+
+
+  FLAC__StreamDecoderWriteStatus cb_write(
+      FLAC__StreamDecoder const * decoder,
+      FLAC__Frame const * frame,
+      FLAC__int32 const * const buffer[])
+  {
+    assert(decoder == m_decoder);
+    assert(m_buffer);
+
+    if (8 == m_bits_per_sample) {
+      return write_internal<int8_t>(frame->header.blocksize, buffer);
+    }
+    else if (16 == m_bits_per_sample) {
+      return write_internal<int16_t>(frame->header.blocksize, buffer);
+    }
+    else {
+      // Should not happen, just return an error.
+      return FLAC__STREAM_DECODER_WRITE_STATUS_ABORT;
+    }
+  }
+
+
+
+  void cb_metadata(
+      FLAC__StreamDecoder const * decoder,
+      FLAC__StreamMetadata const * metadata)
+  {
+    assert(decoder == m_decoder);
+
+    if (!metadata || FLAC__METADATA_TYPE_STREAMINFO != metadata->type) {
+      return;
+    }
+
+    m_sample_rate = metadata->data.stream_info.sample_rate;
+    m_channels = metadata->data.stream_info.channels;
+    m_bits_per_sample = metadata->data.stream_info.bits_per_sample;
+
+    // We report the maximum block size, because a buffer that size will hold
+    // any block. Yes, that's somewhat lazy, but blocks aren't *that* large.
+    m_min_buffer_size = metadata->data.stream_info.max_blocksize
+      * (m_bits_per_sample / 8)
+      * m_channels;
+  }
+
+
+
+  void cb_error(
+      FLAC__StreamDecoder const * decoder,
+      FLAC__StreamDecoderErrorStatus status)
+  {
+    assert(decoder == m_decoder);
+    m_finished = true;
+  }
+
+
 
 private:
 
@@ -273,8 +409,54 @@ private:
 
 
 
+  /**
+   * Translate decoder state into something we can report as a return
+   * value from read()
+   **/
+  int checkState()
+  {
+    if (m_finished) {
+      return -1;
+    }
+
+    FLAC__StreamDecoderState state = FLAC__stream_decoder_get_state(m_decoder);
+    switch (state) {
+      case FLAC__STREAM_DECODER_SEARCH_FOR_METADATA:
+      case FLAC__STREAM_DECODER_READ_METADATA:
+      case FLAC__STREAM_DECODER_SEARCH_FOR_FRAME_SYNC:
+      case FLAC__STREAM_DECODER_READ_FRAME:
+        return 0;
+
+      case FLAC__STREAM_DECODER_END_OF_STREAM:
+        m_finished = true;
+        return -2;
+
+      case FLAC__STREAM_DECODER_OGG_ERROR:
+        return -3;
+
+      case FLAC__STREAM_DECODER_SEEK_ERROR:
+        return -4;
+
+      case FLAC__STREAM_DECODER_ABORTED:
+        return -5;
+
+      case FLAC__STREAM_DECODER_MEMORY_ALLOCATION_ERROR:
+        return -6;
+
+      case FLAC__STREAM_DECODER_UNINITIALIZED:
+        return -7;
+
+      default:
+        return -8;
+    }
+  }
+
+
   // Configuration values passed to ctor
-  char *  m_infile;
+  char *  m_infile_name;
+
+  // FILE pointer we're reading.
+  FILE *  m_infile;
 
   // FLAC Decoder instance
   FLAC__StreamDecoder * m_decoder;
@@ -284,6 +466,8 @@ private:
   int m_channels;
   int m_bits_per_sample;
   int m_min_buffer_size;
+
+  bool m_finished;
 
   // Buffer related data, used by write callback and set by read function
   char *  m_buffer;
@@ -296,6 +480,60 @@ private:
 /*****************************************************************************
  * FLAC callbacks
  **/
+FLAC__StreamDecoderReadStatus flac_read_helper(
+    FLAC__StreamDecoder const * decoder,
+    FLAC__byte buffer[],
+    size_t * bytes,
+    void * client_data)
+{
+  FLACStreamDecoder * dc = static_cast<FLACStreamDecoder *>(client_data);
+  return dc->cb_read(decoder, buffer, bytes);
+}
+
+
+
+FLAC__StreamDecoderSeekStatus flac_seek_helper(
+    FLAC__StreamDecoder const * decoder,
+    FLAC__uint64 absolute_byte_offset,
+    void * client_data)
+{
+  FLACStreamDecoder * dc = static_cast<FLACStreamDecoder *>(client_data);
+  return dc->cb_seek(decoder, absolute_byte_offset);
+}
+
+
+
+FLAC__StreamDecoderTellStatus flac_tell_helper(
+    FLAC__StreamDecoder const * decoder,
+    FLAC__uint64 * absolute_byte_offset,
+    void * client_data)
+{
+  FLACStreamDecoder * dc = static_cast<FLACStreamDecoder *>(client_data);
+  return dc->cb_tell(decoder, absolute_byte_offset);
+}
+
+
+
+FLAC__StreamDecoderLengthStatus flac_length_helper(
+    FLAC__StreamDecoder const * decoder,
+    FLAC__uint64 * stream_length,
+    void * client_data)
+{
+  FLACStreamDecoder * dc = static_cast<FLACStreamDecoder *>(client_data);
+  return dc->cb_length(decoder, stream_length);
+}
+
+
+
+FLAC__bool flac_eof_helper(
+    FLAC__StreamDecoder const * decoder,
+    void * client_data)
+{
+  FLACStreamDecoder * dc = static_cast<FLACStreamDecoder *>(client_data);
+  return dc->cb_eof(decoder);
+}
+
+
 
 FLAC__StreamDecoderWriteStatus flac_write_helper(
     FLAC__StreamDecoder const * decoder,
@@ -304,7 +542,7 @@ FLAC__StreamDecoderWriteStatus flac_write_helper(
     void * client_data)
 {
   FLACStreamDecoder * dc = static_cast<FLACStreamDecoder *>(client_data);
-  return dc->write(decoder, frame, buffer);
+  return dc->cb_write(decoder, frame, buffer);
 }
 
 
@@ -315,7 +553,7 @@ void flac_metadata_helper(
     void * client_data)
 {
   FLACStreamDecoder * dc = static_cast<FLACStreamDecoder *>(client_data);
-  dc->metadata(decoder, metadata);
+  dc->cb_metadata(decoder, metadata);
 }
 
 
@@ -326,7 +564,7 @@ void flac_error_helper(
     void * client_data)
 {
   FLACStreamDecoder * dc = static_cast<FLACStreamDecoder *>(client_data);
-  dc->error(decoder, status);
+  dc->cb_error(decoder, status);
 }
 
 
