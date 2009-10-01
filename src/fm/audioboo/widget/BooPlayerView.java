@@ -21,6 +21,9 @@ import android.widget.TextView;
 
 import android.media.AudioManager;
 
+import android.os.Handler;
+import android.os.Message;
+
 import fm.audioboo.app.Boo;
 import fm.audioboo.app.BooPlayer;
 import fm.audioboo.app.Globals;
@@ -33,7 +36,7 @@ import android.util.Log;
  * Displays a player window, and uses the BooPlayer in Globals to play back
  * Boos.
  **/
-public class BooPlayerView extends LinearLayout
+public class BooPlayerView extends LinearLayout implements Handler.Callback
 {
   /***************************************************************************
    * Private constants
@@ -47,6 +50,10 @@ public class BooPlayerView extends LinearLayout
 
   // The type of stream Boos play in.
   private static final int  STREAM_TYPE         = AudioManager.STREAM_MUSIC;
+
+  // Messages used to invoke onStart/onStop on main thread.
+  private static final int  MSG_ON_START = 0;
+  private static final int  MSG_ON_STOP  = 1;
 
 
   /***************************************************************************
@@ -99,13 +106,20 @@ public class BooPlayerView extends LinearLayout
    **/
   private class ButtonListener implements CompoundButton.OnCheckedChangeListener
   {
+    private Handler mHandler;
+
+    public ButtonListener(Handler.Callback callback)
+    {
+      mHandler = new Handler(callback);
+    }
+
     public void onCheckedChanged(CompoundButton buttonView, boolean isChecked)
     {
       if (isChecked) {
-        onStop(END_STATE_SUCCESS);
+        mHandler.obtainMessage(MSG_ON_STOP, END_STATE_SUCCESS).sendToTarget();
       }
       else {
-        onStart();
+        mHandler.obtainMessage(MSG_ON_START).sendToTarget();
       }
     }
   }
@@ -117,6 +131,14 @@ public class BooPlayerView extends LinearLayout
    **/
   private class BooProgressListener extends BooPlayer.ProgressListener
   {
+    private Handler mHandler;
+
+    public BooProgressListener(Handler.Callback callback)
+    {
+      mHandler = new Handler(callback);
+    }
+
+
     public void onProgress(int state, double progress)
     {
       switch (state) {
@@ -130,11 +152,11 @@ public class BooPlayerView extends LinearLayout
           break;
 
         case BooPlayer.STATE_FINISHED:
-          onStop(END_STATE_SUCCESS);
+          mHandler.obtainMessage(MSG_ON_STOP, END_STATE_SUCCESS).sendToTarget();
           break;
 
         case BooPlayer.STATE_ERROR:
-          onStop(END_STATE_ERROR);
+          mHandler.obtainMessage(MSG_ON_STOP, END_STATE_ERROR).sendToTarget();
           break;
       }
     }
@@ -214,7 +236,7 @@ public class BooPlayerView extends LinearLayout
   {
     // Grab the play/pause button from the View. That's handed to the
     // BooPlayer.
-    Globals.get().mPlayer.setProgressListener(new BooProgressListener());
+    Globals.get().mPlayer.setProgressListener(new BooProgressListener(this));
     Globals.get().mPlayer.play(mBoo);
 
     // Initialize button state
@@ -313,7 +335,7 @@ public class BooPlayerView extends LinearLayout
       mButton.setIndeterminate(true);
 
 
-      mButton.setOnCheckedChangeListener(new ButtonListener());
+      mButton.setOnCheckedChangeListener(new ButtonListener(this));
     }
 
     // Remember
@@ -346,5 +368,26 @@ public class BooPlayerView extends LinearLayout
   private void onStart()
   {
     startPlaying();
+  }
+
+
+
+  public boolean handleMessage(Message msg)
+  {
+    switch (msg.what) {
+      case MSG_ON_START:
+        onStart();
+        break;
+
+      case MSG_ON_STOP:
+        onStop(msg.arg1);
+        break;
+
+      default:
+        Log.e(LTAG, "Unknown message id: " + msg.what);
+        return false;
+    }
+
+    return true;
   }
 }
