@@ -27,7 +27,9 @@ import fm.audioboo.app.R;
 import android.util.Log;
 
 /**
- * FIXME
+ * Presents a toggle button that switches between "play" and "pause" images,
+ * surrounded by a circular progress bar that either shows an indeterminate
+ * throbber, or a progress (presumably the playback progress).
  **/
 public class PlayPauseButton extends RelativeLayout
 {

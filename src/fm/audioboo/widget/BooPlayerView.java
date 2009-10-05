@@ -211,7 +211,7 @@ public class BooPlayerView extends LinearLayout implements Handler.Callback
 
     // Set title
     if (null == mBoo.mTitle) {
-      setTitle("New recording"); // FIXME
+      setTitle(mContext.getResources().getString(R.string.boo_player_new_title));
     }
     else {
       setTitle(mBoo.mTitle);

@@ -29,4 +29,10 @@
     <item>Refresh</item>
   </string-array>
 
+
+  <!--
+    Boo player view
+  -->
+  <string name="boo_player_new_title">New recording</string>
+
 </resources>
