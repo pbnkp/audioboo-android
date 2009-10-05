@@ -31,6 +31,15 @@
 
 
   <!--
+    Recording view
+  -->
+  <string-array name="record_menu_titles">
+    <item>Restart</item>
+    <item>Publish</item>
+  </string-array>
+
+
+  <!--
     Boo player view
   -->
   <string name="boo_player_new_title">New recording</string>

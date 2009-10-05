@@ -61,6 +61,10 @@ public class RecordActivity extends Activity
   // Extension for recordings.
   private static final String RECORDING_EXTENSION         = ".flac";
 
+  // Options menu IDs
+  private static final int  MENU_RESTART  = 0;
+  private static final int  MENU_PUBLISH  = 1;
+
 
   /***************************************************************************
    * Data members
@@ -72,6 +76,7 @@ public class RecordActivity extends Activity
   // filled with all possible bits of information yet. We (re-)create this
   // Boo whenever we reset the recorder.
   private Boo           mBoo;
+  private boolean       mBooIsNew;
 
   // Base path, prepended before mRelativeFilePath. It's on the external
   // storage and includes the file bundle.
@@ -84,6 +89,9 @@ public class RecordActivity extends Activity
 
   // Reference to the spectral view
   private SpectralView  mSpectralView;
+
+  // Reference to overlay view
+  private View          mOverlay;
 
 
   /***************************************************************************
@@ -102,37 +110,30 @@ public class RecordActivity extends Activity
   {
     super.onStart();
 
-    setContentView(R.layout.record);
-
-    if (null == mFlacRecorder) {
+    // Check whether the recorder file already exists. If it does, we'll not
+    // initialize the recorder, but only the player.
+    String filename = getRecorderFilename();
+    filename += Boo.EXTENSION;
+    Boo boo = Boo.constructFromFile(filename);
+    if (null != boo && 0.0 != boo.mDuration) {
+      mBoo = boo;
+      mBooIsNew = false;
+    }
+    else if (null == mFlacRecorder) {
       resetFLACRecorder();
     }
 
-
-    mRecordButton = (RecordButton) findViewById(R.id.record_button);
-    if (null != mRecordButton) {
-      mRecordButton.setMax(RECORDING_TIME_LIMIT);
-
-      mRecordButton.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
-        public void onCheckedChanged(CompoundButton buttonView, boolean isChecked)
-        {
-          if (isChecked) {
-            startRecording();
-          }
-          else {
-            stopRecording();
-          }
-        }
-      });
-    }
-
-    mSpectralView = (SpectralView) findViewById(R.id.record_spectral_view);
+    initUI();
   }
 
 
 
   private void startRecording()
   {
+    if (null == mFlacRecorder) {
+      resetFLACRecorder();
+    }
+
     Log.d(LTAG, "Resume recording!");
     mFlacRecorder.resumeRecording();
     mSpectralView.startAnimation();
@@ -167,6 +168,7 @@ public class RecordActivity extends Activity
 
     // Pause recording in onPause
     if (null != mFlacRecorder) {
+      mBoo.mDuration = mFlacRecorder.getDuration();
       mFlacRecorder.pauseRecording();
       mFlacRecorder.interrupt();
     }
@@ -176,6 +178,11 @@ public class RecordActivity extends Activity
     }
 
     stopPlayer();
+
+    // Write Boo
+    String filename = getRecorderFilename();
+    filename += Boo.EXTENSION;
+    mBoo.writeToFile(filename);
   }
 
 
@@ -187,26 +194,95 @@ public class RecordActivity extends Activity
     // again.
     super.onConfigurationChanged(config);
 
-    Log.d(LTAG, "RecordActivity: onConfiguratioNChanged");
-    // XXX ? maybe that's all that's required to load the landscape
-    // layout.
-    // FIXME: no, need to attach buttons to actions, and all that.
-    // FIXME:
-    //  - also need to do the whole shebang if the tab was selected, because the
-    //    following would lead to the wrong layout being used:
-    //    - switch to another tab
-    //    - open or close the keyboard
-    //    - switch back
-    //  - doesn't need to create data objects, but reinitialize the button view to
-    //    update the current recording state, etc
-    setContentView(R.layout.record);
+    initUI();
   }
 
 
 
-  private void drawAmplitudes(FLACRecorder.Amplitudes amp)
+  private void initUI()
   {
+    // This function is called either from onStart() or from
+    // onConfigurationChanged(). Either way, we need to reconstruct the
+    // activity's state as it was previously.
+
+    // First of all, we need to set the content view.
+    setContentView(R.layout.record);
+
+    // That also implies that we've lost our bindings for the button, etc.
+    mRecordButton = (RecordButton) findViewById(R.id.record_button);
+    if (null == mRecordButton) {
+      Log.e(LTAG, "No record button found!");
+      return;
+    }
+    mRecordButton.setMax(RECORDING_TIME_LIMIT);
+    mRecordButton.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+      public void onCheckedChanged(CompoundButton buttonView, boolean isChecked)
+      {
+        if (isChecked) {
+          startRecording();
+        }
+        else {
+          stopRecording();
+        }
+      }
+    });
+
+
+    mSpectralView = (SpectralView) findViewById(R.id.record_spectral_view);
+    if (null == mSpectralView) {
+      Log.e(LTAG, "No spectral view found!");
+      return;
+    }
+
+
+    mOverlay = findViewById(R.id.record_overlay);
+    if (null == mOverlay) {
+      Log.e(LTAG, "No overlay view found!");
+      return;
+    }
+
+    // If we've been recording, set the button/spectral view to the appropriate
+    // state.
+    if (null != mFlacRecorder) {
+      // If we're recording, we'll update everything regularly. If not, we'll
+      // want to set the button's progress properly nevertheless.
+      if (mFlacRecorder.isRecording()) {
+        mSpectralView.startAnimation();
+        mRecordButton.setChecked(true);
+      }
+      else {
+        FLACRecorder.Amplitudes amp = mFlacRecorder.getAmplitudes();
+        if (null != amp) {
+          mRecordButton.setProgress((int) (amp.mPosition / 1000));
+        }
+      }
+    }
+
+    // Show the player view, if there's a Boo to match.
+    if (null != mBoo) {
+      // Only show the player if the Boo has a duration. Otherwise there's
+      // nothing to play back.
+      Log.d(LTAG, "Boo: " + mBoo);
+      if (0.0 != mBoo.mDuration) {
+        showPlayer();
+      }
+
+      if (!mBooIsNew) {
+        mOverlay.setVisibility(View.VISIBLE);
+      }
+    }
+  }
+
+
+
+  private void updateRecordingState(FLACRecorder.Amplitudes amp)
+  {
+    if (null == mBoo.mRecordedAt) {
+      mBoo.mRecordedAt = new Date();
+    }
+
     mSpectralView.setAmplitudes(amp.mAverage, amp.mPeak);
+    mRecordButton.setProgress((int) (amp.mPosition / 1000));
   }
 
 
@@ -220,7 +296,6 @@ public class RecordActivity extends Activity
       player.startAnimation(animation);
       player.setVisibility(View.VISIBLE);
 
-      Log.d(LTAG, "Playing: " + mBoo);
       // Tell the player to lay the boo we remember.
       player.play(mBoo, false);
     }
@@ -250,11 +325,8 @@ public class RecordActivity extends Activity
       mFlacRecorder = null;
     }
 
-    // Instanciate recorder. TODO need to check whether the file exists,
-    // and use a different name.
-    String filename = getBasePath() + File.separator + RECORDING_BASE_NAME + RECORDING_EXTENSION;
-    File f = new File(filename);
-    f.getParentFile().mkdirs();
+    // Instanciate recorder.
+    String filename = getRecorderFilename();
 
     mFlacRecorder = new FLACRecorder(this, filename,
       new Handler(new Handler.Callback()
@@ -264,8 +336,7 @@ public class RecordActivity extends Activity
           switch (m.what) {
             case FLACRecorder.MSG_AMPLITUDES:
               FLACRecorder.Amplitudes amp = (FLACRecorder.Amplitudes) m.obj;
-              drawAmplitudes(amp);
-              mRecordButton.setProgress((int) (amp.mPosition / 1000));
+              updateRecordingState(amp);
               break;
 
             default:
@@ -283,9 +354,8 @@ public class RecordActivity extends Activity
     // Also recrete the Boo we're remembering. We can at least set the "recorded
     // at" date, and hijack the mHighMP3Url to point to our flac file.
     mBoo = new Boo();
-    mBoo.mRecordedAt = new Date();
     mBoo.mHighMP3Url = Uri.parse(String.format("file://%s", filename));
-    Log.d(LTAG, "New boo: " + mBoo);
+    mBooIsNew = true;
   }
 
 
@@ -301,19 +371,14 @@ public class RecordActivity extends Activity
   @Override
   public boolean onCreateOptionsMenu(Menu menu)
   {
-//    String[] menu_titles = getResources().getStringArray(R.array.shelfoverview_menu_titles);
-//    final int[] menu_icons = {
-//      android.R.drawable.ic_menu_add,
-//      R.drawable.scan,
-//      android.R.drawable.ic_menu_search,
-//      android.R.drawable.ic_menu_info_details,
-//    };
-//    for (int i = 0 ; i < menu_titles.length ; ++i) {
-//      menu.add(0, i, 0, menu_titles[i]).setIcon(menu_icons[i]);
-//// FIXME item.setAlphabeticShortcut(SearchManager.MENU_KEY);
-//    }
-//    return true;
-    menu.add(0, 0, 0, "Will contain upload and reset");
+    String[] menu_titles = getResources().getStringArray(R.array.record_menu_titles);
+    final int[] menu_icons = {
+      android.R.drawable.ic_menu_revert,
+      android.R.drawable.ic_menu_share,
+    };
+    for (int i = 0 ; i < menu_titles.length ; ++i) {
+      menu.add(0, i, 0, menu_titles[i]).setIcon(menu_icons[i]);
+    }
     return true;
   }
 
@@ -322,7 +387,29 @@ public class RecordActivity extends Activity
   @Override
   public boolean onOptionsItemSelected(MenuItem item)
   {
+    switch (item.getItemId()) {
+      case MENU_RESTART:
+        resetFLACRecorder();
+        initUI();
+        break;
+
+      default:
+        Log.e(LTAG, "Unknown menu id: " + item.getItemId());
+        return false;
+    }
+
     return true;
+  }
+
+
+
+  private String getRecorderFilename()
+  {
+    String filename = getBasePath() + File.separator + RECORDING_BASE_NAME + RECORDING_EXTENSION;
+    File f = new File(filename);
+    f.getParentFile().mkdirs();
+
+    return filename;
   }
 
 
