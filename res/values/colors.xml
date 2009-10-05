@@ -31,6 +31,7 @@
     Colors for the Record view. Also see res/color
   -->
   <color name="record_button_text_shadow">#cc000000</color>
+  <color name="record_overlay_background">#cc222222</color>
 
 
   <!--

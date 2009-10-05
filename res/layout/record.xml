@@ -13,13 +13,13 @@
     android:layout_width="fill_parent"
     android:layout_height="fill_parent"
     android:background="#3b3b3b"
-    android:padding="10dp"
   >
   <LinearLayout
       android:layout_width="fill_parent"
       android:layout_height="fill_parent"
       android:orientation="vertical"
       android:gravity="center"
+      android:padding="10dp"
     >
     <!-- Record button -->
     <fm.audioboo.widget.RecordButton android:id="@+id/record_button"
@@ -50,6 +50,16 @@
         audioboo:gridColor="#cc3b3b3b"
       />
   </LinearLayout>
+
+  <!-- Disabled overlay -->
+  <View android:id="@+id/record_overlay"
+      android:layout_width="fill_parent"
+      android:layout_height="fill_parent"
+      android:clickable="true"
+      android:visibility="gone"
+      android:background="@color/record_overlay_background"
+    />
+
 
   <!-- Player view -->
   <fm.audioboo.widget.BooPlayerView
