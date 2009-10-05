@@ -122,11 +122,34 @@ public class FLACRecorder extends Thread
 
 
 
+  public boolean isRecording()
+  {
+    return mShouldRun && mShouldRecord;
+  }
+
+
+
   public double getDuration()
   {
     // Duration for Boos is normally in secs, and we're remembering msecs here,
     // so we'll need to convert.
     return mDuration / 1000;
+  }
+
+
+
+  public Amplitudes getAmplitudes()
+  {
+    if (null == mEncoder) {
+      return null;
+    }
+
+    Amplitudes amp = new Amplitudes();
+    amp.mPosition = (long) mDuration;
+    amp.mPeak = mEncoder.getMaxAmplitude();
+    amp.mAverage = mEncoder.getAverageAmplitude();
+
+    return amp;
   }
 
 
@@ -242,11 +265,7 @@ public class FLACRecorder extends Thread
                   mHandler.obtainMessage(MSG_WRITE_ERROR).sendToTarget();
                 }
                 else {
-                  Amplitudes amp = new Amplitudes();
-                  amp.mPosition = (long) mDuration;
-                  amp.mPeak = mEncoder.getMaxAmplitude();
-                  amp.mAverage = mEncoder.getAverageAmplitude();
-
+                  Amplitudes amp = getAmplitudes();
                   mHandler.obtainMessage(MSG_AMPLITUDES, amp).sendToTarget();
                 }
               }
