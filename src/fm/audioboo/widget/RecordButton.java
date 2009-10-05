@@ -134,7 +134,7 @@ public class RecordButton extends RelativeLayout
 
 
   /**
-   * see @setProgress
+   * @see setProgress
    **/
   public void setMax(int max)
   {
@@ -142,6 +142,31 @@ public class RecordButton extends RelativeLayout
     if (null != mProgress) {
       mProgress.setMax(max);
     }
+  }
+
+
+
+  /**
+   * Sets checked state of the button. @See isChecked below.
+   **/
+  public void setChecked(boolean checked)
+  {
+    if (null != mToggle) {
+      mToggle.setChecked(checked);
+    }
+  }
+
+
+
+  /**
+   * @see setChecked above
+   **/
+  public boolean isChecked()
+  {
+    if (null == mToggle) {
+      return false;
+    }
+    return mToggle.isChecked();
   }
 
 
