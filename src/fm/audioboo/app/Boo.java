@@ -38,8 +38,15 @@ public class Boo implements Serializable
   // Log ID
   private static final String LTAG = "Boo";
 
+
+
+  /***************************************************************************
+   * Public constants
+   **/
   // Serialized file extension.
-  private static final String EXTENSION = ".boo";
+  public static final String EXTENSION = ".boo";
+
+
 
   /***************************************************************************
    * Public data
@@ -72,18 +79,11 @@ public class Boo implements Serializable
 
 
   /**
-   * Assuming the filename specifies a local file, reads a serialized Boo
-   * from a file with that name and the EXTENSION defined above.
+   * Tries to construct a Boo from a file with the given filename.
    **/
   public static Boo constructFromFile(String filename)
   {
     File f = new File(filename);
-    if (!f.exists()) {
-      return null;
-    }
-
-    String boo_filename = filename + EXTENSION;
-    f = new File(boo_filename);
     if (!f.exists()) {
       return null;
     }
@@ -96,11 +96,11 @@ public class Boo implements Serializable
 
       return boo;
     } catch (FileNotFoundException ex) {
-      Log.e(LTAG, "File not found: " + boo_filename);
+      Log.e(LTAG, "File not found: " + filename);
     } catch (ClassNotFoundException ex) {
-      Log.e(LTAG, "Class not found: " + boo_filename);
+      Log.e(LTAG, "Class not found: " + filename);
     } catch (IOException ex) {
-      Log.e(LTAG, "Error reading file: " + boo_filename);
+      Log.e(LTAG, "Error reading file: " + filename);
     }
 
     return null;
@@ -109,22 +109,8 @@ public class Boo implements Serializable
 
 
   /**
-   * If the HighMP3Url field is set to a local file, writes the metadata to
-   * a file with that name and the EXTENSION defined above.
+   * Serializes the Boo class to a file specified by the given filename.
    **/
-  public void write()
-  {
-    if (null == mHighMP3Url) {
-      return;
-    }
-
-    String filename = mHighMP3Url.getPath();
-    filename += EXTENSION;
-    writeToFile(filename);
-  }
-
-
-
   public void writeToFile(String filename)
   {
     try {
