@@ -44,4 +44,16 @@
   -->
   <string name="boo_player_new_title">New recording</string>
 
+
+  <!--
+    Publish view
+  -->
+  <string name="publish_activity_title">AudioBoo Publish</string>
+
+  <string name="publish_label_picture">Attach A Picture</string>
+  <string name="publish_label_title">Describe Your Boo</string>
+  <string name="publish_label_tags">Tag It</string>
+  <string name="publish_label_submit">That's All</string>
+
+  <string name="publish_submit_text">Upload</string>
 </resources>

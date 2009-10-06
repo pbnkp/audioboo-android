@@ -53,5 +53,9 @@
         android:configChanges="orientation|keyboardHidden"
       />
 
+    <activity android:name=".PublishActivity"
+        android:configChanges="orientation|keyboardHidden"
+      />
+
   </application>
 </manifest>

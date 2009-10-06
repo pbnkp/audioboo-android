@@ -40,4 +40,10 @@
   <color name="boo_player_background">#cc222222</color>
   <color name="boo_player_title">#ccffffff</color>
 
+
+  <!--
+    Colors for the publish view
+  -->
+  <color name="publish_label">#ccffffff</color>
+
 </resources>

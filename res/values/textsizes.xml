@@ -39,5 +39,5 @@
   <!--
     Publish view
   -->
-  <dimen name="publish_label">@dimen/text_large</dimen>
+  <dimen name="publish_label">@dimen/text_standard</dimen>
 </resources>
