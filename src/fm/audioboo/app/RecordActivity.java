@@ -11,6 +11,8 @@ package fm.audioboo.app;
 
 import android.app.Activity;
 
+import android.content.Intent;
+
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
@@ -42,7 +44,7 @@ import android.util.Log;
 
 /**
  * The RecordActivity allows for recording (and playing back) of Boos, and
- * launches UploadAcitivity.
+ * launches PublishAcitivity.
  **/
 public class RecordActivity extends Activity
 {
@@ -134,7 +136,7 @@ public class RecordActivity extends Activity
       resetFLACRecorder();
     }
 
-    Log.d(LTAG, "Resume recording!");
+    // Log.d(LTAG, "Resume recording!");
     mFlacRecorder.resumeRecording();
     mSpectralView.startAnimation();
 
@@ -147,7 +149,7 @@ public class RecordActivity extends Activity
 
   private void stopRecording()
   {
-    Log.d(LTAG, "Pause recording!");
+    // Log.d(LTAG, "Pause recording!");
     mFlacRecorder.pauseRecording();
     mSpectralView.stopAnimation();
 
@@ -183,6 +185,28 @@ public class RecordActivity extends Activity
     String filename = getRecorderFilename();
     filename += Boo.EXTENSION;
     mBoo.writeToFile(filename);
+  }
+
+
+
+  @Override
+  public void onResume()
+  {
+    super.onResume();
+
+    // Show the player view, if there's a Boo to match.
+    if (null != mBoo) {
+      // Only show the player if the Boo has a duration. Otherwise there's
+      // nothing to play back.
+      // Log.d(LTAG, "Boo: " + mBoo);
+      if (0.0 != mBoo.mDuration) {
+        showPlayer();
+      }
+
+      if (!mBooIsNew) {
+        mOverlay.setVisibility(View.VISIBLE);
+      }
+    }
   }
 
 
@@ -255,20 +279,6 @@ public class RecordActivity extends Activity
         if (null != amp) {
           mRecordButton.setProgress((int) (amp.mPosition / 1000));
         }
-      }
-    }
-
-    // Show the player view, if there's a Boo to match.
-    if (null != mBoo) {
-      // Only show the player if the Boo has a duration. Otherwise there's
-      // nothing to play back.
-      Log.d(LTAG, "Boo: " + mBoo);
-      if (0.0 != mBoo.mDuration) {
-        showPlayer();
-      }
-
-      if (!mBooIsNew) {
-        mOverlay.setVisibility(View.VISIBLE);
       }
     }
   }
@@ -391,6 +401,15 @@ public class RecordActivity extends Activity
       case MENU_RESTART:
         resetFLACRecorder();
         initUI();
+        break;
+
+      case MENU_PUBLISH:
+        Intent i = new Intent(this, PublishActivity.class);
+        String filename = getRecorderFilename() + Boo.EXTENSION;
+        i.putExtra(PublishActivity.EXTRA_BOO_FILENAME, filename);
+        startActivity(i);
+        // TODO need to signal to this activity whether upload was
+        // cancelled; if not, reset() needs to be performed automatically.
         break;
 
       default:
