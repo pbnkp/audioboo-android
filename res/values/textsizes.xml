@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+ This file is part of AudioBoo, an android program for audio blogging.
+ Copyright (C) 2009 BestBefore Media Ltd. All rights reserved.
+
+ Author: Jens Finkhaeuser <jens@finkhaeuser.de>
+
+ $Id$
+-->
+<resources>
+  <!-- Define standard text sizes to be used in the layouts -->
+
+  <!-- Standard text sizes -->
+  <dimen name="text_smaller">10sp</dimen>
+  <dimen name="text_small">12sp</dimen>
+  <dimen name="text_standard">15sp</dimen>
+  <dimen name="text_large">16sp</dimen>
+  <dimen name="text_larger">17sp</dimen>
+
+  <!-- Text sizes for particular layouts -->
+
+  <!--
+    Texts for the player view
+  -->
+  <dimen name="boo_player_title">@dimen/text_small</dimen>
+
+  <!--
+    Record button
+  -->
+  <dimen name="record_button_text">@dimen/text_larger</dimen>
+
+  <!--
+    Recent boos view
+  -->
+  <dimen name="recent_boos_item_author">@dimen/text_small</dimen>
+  <dimen name="recent_boos_item_title">@dimen/text_large</dimen>
+  <dimen name="recent_boos_item_location">@dimen/text_smaller</dimen>
+
+  <!--
+    Publish view
+  -->
+  <dimen name="publish_label">@dimen/text_large</dimen>
+</resources>

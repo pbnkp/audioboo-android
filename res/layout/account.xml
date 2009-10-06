@@ -4,7 +4,6 @@
     android:layout_width="fill_parent"
     android:layout_height="fill_parent"
     android:gravity="center"
-    android:background="#ff0000"
   >
 
 <!-- Progress view -->
@@ -17,6 +16,7 @@
     audioboo:pieColor="@color/recent_boos_progress_pie"
     audioboo:indeterminateBitmap="@drawable/play_pause_buffer_fill"
     audioboo:indeterminateMaskBitmap="@drawable/play_pause_buffer_mask"
+    android:background="#ff0000"
   />
 
 </RelativeLayout>

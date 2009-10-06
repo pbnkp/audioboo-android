@@ -28,7 +28,7 @@
       android:layout_marginTop="2dp"
       android:layout_marginLeft="5dp"
       android:layout_marginRight="5dp"
-      android:textSize="12dp"
+      android:textSize="@dimen/boo_player_title"
       android:textStyle="bold"
       android:textColor="@color/boo_player_title"
       android:ellipsize="end"

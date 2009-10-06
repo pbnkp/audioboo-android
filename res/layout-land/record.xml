@@ -7,42 +7,66 @@
 
  $Id$
 -->
-<LinearLayout
+<RelativeLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:audioboo="http://schemas.android.com/apk/res/fm.audioboo.app"
     android:layout_width="fill_parent"
     android:layout_height="fill_parent"
-    android:orientation="vertical"
     android:background="#3b3b3b"
-    android:padding="10dp"
-    android:gravity="center"
   >
-  <!-- Record button -->
-  <fm.audioboo.widget.RecordButton android:id="@+id/record_button"
-      android:layout_width="fill_parent"
-      android:layout_height="wrap_content"
-      android:layout_marginTop="5dp"
-      android:gravity="center"
-      audioboo:textInitial="Start"
-      audioboo:textOn="Pause"
-      audioboo:textOff="Resume"
-    />
-
-  <!-- Pseudo-spectral analysis view -->
-  <fm.audioboo.widget.SpectralView android:id="@+id/record_spectral_view"
+  <LinearLayout
       android:layout_width="fill_parent"
       android:layout_height="fill_parent"
-      android:background="@drawable/spectral_view_background"
-      audioboo:inactiveDrawable="@drawable/spectral_view_inactive"
-      audioboo:inactiveTintColor="#bf3b3b3b"
-      audioboo:numberOfBars="13"
-      audioboo:frameDrawable="@drawable/spectral_view_frame"
-      audioboo:evenBarDrawable="@drawable/spectral_view_even_bar"
-      audioboo:oddBarDrawable="@drawable/spectral_view_odd_bar"
-      audioboo:barPaddingLeft="5dp"
-      audioboo:barPaddingRight="3dp"
-      audioboo:barPaddingTop="3dp"
-      audioboo:barPaddingBottom="3dp"
-      audioboo:gridColor="#cc3b3b3b"
+      android:orientation="vertical"
+      android:gravity="center"
+      android:padding="10dp"
+    >
+    <!-- Record button -->
+    <fm.audioboo.widget.RecordButton android:id="@+id/record_button"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="5dp"
+        android:gravity="center"
+        audioboo:textInitial="Start"
+        audioboo:textOn="Pause"
+        audioboo:textOff="Resume"
+      />
+
+    <!-- Pseudo-spectral analysis view -->
+    <fm.audioboo.widget.SpectralView android:id="@+id/record_spectral_view"
+        android:layout_width="fill_parent"
+        android:layout_height="fill_parent"
+        android:background="@drawable/spectral_view_background"
+        audioboo:inactiveDrawable="@drawable/spectral_view_inactive"
+        audioboo:inactiveTintColor="#bf3b3b3b"
+        audioboo:numberOfBars="13"
+        audioboo:frameDrawable="@drawable/spectral_view_frame"
+        audioboo:evenBarDrawable="@drawable/spectral_view_even_bar"
+        audioboo:oddBarDrawable="@drawable/spectral_view_odd_bar"
+        audioboo:barPaddingLeft="5dp"
+        audioboo:barPaddingRight="3dp"
+        audioboo:barPaddingTop="3dp"
+        audioboo:barPaddingBottom="3dp"
+        audioboo:gridColor="#cc3b3b3b"
+      />
+  </LinearLayout>
+
+  <!-- Disabled overlay -->
+  <View android:id="@+id/record_overlay"
+      android:layout_width="fill_parent"
+      android:layout_height="fill_parent"
+      android:clickable="true"
+      android:visibility="gone"
+      android:background="@color/record_overlay_background"
     />
-</LinearLayout>
+
+
+  <!-- Player view -->
+  <fm.audioboo.widget.BooPlayerView
+      android:id="@+id/record_player"
+      android:layout_width="fill_parent"
+      android:layout_height="wrap_content"
+      android:layout_alignParentBottom="true"
+      android:visibility="invisible"
+    />
+</RelativeLayout>
