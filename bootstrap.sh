@@ -49,3 +49,6 @@ done
 # 5. Build native stuff. By default, build the release version, but if the
 #    a command line target "debug" is provided, build the debug version
 ./build-native.sh "$@"
+
+# 6. Build external libs. The artefacts end up in the libs subdirectory.
+./build-externals.sh "$@"
