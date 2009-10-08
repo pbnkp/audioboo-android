@@ -16,6 +16,13 @@ import android.net.Uri;
 import java.net.URI;
 import java.net.URISyntaxException;
 
+import org.xbill.DNS.Record;
+import org.xbill.DNS.SRVRecord;
+import org.xbill.DNS.Type;
+import org.xbill.DNS.Lookup;
+import org.xbill.DNS.TextParseException;
+import org.xbill.DNS.SimpleResolver;
+
 import java.io.IOException;
 
 import org.apache.http.impl.conn.tsccm.ThreadSafeClientConnManager;
@@ -23,19 +30,25 @@ import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.conn.scheme.SchemeRegistry;
 import org.apache.http.conn.scheme.Scheme;
 import org.apache.http.conn.scheme.PlainSocketFactory;
-// import org.apache.http.conn.ssl.SSLSocketFactory;
 import org.apache.http.params.HttpParams;
 import org.apache.http.params.BasicHttpParams;
 import org.apache.http.params.HttpConnectionParams;
 import org.apache.http.params.HttpProtocolParams;
 import org.apache.http.HttpVersion;
-//import org.apache.http.auth.UsernamePasswordCredentials;
-//import org.apache.http.auth.AuthScope;
 
+import org.apache.http.client.methods.HttpEntityEnclosingRequestBase; // FIXME remove
+import org.apache.http.client.methods.HttpRequestBase;
 import org.apache.http.client.methods.HttpGet;
+import org.apache.http.client.methods.HttpPost;
 import org.apache.http.HttpResponse;
-import org.apache.http.HttpEntity;
 
+import org.apache.http.HttpEntity;
+import org.apache.http.client.entity.UrlEncodedFormEntity;
+import org.apache.http.entity.mime.MultipartEntity;
+import org.apache.http.entity.mime.content.*;
+import org.apache.http.message.BasicNameValuePair;
+
+import java.io.File;
 import java.io.BufferedReader;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -45,6 +58,11 @@ import java.util.StringTokenizer;
 import java.text.SimpleDateFormat;
 import java.util.Map;
 import java.util.HashMap;
+import java.util.TreeMap;
+import java.util.LinkedList;
+
+import java.math.BigInteger;
+import java.security.MessageDigest;
 
 import android.util.Log;
 
@@ -68,34 +86,84 @@ public class API
   // API version we're requesting
   public static final int API_VERSION = 200;
 
-
   /***************************************************************************
    * Private constants
    **/
   // Log ID
   private static final String LTAG  = "API";
 
+  // Default API host. Used as a fallback if SRV lookup fails.
+  private static final String DEFAULT_API_HOST            = "api.audioboo.fm";
+  //FIXME
+//  private static final String DEFAULT_API_HOST            = "api.staging.audioboo.fm";
+
+  // Scheme for API requests.
+  private static final String API_REQUEST_URI_SCHEME      = "http";
+
   // Base URL for API calls. XXX Trailing slash is expected.
   private static final String BASE_URL                    = "http://api.audioboo.fm/";
+  // private static final String BASE_URL                    = "http://api.staging.audioboo.fm/";
+
+  // Format string for making SRV lookups. %s is the client ID.
+  private static final String SRV_LOOKUP_FORMAT           = "_%s._audioboo._tcp.audioboo.fm.";
+  // Attempts to perform SRV lookup before reverting to BASE_URL above.
+  //private static final int    SRV_LOOKUP_ATTEMPTS_MAX     = 3; 
+  // FIXME disable SRV lookup for now.
+  private static final int    SRV_LOOKUP_ATTEMPTS_MAX     = 0; 
 
   // Request/response format for API calls. XXX Leading dot is expected.
-  private static final String FORMAT                      = ".json";
+  private static final String API_FORMAT                  = "json";
 
   // URI snippets for various APIs
   private static final String API_RECENT                  = "audio_clips";
+  private static final String API_UPLOAD                  = "account/audio_clips";
 
-  // API version parameter
+  private static final String API_REGISTER                = "sources/register";
+
+  // API version, format parameter
   private static final String KEY_API_VERSION             = "version";
+  private static final String KEY_API_FORMAT              = "fmt";
+
+  // Signature-related keys
+  private static final String KEY_SOURCE_KEY              = "source[key]";
+  private static final String KEY_SOURCE_SIGNATURE        = "source[signature]";
+
+  private static final String KEY_SERVICE_KEY             = "service[key]";
+  private static final String KEY_SERVICE_SIGNATURE       = "service[signature]";
+
+  // Prefix for signed parameters
+  private static final String SIGNED_PARAM_PREFIX         = "signed_";
+
+  // Service key/secret
+  private static final String SERVICE_KEY                 = "06b4c02d1aa1cb98562264c1";
+  //private static final String SERVICE_SECRET              = "0334a90b23ee15b9d05859f21d6759169dd6758512ea852e8e7fb673b583c581";
+  private static final String SERVICE_SECRET              = "--secret--";
+
+  // Request types: we have GET, FORM and MULTIPART.
+  private static final int RT_GET                         = 0;
+  private static final int RT_FORM                        = 1;
+  private static final int RT_MULTIPART                   = 2;
+
+  // Map of APIs to request types.
+  private static final HashMap<String, Integer> REQUEST_TYPES;
+  static {
+    REQUEST_TYPES = new HashMap<String, Integer>();
+    REQUEST_TYPES.put(API_RECENT, RT_GET);
+    REQUEST_TYPES.put(API_UPLOAD, RT_MULTIPART);
+    REQUEST_TYPES.put(API_REGISTER, RT_FORM);
+    // XXX Add request types for different API calls; if they're not specified
+    //     here, the default is RT_GET.
+  }
 
   // HTTP Client parameters
-  private static final int          HTTP_TIMEOUT          = 60 * 1000;
-  private static final HttpVersion  HTTP_VERSION          = HttpVersion.HTTP_1_1;
+  private static final int          HTTP_TIMEOUT            = 60 * 1000;
+  private static final HttpVersion  HTTP_VERSION            = HttpVersion.HTTP_1_1;
 
-  // Fetcher startup delay. Avoids high load at startup that could impact UX.
-  private static final int          FETCHER_STARTUP_DELAY = 5 * 1000;
+  // Requester startup delay. Avoids high load at startup that could impact UX.
+  private static final int          REQUESTER_STARTUP_DELAY = 5 * 1000;
 
   // Chunk size to read responses in (in Bytes).
-  private static final int          READ_CHUNK_SIZE       = 8192;
+  private static final int          READ_CHUNK_SIZE         = 8192;
 
   /***************************************************************************
    * Protected static data
@@ -107,34 +175,64 @@ public class API
   /***************************************************************************
    * Helper class for fetching API responses in the background.
    **/
-  private class Fetcher extends Thread
+  private class Requester extends Thread
   {
     public boolean keepRunning = true;
 
-    private String    mUriString;
-    private Handler   mHandler;
+    private String                  mApi;
+    private HashMap<String, String> mParams;
+    private HashMap<String, String> mSignedParams;
+    private HashMap<String, String> mFileParams;
+    private Handler                 mHandler;
 
-    public Fetcher(String uri, Handler handler)
+    public Requester(String api,
+        HashMap<String, String> params,
+        HashMap<String, String> signedParams,
+        HashMap<String, String> fileParams,
+        Handler handler)
     {
       super();
-      mUriString = uri;
+      mApi = api;
+      mParams = params;
+      mSignedParams = signedParams;
+      mFileParams = fileParams;
       mHandler = handler;
     }
+
 
     @Override
     public void run()
     {
       // Delay before starting to fetch stuff.
       try {
-        sleep(FETCHER_STARTUP_DELAY);
+// FIXME        sleep(Requester_STARTUP_DELAY);
+        sleep(20);
       } catch (java.lang.InterruptedException ex) {
         // pass
       }
 
-      // The loop construct prevents updateFeed from being executed if an
-      // external interrupt occurred with a request to shut down the thread.
+      // The loop ensures that external interrrupts don't mean the request is
+      // never executed..
       while (keepRunning) {
-        fetch(mUriString, mHandler);
+        // Resolve API host. Should return immediately after the first time
+        // it's run.
+        resolveAPIHost();
+
+        // After resolving the API host, we need to obtain the appropriate
+        // key(s) for API calls. This should return immediately after the
+        // first time it's run.
+        initializeAPIKeys();
+
+        // Construct request.
+        HttpRequestBase request = constructRequest(mApi, mParams, mSignedParams,
+            mFileParams);
+
+        // Perform request.
+        byte[] data = fetchRawSynchronous(request, mHandler);
+        if (null != data) {
+          mHandler.obtainMessage(ERR_SUCCESS, new String(data)).sendToTarget();
+        }
+
         keepRunning = false;
       }
     }
@@ -145,9 +243,21 @@ public class API
    * Data members
    **/
 
-  // Fetcher. There's only one instance, so only one API call can be scheduled
+  // Requester. There's only one instance, so only one API call can be scheduled
   // at a time.
-  private Fetcher mFetcher;
+  private Requester     mRequester;
+
+  // API host to use in requests.
+  private String        mAPIHost;
+
+  // Key and secret for signing requests. Defaults to service (not source/device)
+  // values.
+  private String        mAPIKey             = SERVICE_KEY;
+  private String        mAPISecret          = SERVICE_SECRET;
+
+  // Parameter names for the key and signature.
+  private String        mParamNameKey       = KEY_SERVICE_KEY;
+  private String        mParamNameSignature = KEY_SERVICE_SIGNATURE;
 
   /***************************************************************************
    * Implementation
@@ -246,31 +356,126 @@ public class API
    **/
   public void fetchRecentBoos(final Handler result_handler)
   {
-    // XXX The params map below doesn't seem to work.
-    HashMap<String, String> params = new HashMap<String, String>();
-    params.put("find[limit]", "25");
-    params.put("find[pg_rated]", "1");
-    String uri_string = getApiUrl(API_RECENT, params);
-    //Log.d(LTAG, "uri: " + uri_string);
-
-    if (null != mFetcher) {
-      mFetcher.keepRunning = false;
-      mFetcher.interrupt();
+    if (null != mRequester) {
+      mRequester.keepRunning = false;
+      mRequester.interrupt();
     }
 
-    mFetcher = new Fetcher(uri_string, new Handler(new Handler.Callback() {
-      public boolean handleMessage(Message msg)
-      {
-        if (ERR_SUCCESS == msg.what) {
-          parseRecentBoosResponse((String) msg.obj, result_handler);
+    // This request has no parameters.
+    mRequester = new Requester(API_RECENT, null, null, null,
+        new Handler(new Handler.Callback() {
+          public boolean handleMessage(Message msg)
+          {
+            if (ERR_SUCCESS == msg.what) {
+              parseRecentBoosResponse((String) msg.obj, result_handler);
+            }
+            else {
+              result_handler.obtainMessage(msg.what, msg.obj).sendToTarget();
+            }
+            return true;
+          }
         }
-        else {
-          result_handler.obtainMessage(msg.what, msg.obj).sendToTarget();
+    ));
+    mRequester.start();
+  }
+
+
+  // FIXME
+  public void uploadBoo(Boo boo, final Handler result_handler)
+  {
+    if (null != mRequester) {
+      mRequester.keepRunning = false;
+      mRequester.interrupt();
+    }
+
+    // Prepare parameters.
+    HashMap<String, String> params = new HashMap<String, String>();
+    params.put("debug_signature", "true");
+
+    // Prepare signed parameters
+    HashMap<String, String> signedParams = new HashMap<String, String>();
+    signedParams.put("audio_clip[title]", "Android test");
+    signedParams.put("audio_clip[local_recorded_at]", "06/10/2009 23:47");
+//    HashMap<String, String> signedParams = null;
+//    params.put("audio_clip[title]", "Android test");
+//    params.put("audio_clip[local_recorded_at]", "06/10/2009 23:47");
+
+    // Prepare files.
+    HashMap<String, String> fileParams = new HashMap<String, String>();
+    fileParams.put("audio_clip[uploaded_data]", boo.mHighMP3Url.getPath());
+
+//	BBURLRequest* request = [BBURLRequest requestWithURL:[NSURL serverRelativeURL:@"boos"]];
+//	[request setValue:@"xml" forParameter:@"fmt"];
+//	[request setHTTPMethod:@"POST"];
+//	
+//	NSString* presentedTitle = self.title ? self.title : self.placeholderTitle;
+//	[request setValue:presentedTitle forSignedParameter:@"audio_clip[title]"];
+//	
+//	if (self.tags)
+//		[request setValue:self.tags forSignedParameter:@"audio_clip[tags]"];
+//	if ([[audioWriters lastObject] lastModified])
+//		[request setValue:[[[audioWriters lastObject] lastModified] description] forSignedParameter:@"audio_clip[local_recorded_at]"];
+//	if (self.location) {
+//		[request setValue:@"1" forSignedParameter:@"audio_clip[public_location]"];
+//		[request setValue:[NSString stringWithFormat:@"%lf", self.location.coordinate.latitude] forSignedParameter:@"audio_clip[location_latitude]"];
+//		[request setValue:[NSString stringWithFormat:@"%lf", self.location.coordinate.longitude] forSignedParameter:@"audio_clip[location_longitude]"];
+//		[request setValue:[NSString stringWithFormat:@"%lf", self.location.horizontalAccuracy] forSignedParameter:@"audio_clip[location_accuracy]"];
+//	}
+//	
+//	if ([self hasImageAttachment]) {
+//		[request setFile:self.imagePath forParameter:@"audio_clip[uploaded_image]"];
+//	}
+//	
+//	[request setFile:self.audioPath forParameter:@"audio_clip[uploaded_data]"];
+//	
+//	[connection release];
+//	connection = [[ABURLConnection alloc] initWithRequest:request delegate:self];
+
+    mRequester = new Requester(API_UPLOAD, params, signedParams, fileParams,
+        new Handler(new Handler.Callback() {
+          public boolean handleMessage(Message msg)
+          {
+            if (ERR_SUCCESS == msg.what) {
+              Log.d(LTAG, "Response: " + (String) msg.obj);
+            }
+            else {
+              result_handler.obtainMessage(msg.what, msg.obj).sendToTarget();
+            }
+            return true;
+          }
         }
-        return true;
-      }
-    }));
-    mFetcher.start();
+    ));
+    mRequester.start();
+
+//    Thread th = new Thread() {
+//      public void run()
+//      {
+////    params.put("audio_clip[title]", boo.mTitle);
+////    params.put("audio_clip[local_recorded_at]", boo.mRecordedAt.toString());
+//    // TODO add tags, etc.
+////    String uri_string = getApiUrl(API_UPLOAD, params);
+//    Log.d(LTAG, "uri: " + uri_string);
+//
+//    HttpPost post = new HttpPost(uri_string);
+//    FileBody bin = new FileBody(new File(boo.mHighMP3Url.getPath()));
+//
+//    MultipartEntity reqEntity = new MultipartEntity();
+//    reqEntity.addPart("audio_clip[uploaded_data]", bin);
+//
+//    post.setEntity(reqEntity);
+//    try {
+//    HttpResponse response = sClient.execute(post);
+//
+//    HttpEntity resEntity = response.getEntity();
+//    if (resEntity != null) {
+//        resEntity.consumeContent();
+//    }
+//    } catch (IOException ex) {
+//      Log.e(LTAG, "IO EXCEPTIOn: " + ex.getMessage());
+//    }
+//      }
+//    };
+//    th.start();
   }
 
 
@@ -293,30 +498,51 @@ public class API
 
 
   /**
-   * Prepare an API URL
+   * Concatenates parameters into a URL-encoded query string.
    **/
-  private String getApiUrl(String api)
+  private String constructQueryString(HashMap<String, String> params)
   {
-    return getApiUrl(api, new HashMap<String, String>());
+    String query_string = "";
+
+    if (null != params) {
+      for (Map.Entry<String, String> param : params.entrySet()) {
+        query_string += String.format("%s=%s&",
+            Uri.encode(param.getKey()), Uri.encode(param.getValue()));
+      }
+      if (0 < query_string.length()) {
+        query_string = query_string.substring(0, query_string.length() - 1);
+      }
+    }
+
+    return query_string;
   }
 
 
-  private String getApiUrl(String api, HashMap<String, String> params)
+
+  /**
+   * Concatenates parameters into a string without URL encoding.
+   **/
+  private String concatenateParamtersSorted(HashMap<String, String> params)
   {
-    params.put(KEY_API_VERSION, String.valueOf(API_VERSION));
+    String result = "";
 
-    String param_string = "";
-    for (Map.Entry<String, String> param : params.entrySet()) {
-      param_string += Uri.encode(param.getKey())
-        + "="
-        + Uri.encode(param.getValue())
-        + "&";
-    }
-    if (0 < param_string.length()) {
-      param_string = param_string.substring(0, param_string.length() - 1);
+    if (null != params) {
+      // Create a sorted map.
+      TreeMap<String, String> sorted = new TreeMap<String, String>();
+      for (Map.Entry<String, String> param : params.entrySet()) {
+        sorted.put(param.getKey(), param.getValue());
+      }
+
+      // Now concatenate the sorted values.
+      for (Map.Entry<String, String> param : sorted.entrySet()) {
+        result += String.format("%s=%s&", param.getKey(), param.getValue());
+      }
+      if (0 < result.length()) {
+        result = result.substring(0, result.length() - 1);
+      }
     }
 
-    return BASE_URL + api + FORMAT + "?" + param_string;
+    return result;
   }
 
 
@@ -346,7 +572,6 @@ public class API
   }
 
 
-
   /**
    * Synchronous version of fetchRaw, used in both fetch() and fetchRaw(). May
    * send error messages, if the Handler is non-null, but always returns the
@@ -354,22 +579,14 @@ public class API
    **/
   public byte[] fetchRawSynchronous(String uri_string, Handler handler)
   {
-    // Log.d(LTAG, "Fetching " + uri_string);
+    HttpGet request = new HttpGet(uri_string);
+    return fetchRawSynchronous(request, handler);
+  }
 
-    // Construct URI instance
-    URI request_uri = null;
-    try {
-      request_uri = new URI(uri_string);
-    } catch (URISyntaxException ex) {
-      Log.e(LTAG, "Invalid API URI: " + uri_string);
-      if (null != handler) {
-        handler.obtainMessage(ERR_INVALID_URI, uri_string).sendToTarget();
-      }
-      return null;
-    }
 
-    // Construct request
-    HttpGet request = new HttpGet(request_uri);
+
+  public byte[] fetchRawSynchronous(HttpRequestBase request, Handler handler)
+  {
     HttpResponse response;
     try {
       response = sClient.execute(request);
@@ -377,9 +594,10 @@ public class API
       // Read response
       HttpEntity entity = response.getEntity();
       if (null == entity) {
-        Log.e(LTAG, "Response is empty: " + request_uri);
+        Log.e(LTAG, "Response is empty: " + request.getURI().toString());
         if (null != handler) {
-          handler.obtainMessage(ERR_EMPTY_RESPONSE, uri_string).sendToTarget();
+          handler.obtainMessage(ERR_EMPTY_RESPONSE, request.getURI().toString()
+              ).sendToTarget();
         }
         return null;
       }
@@ -395,4 +613,236 @@ public class API
     }
   }
 
+
+
+  /**
+   * Construct an HTTP request based on the API and parameters to query.
+   **/
+  private HttpRequestBase constructRequest(String api,
+      HashMap<String, String> params,
+      HashMap<String, String> signedParams,
+      HashMap<String, String> fileParams)
+  {
+    // 1. Construct request URI.
+    String request_uri = String.format("%s://%s/%s",
+        API_REQUEST_URI_SCHEME, mAPIHost, api);
+    Log.d(LTAG, "Request URI: " + request_uri);
+
+    // 2. Initialize params map. We always send the API version, and the API key
+    if (null == params) {
+      params = new HashMap<String, String>();
+    }
+    params.put(KEY_API_VERSION, String.valueOf(API_VERSION));
+    params.put(KEY_API_FORMAT, API_FORMAT);
+    params.put(mParamNameKey, mAPIKey);
+
+    // 3. If there are signed parameters, append them to the params map
+    if (null != signedParams) {
+      for (Map.Entry<String, String> param : signedParams.entrySet()) {
+        params.put(String.format("%s%s", SIGNED_PARAM_PREFIX, param.getKey()),
+              param.getValue());
+      }
+    }
+
+    // 4. If there are signed parameters, create the signature.
+    if (null != signedParams) {
+      String signature = String.format("%s:%s:%s", request_uri,
+          concatenateParamtersSorted(signedParams), mAPISecret);
+      Log.d(LTAG, "signature pre signing: " + signature);
+      try {
+        MessageDigest m = MessageDigest.getInstance("SHA-1");
+        m.update(signature.getBytes());
+        signature = new BigInteger(1, m.digest()).toString(16);
+        Log.d(LTAG, "signature: " + signature);
+        params.put(mParamNameSignature, signature);
+      } catch (java.security.NoSuchAlgorithmException ex) {
+        Log.e(LTAG, "Error: could not sign request: " + ex.getMessage());
+      }
+    }
+
+    // 5. Figure out the type of request to construct.
+    Integer request_type_obj = REQUEST_TYPES.get(api);
+    int request_type = (null == request_type_obj ? RT_GET : (int) request_type_obj);
+    if (null != fileParams) {
+      request_type = RT_MULTIPART;
+    }
+
+    // 6. Construct request.
+    HttpRequestBase request = null;
+    switch (request_type) {
+      case RT_GET:
+        {
+          request_uri = String.format("%s?%s", request_uri,
+              constructQueryString(params));
+          request = new HttpGet(request_uri);
+        }
+        break;
+
+
+      case RT_MULTIPART:
+        {
+          HttpPost post = new HttpPost(request_uri);
+          MultipartEntity content = new MultipartEntity();
+
+          // Append all parameters as parts.
+          for (Map.Entry<String, String> param : params.entrySet()) {
+            try {
+              content.addPart(param.getKey(), new StringBody(param.getValue()));
+            } catch (java.io.UnsupportedEncodingException ex) {
+              Log.e(LTAG, "Unsupported encoding, skipping parameter: "
+                  + param.getKey() + "=" + param.getValue());
+            }
+          }
+
+          // Append all files as parts.
+          if (null != fileParams) {
+            for (Map.Entry<String, String> param : fileParams.entrySet()) {
+              content.addPart(param.getKey(), new FileBody(new File(param.getValue())));
+            }
+          }
+
+          post.setEntity(content);
+          request = post;
+        }
+        break;
+
+
+      case RT_FORM:
+        {
+          HttpPost post = new HttpPost(request_uri);
+          post.setHeader("Content-Type", "application/x-www-form-urlencoded; charset=utf-8");
+
+          // Push parameters into a list.
+          LinkedList<BasicNameValuePair> p = new LinkedList<BasicNameValuePair>();
+          for (Map.Entry<String, String> param : params.entrySet()) {
+            p.add(new BasicNameValuePair(param.getKey(), param.getValue()));
+          }
+
+          try {
+            UrlEncodedFormEntity content = new UrlEncodedFormEntity(p);
+            post.setEntity(content);
+            request = post;
+          } catch (java.io.UnsupportedEncodingException ex) {
+            Log.e(LTAG, "Unsupported encoding, can't send request.");
+          }
+        }
+        break;
+
+
+      default:
+        Log.e(LTAG, "Unsupported request type: " + request_type);
+    }
+
+    // FIXME
+    try {
+    HttpEntityEnclosingRequestBase rc = (HttpEntityEnclosingRequestBase) request.clone();
+    HttpEntity e = rc.getEntity();
+    String s = readStream(e.getContent());
+    Log.d(LTAG, "Request: " + s);
+    } catch (Exception ex) {
+      Log.d(LTAG, "ex: " + ex.getMessage());
+    }
+
+    return request;
+  }
+
+
+
+  /**
+   * Resolves API host; may block for a long time, so must be run in the
+   * background. May exit immediately if the API host has already been
+   * resolved.
+   **/
+  private void resolveAPIHost()
+  {
+    // Exit if already resolved.
+    if (null != mAPIHost) {
+      return;
+    }
+
+    // Resolve host name with client ID part to use for API requests.
+    String srv_lookup = String.format(SRV_LOOKUP_FORMAT, Globals.get().getClientID());
+
+    Record[] records = null;
+    int result = Lookup.TRY_AGAIN;
+    try {
+      int tries = 0;
+      Lookup lookup = new Lookup(srv_lookup, Type.SRV);
+      while (Lookup.TRY_AGAIN == result
+          && tries < SRV_LOOKUP_ATTEMPTS_MAX)
+      {
+        Log.d(LTAG, "SRV lookup attempt #" + tries + ": " + srv_lookup);
+        records = lookup.run();
+        if (null != records) {
+          break;
+        }
+        ++tries;
+        result = lookup.getResult();
+        Log.e(LTAG, "SRV lookup error: " + lookup.getErrorString());
+      }
+    } catch (TextParseException ex) {
+      Log.e(LTAG, "Error performing SRV lookup: " + ex.getMessage());
+    }
+
+    // If after all attempts have been made (or an exception occurred) the
+    // records array is still not set, we know we need to fall back to the
+    // default API host.
+    if (null == records) {
+      mAPIHost = DEFAULT_API_HOST;
+      return;
+    }
+
+    // On the other hand, if there are records, we want to use the first
+    // SRV record's target/port as the API host. There's not much use in
+    // trying to look at more records than the first.
+    SRVRecord srv = (SRVRecord) records[0];
+    mAPIHost = String.format("%s:%d", srv.getTarget(), srv.getPort());
+  }
+
+
+
+  /**
+   * FIXME
+   **/
+  private void initializeAPIKeys()
+  {
+    // We can check any of the mAPI* or mParamName* fields to determine
+    // whether or not we need to do anything here. Let's stick to the first.
+    if (!mAPIKey.equals(SERVICE_KEY)) {
+      // That's it.
+      return;
+    }
+
+    // TODO try load key/secret.
+
+    // Since we could not load the key/secret, we'll need to send a request
+    // to fetch both.
+    HashMap<String, String> signedParams = new HashMap<String, String>();
+    signedParams.put("source[unique_identifier]", Globals.get().getClientID());
+//	[req setValue:[[UIDevice currentDevice] uniqueIdentifier]
+//	forSignedParameter:@"source[unique_identifier]"];
+    signedParams.put("source[device_name]", "foo");
+//	[req setValue:[[UIDevice currentDevice] name]
+//	forSignedParameter:@"source[device_name]"];
+    signedParams.put("source[device_model]", "bar");
+//	[req setValue:[[UIDevice currentDevice] model]
+//	forSignedParameter:@"source[device_model]"];	
+    signedParams.put("source[system_name]", "android");
+//	[req setValue:[[UIDevice currentDevice] systemName]
+//	forSignedParameter:@"source[system_name]"];
+    signedParams.put("source[system_version]", "1.5");
+//	[req setValue:[[UIDevice currentDevice] systemVersion]
+//	forSignedParameter:@"source[system_version]"];
+    signedParams.put("force_mobile", "false");
+
+    HashMap<String, String> params = null;
+    params = new HashMap<String, String>();
+    params.put("debug_signature", "true");
+
+    HttpRequestBase request = constructRequest(API_REGISTER, params, signedParams, null);
+    byte[] data = fetchRawSynchronous(request, null);
+    Log.d(LTAG, "registration response: " + new String(data));
+
+    // TODO parse response
+  }
 }
