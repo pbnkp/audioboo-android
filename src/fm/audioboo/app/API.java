@@ -36,7 +36,6 @@ import org.apache.http.params.HttpConnectionParams;
 import org.apache.http.params.HttpProtocolParams;
 import org.apache.http.HttpVersion;
 
-import org.apache.http.client.methods.HttpEntityEnclosingRequestBase; // FIXME remove
 import org.apache.http.client.methods.HttpRequestBase;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
@@ -117,7 +116,8 @@ public class API
 
   // URI snippets for various APIs
   private static final String API_RECENT                  = "audio_clips";
-  private static final String API_UPLOAD                  = "account/audio_clips";
+  //private static final String API_UPLOAD                  = "account/audio_clips";
+  private static final String API_UPLOAD                  = "boos";
 
   private static final String API_REGISTER                = "sources/register";
 
@@ -380,7 +380,10 @@ public class API
   }
 
 
-  // FIXME
+
+  /**
+   * Uploads a Boo.
+   **/
   public void uploadBoo(Boo boo, final Handler result_handler)
   {
     if (null != mRequester) {
@@ -389,25 +392,20 @@ public class API
     }
 
     // Prepare parameters.
-    HashMap<String, String> params = new HashMap<String, String>();
-    params.put("debug_signature", "true");
+    HashMap<String, String> params = null;
+//    params = new HashMap<String, String>();
+//    params.put("debug_signature", "true");
 
     // Prepare signed parameters
     HashMap<String, String> signedParams = new HashMap<String, String>();
-    signedParams.put("audio_clip[title]", "Android test");
-    signedParams.put("audio_clip[local_recorded_at]", "06/10/2009 23:47");
-//    HashMap<String, String> signedParams = null;
-//    params.put("audio_clip[title]", "Android test");
-//    params.put("audio_clip[local_recorded_at]", "06/10/2009 23:47");
+    signedParams.put("audio_clip[title]", boo.mTitle);
+    signedParams.put("audio_clip[local_recorded_at]", boo.mRecordedAt.toString());
 
     // Prepare files.
     HashMap<String, String> fileParams = new HashMap<String, String>();
     fileParams.put("audio_clip[uploaded_data]", boo.mHighMP3Url.getPath());
 
-//	BBURLRequest* request = [BBURLRequest requestWithURL:[NSURL serverRelativeURL:@"boos"]];
-//	[request setValue:@"xml" forParameter:@"fmt"];
-//	[request setHTTPMethod:@"POST"];
-//	
+    // TODO
 //	NSString* presentedTitle = self.title ? self.title : self.placeholderTitle;
 //	[request setValue:presentedTitle forSignedParameter:@"audio_clip[title]"];
 //	
@@ -437,6 +435,7 @@ public class API
           {
             if (ERR_SUCCESS == msg.what) {
               Log.d(LTAG, "Response: " + (String) msg.obj);
+              // FIXME parse the Boo id from the response
             }
             else {
               result_handler.obtainMessage(msg.what, msg.obj).sendToTarget();
@@ -446,36 +445,6 @@ public class API
         }
     ));
     mRequester.start();
-
-//    Thread th = new Thread() {
-//      public void run()
-//      {
-////    params.put("audio_clip[title]", boo.mTitle);
-////    params.put("audio_clip[local_recorded_at]", boo.mRecordedAt.toString());
-//    // TODO add tags, etc.
-////    String uri_string = getApiUrl(API_UPLOAD, params);
-//    Log.d(LTAG, "uri: " + uri_string);
-//
-//    HttpPost post = new HttpPost(uri_string);
-//    FileBody bin = new FileBody(new File(boo.mHighMP3Url.getPath()));
-//
-//    MultipartEntity reqEntity = new MultipartEntity();
-//    reqEntity.addPart("audio_clip[uploaded_data]", bin);
-//
-//    post.setEntity(reqEntity);
-//    try {
-//    HttpResponse response = sClient.execute(post);
-//
-//    HttpEntity resEntity = response.getEntity();
-//    if (resEntity != null) {
-//        resEntity.consumeContent();
-//    }
-//    } catch (IOException ex) {
-//      Log.e(LTAG, "IO EXCEPTIOn: " + ex.getMessage());
-//    }
-//      }
-//    };
-//    th.start();
   }
 
 
@@ -731,16 +700,6 @@ public class API
 
       default:
         Log.e(LTAG, "Unsupported request type: " + request_type);
-    }
-
-    // FIXME
-    try {
-    HttpEntityEnclosingRequestBase rc = (HttpEntityEnclosingRequestBase) request.clone();
-    HttpEntity e = rc.getEntity();
-    String s = readStream(e.getContent());
-    Log.d(LTAG, "Request: " + s);
-    } catch (Exception ex) {
-      Log.d(LTAG, "ex: " + ex.getMessage());
     }
 
     return request;
