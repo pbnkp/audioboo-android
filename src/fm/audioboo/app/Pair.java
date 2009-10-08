@@ -1,0 +1,25 @@
+/**
+ * This file is part of AudioBoo, an android program for audio blogging.
+ * Copyright (C) 2009 BestBefore Media Ltd. All rights reserved.
+ *
+ * Author: Jens Finkhaeuser <jens@finkhaeuser.de>
+ *
+ * $Id$
+ **/
+
+package fm.audioboo.app;
+
+/**
+ * Funny, the things you take for granted from C++.
+ **/
+public class Pair<F, S>
+{
+  public F  mFirst;
+  public S  mSecond;
+
+  public Pair(F first, S second)
+  {
+    mFirst = first;
+    mSecond = second;
+  }
+}
