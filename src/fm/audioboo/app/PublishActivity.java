@@ -13,6 +13,9 @@ import android.app.Activity;
 
 import android.os.Bundle;
 
+import android.os.Handler;
+import android.os.Message;
+
 import android.view.View;
 
 import android.widget.Button;
@@ -139,8 +142,37 @@ public class PublishActivity extends Activity
   {
     Log.d(LTAG, "Uploading...");
 
-    Globals.get().mAPI.uploadBoo(mBoo, null);
-    // FIXME
+    // Hide form, and show progress view.
+    View view = findViewById(R.id.publish_form);
+    view.setVisibility(View.GONE);
+    view = findViewById(R.id.publish_progress);
+    view.setVisibility(View.VISIBLE);
+
+    // Grab Boo title.
+    EditText edit_text = (EditText) findViewById(R.id.publish_title);
+    if (null != edit_text) {
+      mBoo.mTitle = edit_text.getText().toString();
+    }
+    if (null == mBoo.mTitle) {
+      // TODO if mTitle is not set, use the hint.
+      mBoo.mTitle = "Android Boo";
+    }
+
+    // TODO set local file:/// url for image path, if that's
+    //      desired.
+
+    Globals.get().mAPI.uploadBoo(mBoo, new Handler(new Handler.Callback() {
+      public boolean handleMessage(Message msg)
+      {
+        if (API.ERR_SUCCESS == msg.what) {
+          onUploadSucceeded((String) msg.obj);
+        }
+        else {
+          onUploadError(msg.what, (String) msg.obj);
+        }
+        return true;
+      }
+    }));
   }
 
 
@@ -148,5 +180,24 @@ public class PublishActivity extends Activity
   private void onEditImage()
   {
     Log.d(LTAG, "Editing image...");
+  }
+
+
+
+  private void onUploadSucceeded(String booId)
+  {
+    Log.d(LTAG, "Boo uploaded to: " + booId);
+
+    // TODO delete boo, or signal recording boo that that should reset.
+
+    finish();
+  }
+
+
+
+  private void onUploadError(int code, String message)
+  {
+    // FIXME want a popup
+    Log.e(LTAG, "Error uploading boo: " + code + " " + message);
   }
 }
