@@ -37,7 +37,7 @@ class ResponseParser
 
   // Expected response version. In the future, we may want to handle more than
   // one version and add support for several.
-  private static final int EXPECTED_VERSION           = 200;
+  private static final int EXPECTED_VERSION           = API.API_VERSION;
 
   // Keys found in the JSON response
   private static final String VERSION                 = "version";
@@ -86,6 +86,11 @@ class ResponseParser
   private static final String TAG_NORMALISED          = "normalised_tag";
   private static final String TAG_URL                 = "url";
 
+  // Fields for registration responses
+  private static final String SOURCE                  = "source";
+  private static final String API_SECRET              = "api_secret";
+  private static final String API_KEY                 = "api_key";
+
 
   /***************************************************************************
    * Implementation
@@ -128,6 +133,42 @@ class ResponseParser
       }
       // Log.d(LTAG, "# clips: " + result.mClips.size());
 
+      return result;
+
+    } catch (JSONException ex) {
+      Log.e(LTAG, "Could not parse JSON response: " + ex);
+      handler.obtainMessage(API.ERR_PARSE_ERROR).sendToTarget();
+      return null;
+    }
+  }
+
+
+
+  /**
+   * Parses a registration response, returns the secret in Pair's first
+   * member, and the key in the second.
+   **/
+  public Pair<String, String> parseRegistrationResponse(String response, Handler handler)
+  {
+
+    try {
+      JSONObject object = new JSONObject(response);
+
+      // Check version of the response first. We expect a particular version
+      // at the moment.
+      int version = object.getInt(VERSION);
+      if (EXPECTED_VERSION != version) {
+        Log.e(LTAG, "Response version did not match our expectations.");
+        handler.obtainMessage(API.ERR_VERSION_MISMATCH).sendToTarget();
+        return null;
+      }
+
+      JSONObject body = object.getJSONObject(BODY);
+      JSONObject source = body.getJSONObject(SOURCE);
+
+      Pair<String, String> result = new Pair<String, String>(
+          source.getString(API_SECRET),
+          source.getString(API_KEY));
       return result;
 
     } catch (JSONException ex) {
