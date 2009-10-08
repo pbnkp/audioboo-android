@@ -11,6 +11,7 @@ package fm.audioboo.app;
 
 import android.content.Context;
 
+import android.os.Build;
 import android.telephony.TelephonyManager;
 import java.math.BigInteger;
 import java.security.MessageDigest;
@@ -164,64 +165,12 @@ public class Globals
   /**
    * Constructs a hardware identifier string from /proc/cpuinfo and returns it.
    **/
-  private String getHardwareString()
+  public String getHardwareString()
   {
-    // Read /proc/cpuinfo
-    String contents = null;
-    try {
-      FileInputStream is = new FileInputStream("/proc/cpuinfo");
-      contents = API.readStream(is);
-      try {
-        is.close();
-      } catch (java.io.IOException ex) {
-        // pass
-      }
-    } catch (java.io.FileNotFoundException ex) {
-      return HARDWARE_UNKNOWN;
-    } catch (java.io.IOException ex) {
-      return HARDWARE_UNKNOWN;
-    }
-
-    // The part to read is formatted like this:
-    // Hardware        : trout
-    // Revision        : 0080
-    // Serial          : 0000000000000000
-    boolean parse = false;
-    String hardware = null;
-    StringTokenizer st = new StringTokenizer(contents, "\n");
-    while (st.hasMoreTokens()) {
-      String line = st.nextToken();
-      if (line.startsWith("Hardware")) {
-        parse = true;
-      }
-
-      if (!parse) {
-        continue;
-      }
-
-      StringTokenizer lst = new StringTokenizer(line, ":");
-      if (2 > lst.countTokens()) {
-        Log.e(LTAG, "Cannot parse line: " + line);
-        continue;
-      }
-
-      // Skip first part.
-      lst.nextToken();
-      while (lst.hasMoreTokens()) {
-        String token = lst.nextToken().trim();
-        if (null == hardware) {
-          hardware = token;
-        }
-        else {
-          hardware += ":" + token;
-        }
-      }
-    }
-
-    if (null == hardware) {
-      hardware = HARDWARE_UNKNOWN;
-    }
-
-    return hardware;
+    // This should uniquely identify the hardware, without including information
+    // about the system software. The fields DISPLAY, FINGERPRINT, etc.
+    // all include information about the SDK.
+    return String.format("%s:%s:%s:%s",
+        Build.BOARD, Build.BRAND, Build.DEVICE, Build.MODEL);
   }
 }
