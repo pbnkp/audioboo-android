@@ -12,9 +12,9 @@ package fm.audioboo.app;
 import android.os.Handler;
 import android.os.Message;
 
+import android.os.Build;
+
 import android.net.Uri;
-import java.net.URI;
-import java.net.URISyntaxException;
 
 import org.xbill.DNS.Record;
 import org.xbill.DNS.SRVRecord;
@@ -59,6 +59,7 @@ import java.text.SimpleDateFormat;
 import java.util.Map;
 import java.util.HashMap;
 import java.util.TreeMap;
+import java.util.List;
 import java.util.LinkedList;
 
 import java.math.BigInteger;
@@ -136,8 +137,7 @@ public class API
 
   // Service key/secret
   private static final String SERVICE_KEY                 = "06b4c02d1aa1cb98562264c1";
-  //private static final String SERVICE_SECRET              = "0334a90b23ee15b9d05859f21d6759169dd6758512ea852e8e7fb673b583c581";
-  private static final String SERVICE_SECRET              = "--secret--";
+  private static final String SERVICE_SECRET              = "0334a90b23ee15b9d05859f21d6759169dd6758512ea852e8e7fb673b583c581";
 
   // Request types: we have GET, FORM and MULTIPART.
   private static final int RT_GET                         = 0;
@@ -221,7 +221,7 @@ public class API
         // After resolving the API host, we need to obtain the appropriate
         // key(s) for API calls. This should return immediately after the
         // first time it's run.
-        initializeAPIKeys();
+        initializeAPIKeys(mHandler);
 
         // Construct request.
         HttpRequestBase request = constructRequest(mApi, mParams, mSignedParams,
@@ -802,47 +802,65 @@ public class API
 
 
   /**
-   * FIXME
+   * - Check whether we've already got an API key linked to the device.
+   * - If not, attempt to read it from disk.
+   * - If that fails, fetch it from the API.
    **/
-  private void initializeAPIKeys()
+  private void initializeAPIKeys(Handler handler)
   {
     // We can check any of the mAPI* or mParamName* fields to determine
     // whether or not we need to do anything here. Let's stick to the first.
     if (!mAPIKey.equals(SERVICE_KEY)) {
       // That's it.
+      Log.d(LTAG, "Using source key: " + mAPIKey);
       return;
     }
 
     // TODO try load key/secret.
 
+
+
     // Since we could not load the key/secret, we'll need to send a request
     // to fetch both.
+    // BOARD: trout
+    // BRAND: android-devphone1
+    // DEVICE: dream
+    // DISPLAY: dream_devphone-userdebug 1.5 CRB43 148830 test-keys
+    // FINGERPRINT: android-devphone1/dream_devphone/dream/trout:1.5/CRB43/148830:userdebug/adp,test-keys
+    // HOST: undroid11.mtv.corp.google.com
+    // ID: CRB43
+    // MODEL: Android Dev Phone 1
+    // PRODUCT: dream_devphone
+    // TAGS: test-keys
+    // TYPE: userdebug
+    // USER: android-build
+    // VERSION.INCREMENTAL: 148830
+    // VERSION.RELEASE: 1.5
+    // VERSION.SDK: 3
     HashMap<String, String> signedParams = new HashMap<String, String>();
     signedParams.put("source[unique_identifier]", Globals.get().getClientID());
-//	[req setValue:[[UIDevice currentDevice] uniqueIdentifier]
-//	forSignedParameter:@"source[unique_identifier]"];
-    signedParams.put("source[device_name]", "foo");
-//	[req setValue:[[UIDevice currentDevice] name]
-//	forSignedParameter:@"source[device_name]"];
-    signedParams.put("source[device_model]", "bar");
-//	[req setValue:[[UIDevice currentDevice] model]
-//	forSignedParameter:@"source[device_model]"];	
-    signedParams.put("source[system_name]", "android");
-//	[req setValue:[[UIDevice currentDevice] systemName]
-//	forSignedParameter:@"source[system_name]"];
-    signedParams.put("source[system_version]", "1.5");
-//	[req setValue:[[UIDevice currentDevice] systemVersion]
-//	forSignedParameter:@"source[system_version]"];
+    signedParams.put("source[device_name]", "none"); // No comparable concept exists.
+    signedParams.put("source[device_model]", Uri.encode(Build.MODEL));
+    signedParams.put("source[system_name]", "Android");
+    signedParams.put("source[system_version]", String.format("%s-%s", Build.VERSION.RELEASE,
+          Build.VERSION.INCREMENTAL));
     signedParams.put("force_mobile", "false");
 
-    HashMap<String, String> params = null;
-    params = new HashMap<String, String>();
-    params.put("debug_signature", "true");
-
-    HttpRequestBase request = constructRequest(API_REGISTER, params, signedParams, null);
+    HttpRequestBase request = constructRequest(API_REGISTER, null, signedParams, null);
     byte[] data = fetchRawSynchronous(request, null);
-    Log.d(LTAG, "registration response: " + new String(data));
+//    Log.d(LTAG, "registration response: " + new String(data));
 
-    // TODO parse response
+    ResponseParser parser = new ResponseParser();
+    Pair<String, String> results = parser.parseRegistrationResponse(
+        new String(data), handler);
+
+    if (null != results) {
+      mAPISecret = results.mFirst;
+      mAPIKey = results.mSecond;
+      mParamNameKey = KEY_SOURCE_KEY;
+      mParamNameSignature = KEY_SOURCE_SIGNATURE;
+
+      // TODO store these values
+    }
   }
 }
