@@ -55,6 +55,8 @@ import java.io.ByteArrayOutputStream;
 
 import java.util.StringTokenizer;
 import java.text.SimpleDateFormat;
+import java.util.Date;
+
 import java.util.Map;
 import java.util.HashMap;
 import java.util.TreeMap;
@@ -83,10 +85,52 @@ public class API
   public static final int ERR_TRANSMISSION      = 1003;
   public static final int ERR_VERSION_MISMATCH  = 1004;
   public static final int ERR_PARSE_ERROR       = 1005;
+  public static final int ERR_API_ERROR         = 1006;
   // TODO move to Error class; read localized descriptions
 
   // API version we're requesting
   public static final int API_VERSION = 200;
+
+
+  /***************************************************************************
+   * The APIException class is sent as the message object in ERR_API_ERROR
+   * messages.
+   **/
+  public static class APIException extends Exception
+  {
+    private int mCode;
+
+    public APIException(String message, int code)
+    {
+      super(message);
+      mCode = code;
+    }
+
+
+    public int getCode()
+    {
+      return mCode;
+    }
+  }
+
+
+  /***************************************************************************
+   * The status class holds status information as retrieved via updateStatus()
+   **/
+  public static class Status
+  {
+    // ** Common fields
+    // Flag showing whether the device is linked to an account or not.
+    public boolean  mLinked;
+
+    // ** Fields for unlinked devices
+    // The URI to contact when attempting to link a device.
+    public Uri      mLinkUri;
+
+    // ** Fields for linked devices
+  }
+
+
 
   /***************************************************************************
    * Private constants
@@ -122,6 +166,7 @@ public class API
   private static final String API_UPLOAD                  = "boos";
 
   private static final String API_REGISTER                = "sources/register";
+  private static final String API_STATUS                  = "sources/status";
 
   // API version, format parameter
   private static final String KEY_API_VERSION             = "version";
@@ -130,9 +175,11 @@ public class API
   // Signature-related keys
   private static final String KEY_SOURCE_KEY              = "source[key]";
   private static final String KEY_SOURCE_SIGNATURE        = "source[signature]";
+  private static final String KEY_SOURCE_TIMESTAMP        = "source[timestamp]";
 
   private static final String KEY_SERVICE_KEY             = "service[key]";
   private static final String KEY_SERVICE_SIGNATURE       = "service[signature]";
+  private static final String KEY_SERVICE_TIMESTAMP       = "service[timestamp]";
 
   // Prefix for signed parameters
   private static final String SIGNED_PARAM_PREFIX         = "signed_";
@@ -153,6 +200,7 @@ public class API
     REQUEST_TYPES.put(API_RECENT, RT_GET);
     REQUEST_TYPES.put(API_UPLOAD, RT_MULTIPART);
     REQUEST_TYPES.put(API_REGISTER, RT_FORM);
+    REQUEST_TYPES.put(API_STATUS, RT_GET);
     // XXX Add request types for different API calls; if they're not specified
     //     here, the default is RT_GET.
   }
@@ -225,6 +273,18 @@ public class API
         // first time it's run.
         initializeAPIKeys(mHandler);
 
+        // Update status. This should return immediately after the first time
+        // it's run. If the API requested is in fact the status update API, then
+        // the Requester will terminate after this call.
+        if (mApi.equals(API_STATUS)) {
+          updateStatus(mHandler, true);
+          keepRunning = false;
+          break;
+        }
+        else {
+          updateStatus(mHandler, false);
+        }
+
         // Construct request.
         HttpRequestBase request = constructRequest(mApi, mParams, mSignedParams,
             mFileParams);
@@ -260,6 +320,11 @@ public class API
   // Parameter names for the key and signature.
   private String        mParamNameKey       = KEY_SERVICE_KEY;
   private String        mParamNameSignature = KEY_SERVICE_SIGNATURE;
+  private String        mParamNameTimestamp = KEY_SERVICE_TIMESTAMP;
+
+  // API Status.
+  private Status        mStatus;
+
 
   /***************************************************************************
    * Implementation
@@ -280,6 +345,16 @@ public class API
       sConnectionManager = new ThreadSafeClientConnManager(params, registry);
       sClient = new DefaultHttpClient(sConnectionManager, params);
     }
+  }
+
+
+
+  /**
+   * Returns the status
+   **/
+  public Status getStatus()
+  {
+    return mStatus;
   }
 
 
@@ -378,6 +453,25 @@ public class API
           }
         }
     ));
+    mRequester.start();
+  }
+
+
+
+  /**
+   * Updates the device status, if necessary.
+   **/
+  public void updateStatus(final Handler result_handler)
+  {
+    if (null != mRequester) {
+      mRequester.keepRunning = false;
+      mRequester.interrupt();
+    }
+
+    // This request has no parameters. The result hanlder also handles
+    // any responses itself.
+    mRequester = new Requester(API_STATUS, null, null, null,
+        result_handler);
     mRequester.start();
   }
 
@@ -608,38 +702,41 @@ public class API
     params.put(KEY_API_FORMAT, API_FORMAT);
     params.put(mParamNameKey, mAPIKey);
 
-    // 3. If there are signed parameters, append them to the params map
+    // 3. If there are signed parameters, perform the signature dance.
     if (null != signedParams) {
+      // 3.1 We always want a timestamp in the signed parameters.
+      signedParams.put(mParamNameTimestamp, String.valueOf(System.currentTimeMillis() / 1000));
+
+      // 3.2 Then all signed parameters need to be copied to the parameters
+      //     with a prefix.
       for (Map.Entry<String, String> param : signedParams.entrySet()) {
         params.put(String.format("%s%s", SIGNED_PARAM_PREFIX, param.getKey()),
               param.getValue());
       }
-    }
 
-    // 4. If there are signed parameters, create the signature.
-    if (null != signedParams) {
+      // 3.3 Create the signature.
       String signature = String.format("%s:%s:%s", request_uri,
           concatenateParamtersSorted(signedParams), mAPISecret);
-      Log.d(LTAG, "signature pre signing: " + signature);
+      // Log.d(LTAG, "signature pre signing: " + signature);
       try {
         MessageDigest m = MessageDigest.getInstance("SHA-1");
         m.update(signature.getBytes());
         signature = new BigInteger(1, m.digest()).toString(16);
-        Log.d(LTAG, "signature: " + signature);
+        // Log.d(LTAG, "signature: " + signature);
         params.put(mParamNameSignature, signature);
       } catch (java.security.NoSuchAlgorithmException ex) {
         Log.e(LTAG, "Error: could not sign request: " + ex.getMessage());
       }
     }
 
-    // 5. Figure out the type of request to construct.
+    // 4. Figure out the type of request to construct.
     Integer request_type_obj = REQUEST_TYPES.get(api);
     int request_type = (null == request_type_obj ? RT_GET : (int) request_type_obj);
     if (null != fileParams) {
       request_type = RT_MULTIPART;
     }
 
-    // 6. Construct request.
+    // 5. Construct request.
     HttpRequestBase request = null;
     switch (request_type) {
       case RT_GET:
@@ -764,6 +861,31 @@ public class API
 
 
   /**
+   * If no status is known, performs a status request.
+   **/
+  private void updateStatus(Handler handler, boolean signalSuccess)
+  {
+    if (null != mStatus) {
+      return;
+    }
+
+    // Construct status request. We pass an signedParams map to force signing
+    HashMap<String, String> signedParams = new HashMap<String, String>();
+    HttpRequestBase request = constructRequest(API_STATUS, null, signedParams,
+        null);
+    byte[] data = fetchRawSynchronous(request, handler);
+
+    ResponseParser parser = new ResponseParser();
+    mStatus = parser.parseStatusResponse(new String(data), handler);
+
+    if (signalSuccess) {
+      handler.obtainMessage(ERR_SUCCESS).sendToTarget();
+    }
+  }
+
+
+
+  /**
    * - Check whether we've already got an API key linked to the device.
    * - If not, attempt to read it from disk.
    * - If that fails, fetch it from the API.
@@ -774,7 +896,7 @@ public class API
     // whether or not we need to do anything here. Let's stick to the first.
     if (!mAPIKey.equals(SERVICE_KEY)) {
       // That's it.
-      Log.d(LTAG, "Using source key: " + mAPIKey);
+      //Log.d(LTAG, "Using source key: " + mAPIKey);
       return;
     }
 
@@ -785,7 +907,10 @@ public class API
     if (null != apiKey && null != apiSecret) {
       mAPIKey = apiKey;
       mAPISecret = apiSecret;
-      Log.d(LTAG, "Using source key: " + mAPIKey);
+      mParamNameKey = KEY_SOURCE_KEY;
+      mParamNameSignature = KEY_SOURCE_SIGNATURE;
+      mParamNameTimestamp = KEY_SOURCE_TIMESTAMP;
+      //Log.d(LTAG, "Using source key: " + mAPIKey);
       return;
     }
 
@@ -817,7 +942,7 @@ public class API
     signedParams.put("force_mobile", "false");
 
     HttpRequestBase request = constructRequest(API_REGISTER, null, signedParams, null);
-    byte[] data = fetchRawSynchronous(request, null);
+    byte[] data = fetchRawSynchronous(request, handler);
 //    Log.d(LTAG, "registration response: " + new String(data));
 
     ResponseParser parser = new ResponseParser();
@@ -829,6 +954,7 @@ public class API
       mAPIKey = results.mSecond;
       mParamNameKey = KEY_SOURCE_KEY;
       mParamNameSignature = KEY_SOURCE_SIGNATURE;
+      mParamNameTimestamp = KEY_SOURCE_TIMESTAMP;
 
       // Store these values
       SharedPreferences.Editor edit = prefs.edit();

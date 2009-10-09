@@ -27,6 +27,4 @@ public class BooList
   // Metadata
   public int    mOffset;
   public int    mCount;
-  public int    mWindow;
-  public Date   mTimestamp;
 }

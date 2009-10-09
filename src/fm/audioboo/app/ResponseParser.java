@@ -43,6 +43,10 @@ class ResponseParser
   private static final String VERSION                 = "version";
   private static final String BODY                    = "body";
 
+  private static final String ERROR                   = "error";
+  private static final String ERROR_CODE              = "code";
+  private static final String ERROR_DESCRIPTION       = "description";
+
   private static final String WINDOW                  = "window";
   private static final String TOTALS                  = "totals";
   private static final String TOTALS_OFFSET           = "offset";
@@ -91,6 +95,9 @@ class ResponseParser
   private static final String API_SECRET              = "api_secret";
   private static final String API_KEY                 = "api_key";
 
+  // Fields for status responses
+  private static final String STATUS_LINKED           = "linked";
+  private static final String STATUS_LINK_URL         = "link_url";
 
   /***************************************************************************
    * Implementation
@@ -103,24 +110,9 @@ class ResponseParser
   public BooList parseBooList(String response, Handler handler)
   {
     try {
-      JSONObject object = new JSONObject(response);
-
-      // Check version of the response first. We expect a particular version
-      // at the moment.
-      int version = object.getInt(VERSION);
-      if (EXPECTED_VERSION != version) {
-        Log.e(LTAG, "Response version did not match our expectations.");
-        handler.obtainMessage(API.ERR_VERSION_MISMATCH).sendToTarget();
-        return null;
-      }
-
-      JSONObject body = object.getJSONObject(BODY);
+      JSONObject body = retrieveBody(response, handler);
 
       BooList result = new BooList();
-
-      // Read metadata first.
-      result.mWindow = object.getInt(WINDOW);
-      result.mTimestamp = new Date(object.getInt(TIMESTAMP));
 
       JSONObject totals = body.getJSONObject(TOTALS);
       result.mOffset = totals.getInt(TOTALS_OFFSET);
@@ -150,20 +142,9 @@ class ResponseParser
    **/
   public Pair<String, String> parseRegistrationResponse(String response, Handler handler)
   {
-
     try {
-      JSONObject object = new JSONObject(response);
+      JSONObject body = retrieveBody(response, handler);
 
-      // Check version of the response first. We expect a particular version
-      // at the moment.
-      int version = object.getInt(VERSION);
-      if (EXPECTED_VERSION != version) {
-        Log.e(LTAG, "Response version did not match our expectations.");
-        handler.obtainMessage(API.ERR_VERSION_MISMATCH).sendToTarget();
-        return null;
-      }
-
-      JSONObject body = object.getJSONObject(BODY);
       JSONObject source = body.getJSONObject(SOURCE);
 
       Pair<String, String> result = new Pair<String, String>(
@@ -171,6 +152,39 @@ class ResponseParser
           source.getString(API_KEY));
       return result;
 
+    } catch (JSONException ex) {
+      Log.e(LTAG, "Could not parse JSON response: " + ex);
+      handler.obtainMessage(API.ERR_PARSE_ERROR).sendToTarget();
+      return null;
+    }
+  }
+
+
+
+  /**
+   * Parses the response to API_STATUS requests.
+   **/
+  public API.Status parseStatusResponse(String response, Handler handler)
+  {
+    try {
+      JSONObject body = retrieveBody(response, handler);
+
+      // First, figure out if the device is linked. That determines the
+      // remainder of the fields we can expect.
+      API.Status status = new API.Status();
+      status.mLinked = body.getBoolean(STATUS_LINKED);
+
+      if (status.mLinked) {
+        // TODO don't know the format for that yet.
+      }
+      else {
+        // The only thing we'll find if the device is not linked is a
+        // link url.
+        status.mLinkUri = Uri.parse(body.getString(STATUS_LINK_URL));
+      }
+
+      return status;
+ 
     } catch (JSONException ex) {
       Log.e(LTAG, "Could not parse JSON response: " + ex);
       handler.obtainMessage(API.ERR_PARSE_ERROR).sendToTarget();
@@ -313,5 +327,79 @@ class ResponseParser
     // Log.d(LTAG, "Tag: " + result);
 
     return result;
+  }
+
+
+
+  /**
+   * Convenience function: checks the returned version, and checks for errors.
+   * Returns a JSONObject representing the response body on success, null
+   * on failure. If null is returned, the Handler has already been sent an
+   * appropriate error message.
+   **/
+  private JSONObject retrieveBody(String response, Handler handler) throws JSONException
+  {
+    JSONObject object = new JSONObject(response);
+
+    // XXX not sure what to do with the metadata here.
+    // result.mWindow = object.getInt(WINDOW);
+    // result.mTimestamp = new Date(object.getInt(TIMESTAMP));
+
+    if (!checkVersion(object, handler)) {
+      return null;
+    }
+
+    JSONObject body = object.getJSONObject(BODY);
+
+    if (!handleError(body, handler)) {
+      return null;
+    }
+
+    return body;
+  }
+
+
+
+  /**
+   * Returns true if no error has been reported, otherwise returns false.
+   * If false is returned, the handler has already been sent a ERR_API_ERROR
+   * message.
+   **/
+  private boolean handleError(JSONObject body, Handler handler) throws JSONException
+  {
+    if (!body.has(ERROR)) {
+      return true;
+    }
+
+    JSONObject error = body.getJSONObject(ERROR);
+    int code = error.getInt(ERROR_CODE);
+    String message = error.getString(ERROR_DESCRIPTION);
+
+    Log.e(LTAG, "Error response [" + code + "]: " + message);
+    handler.obtainMessage(API.ERR_API_ERROR,
+        new API.APIException(message, code)).sendToTarget();
+
+    return false;
+  }
+
+
+
+  /**
+   * Returns true if the response version matches the expected version, else
+   * false. If false is returned, the handler has already been sent a
+   * ERR_VERSION_MISMATCH message.
+   **/
+  private boolean checkVersion(JSONObject object, Handler handler) throws JSONException
+  {
+    // Check version of the response first. We expect a particular version
+    // at the moment.
+    int version = object.getInt(VERSION);
+    if (EXPECTED_VERSION != version) {
+      Log.e(LTAG, "Response version did not match our expectations.");
+      handler.obtainMessage(API.ERR_VERSION_MISMATCH).sendToTarget();
+      return false;
+    }
+
+    return true;
   }
 }
