@@ -86,7 +86,7 @@ public class API
   public static final int ERR_VERSION_MISMATCH  = 1004;
   public static final int ERR_PARSE_ERROR       = 1005;
   public static final int ERR_API_ERROR         = 1006;
-  // TODO move to Error class; read localized descriptions
+  public static final int ERR_INVALID_STATE     = 1007;
 
   // API version we're requesting
   public static final int API_VERSION = 200;
@@ -128,6 +128,20 @@ public class API
     public Uri      mLinkUri;
 
     // ** Fields for linked devices
+    // Username and email address for the linked user.
+    public String   mUsername;
+    public String   mEmail;
+
+
+    public String toString()
+    {
+      if (mLinked) {
+        return String.format("<linked:%s:%s>", mUsername, mEmail);
+      }
+      else {
+        return String.format("<unlinked:%s>", mLinkUri.toString());
+      }
+    }
   }
 
 
@@ -167,6 +181,8 @@ public class API
 
   private static final String API_REGISTER                = "sources/register";
   private static final String API_STATUS                  = "sources/status";
+  // XXX API_LINK isn't required; the link uri is returned in the status call.
+  private static final String API_UNLINK                  = "sources/unlink";
 
   // API version, format parameter
   private static final String KEY_API_VERSION             = "version";
@@ -201,6 +217,7 @@ public class API
     REQUEST_TYPES.put(API_UPLOAD, RT_MULTIPART);
     REQUEST_TYPES.put(API_REGISTER, RT_FORM);
     REQUEST_TYPES.put(API_STATUS, RT_GET);
+    REQUEST_TYPES.put(API_UNLINK, RT_FORM);
     // XXX Add request types for different API calls; if they're not specified
     //     here, the default is RT_GET.
   }
@@ -210,7 +227,7 @@ public class API
   private static final HttpVersion  HTTP_VERSION            = HttpVersion.HTTP_1_1;
 
   // Requester startup delay. Avoids high load at startup that could impact UX.
-  private static final int          REQUESTER_STARTUP_DELAY = 5 * 1000;
+  private static final int          REQUESTER_STARTUP_DELAY = 1000;
 
   // Chunk size to read responses in (in Bytes).
   private static final int          READ_CHUNK_SIZE         = 8192;
@@ -254,11 +271,13 @@ public class API
     public void run()
     {
       // Delay before starting to fetch stuff.
-      try {
-// FIXME        sleep(Requester_STARTUP_DELAY);
-        sleep(20);
-      } catch (java.lang.InterruptedException ex) {
-        // pass
+      if (mDelayStartup) {
+        try {
+          sleep(REQUESTER_STARTUP_DELAY);
+          mDelayStartup = false;
+        } catch (java.lang.InterruptedException ex) {
+          return;
+        }
       }
 
       // The loop ensures that external interrrupts don't mean the request is
@@ -308,6 +327,7 @@ public class API
   // Requester. There's only one instance, so only one API call can be scheduled
   // at a time.
   private Requester     mRequester;
+  private boolean       mDelayStartup = true;
 
   // API host to use in requests.
   private String        mAPIHost;
@@ -459,6 +479,64 @@ public class API
 
 
   /**
+   * Unlinks the device, if it's currently linked.
+   **/
+  public void unlinkDevice(final Handler result_handler)
+  {
+    if (null != mRequester) {
+      mRequester.keepRunning = false;
+      mRequester.interrupt();
+    }
+
+    if (null == mStatus) {
+      // Can't unlink if we don't know our status.
+      result_handler.obtainMessage(ERR_INVALID_STATE).sendToTarget();
+      return;
+    }
+
+    if (!mStatus.mLinked) {
+      // If the device is not linked, we can report success immediately
+      result_handler.obtainMessage(ERR_SUCCESS).sendToTarget();
+      return;
+    }
+
+    // This request has no parameters. We pass empty signed parameters to force
+    // singing.
+    HashMap<String, String> signedParams = new HashMap<String, String>();
+    mRequester = new Requester(API_UNLINK, null, signedParams, null,
+        new Handler(new Handler.Callback() {
+          public boolean handleMessage(Message msg)
+          {
+            if (ERR_SUCCESS == msg.what) {
+              ResponseParser parser = new ResponseParser();
+              boolean unlinked = parser.parseUnlinkResponse((String) msg.obj,
+                result_handler);
+
+              if (unlinked) {
+                // Freeing the status means that the next request has to fetch
+                // an update.
+                mStatus = null;
+                result_handler.obtainMessage(ERR_SUCCESS).sendToTarget();
+              }
+              else {
+                result_handler.obtainMessage(ERR_INVALID_STATE).sendToTarget();
+              }
+            }
+            else {
+              result_handler.obtainMessage(msg.what, msg.obj).sendToTarget();
+            }
+            return true;
+          }
+        }
+    ));
+    mRequester.start();
+  }
+
+
+
+
+
+  /**
    * Updates the device status, if necessary.
    **/
   public void updateStatus(final Handler result_handler)
@@ -468,11 +546,32 @@ public class API
       mRequester.interrupt();
     }
 
+    // Set status to null, otherwise nothing will be fetched.
+    mStatus = null;
+
     // This request has no parameters. The result hanlder also handles
     // any responses itself.
     mRequester = new Requester(API_STATUS, null, null, null,
         result_handler);
     mRequester.start();
+  }
+
+
+
+  /**
+   * Returns a fully signed URI for linking a device.
+   **/
+  public String getSignedLinkUrl()
+  {
+    HashMap<String, String> signedParams = new HashMap<String, String>();
+    signedParams.put("callback[success]", "audioboo:///link_success");
+    signedParams.put("callback[cancelled]", "audioboo:///link_cancelled");
+    signedParams.put("callback[failure]", "audioboo:///link_failure");
+
+    HttpRequestBase request = constructRequestInternal(
+        mStatus.mLinkUri.toString(), RT_GET, null, signedParams, null);
+
+    return request.getURI().toString();
   }
 
 
@@ -689,12 +788,31 @@ public class API
       HashMap<String, String> signedParams,
       HashMap<String, String> fileParams)
   {
-    // 1. Construct request URI.
+    // Construct request URI.
     String request_uri = String.format("%s://%s/%s",
         API_REQUEST_URI_SCHEME, mAPIHost, api);
     Log.d(LTAG, "Request URI: " + request_uri);
 
-    // 2. Initialize params map. We always send the API version, and the API key
+    // Figure out the type of request to construct.
+    Integer request_type_obj = REQUEST_TYPES.get(api);
+    int request_type = (null == request_type_obj ? RT_GET : (int) request_type_obj);
+    if (null != fileParams) {
+      request_type = RT_MULTIPART;
+    }
+
+    return constructRequestInternal(request_uri, request_type,
+        params, signedParams, fileParams);
+  }
+
+
+
+  private HttpRequestBase constructRequestInternal(String request_uri,
+      int request_type,
+      HashMap<String, String> params,
+      HashMap<String, String> signedParams,
+      HashMap<String, String> fileParams)
+  {
+    // 1. Initialize params map. We always send the API version, and the API key
     if (null == params) {
       params = new HashMap<String, String>();
     }
@@ -702,19 +820,19 @@ public class API
     params.put(KEY_API_FORMAT, API_FORMAT);
     params.put(mParamNameKey, mAPIKey);
 
-    // 3. If there are signed parameters, perform the signature dance.
+    // 2. If there are signed parameters, perform the signature dance.
     if (null != signedParams) {
-      // 3.1 We always want a timestamp in the signed parameters.
+      // 2.1 We always want a timestamp in the signed parameters.
       signedParams.put(mParamNameTimestamp, String.valueOf(System.currentTimeMillis() / 1000));
 
-      // 3.2 Then all signed parameters need to be copied to the parameters
+      // 2.2 Then all signed parameters need to be copied to the parameters
       //     with a prefix.
       for (Map.Entry<String, String> param : signedParams.entrySet()) {
         params.put(String.format("%s%s", SIGNED_PARAM_PREFIX, param.getKey()),
               param.getValue());
       }
 
-      // 3.3 Create the signature.
+      // 2.3 Create the signature.
       String signature = String.format("%s:%s:%s", request_uri,
           concatenateParamtersSorted(signedParams), mAPISecret);
       // Log.d(LTAG, "signature pre signing: " + signature);
@@ -729,14 +847,7 @@ public class API
       }
     }
 
-    // 4. Figure out the type of request to construct.
-    Integer request_type_obj = REQUEST_TYPES.get(api);
-    int request_type = (null == request_type_obj ? RT_GET : (int) request_type_obj);
-    if (null != fileParams) {
-      request_type = RT_MULTIPART;
-    }
-
-    // 5. Construct request.
+    // 3. Construct request.
     HttpRequestBase request = null;
     switch (request_type) {
       case RT_GET:
@@ -878,8 +989,13 @@ public class API
     ResponseParser parser = new ResponseParser();
     mStatus = parser.parseStatusResponse(new String(data), handler);
 
-    if (signalSuccess) {
-      handler.obtainMessage(ERR_SUCCESS).sendToTarget();
+    if (null == mStatus) {
+      handler.obtainMessage(ERR_EMPTY_RESPONSE).sendToTarget();
+    }
+    else {
+      if (signalSuccess) {
+        handler.obtainMessage(ERR_SUCCESS).sendToTarget();
+      }
     }
   }
 

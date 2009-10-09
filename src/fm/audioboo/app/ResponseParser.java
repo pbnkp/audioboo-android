@@ -98,6 +98,12 @@ class ResponseParser
   // Fields for status responses
   private static final String STATUS_LINKED           = "linked";
   private static final String STATUS_LINK_URL         = "link_url";
+  private static final String STATUS_ACCOUNT          = "account";
+  private static final String STATUS_ACC_USERNAME     = "username";
+  private static final String STATUS_ACC_EMAIL        = "email";
+
+  // Unlink response
+  private static final String UNLINKED                = "unlinked";
 
   /***************************************************************************
    * Implementation
@@ -111,6 +117,9 @@ class ResponseParser
   {
     try {
       JSONObject body = retrieveBody(response, handler);
+      if (null == body) {
+        return null;
+      }
 
       BooList result = new BooList();
 
@@ -144,6 +153,9 @@ class ResponseParser
   {
     try {
       JSONObject body = retrieveBody(response, handler);
+      if (null == body) {
+        return null;
+      }
 
       JSONObject source = body.getJSONObject(SOURCE);
 
@@ -162,12 +174,38 @@ class ResponseParser
 
 
   /**
+   * Returns true if the response contains the "unlinked" field and that is
+   * set to "true". Otherwise returns false.
+   **/
+  public boolean parseUnlinkResponse(String response, Handler handler)
+  {
+    try {
+      JSONObject body = retrieveBody(response, handler);
+      if (null == body) {
+        return false;
+      }
+
+      return body.getBoolean(UNLINKED);
+
+    } catch (JSONException ex) {
+      Log.e(LTAG, "Could not parse JSON response: " + ex);
+      handler.obtainMessage(API.ERR_PARSE_ERROR).sendToTarget();
+      return false;
+    }
+  }
+
+
+
+  /**
    * Parses the response to API_STATUS requests.
    **/
   public API.Status parseStatusResponse(String response, Handler handler)
   {
     try {
       JSONObject body = retrieveBody(response, handler);
+      if (null == body) {
+        return null;
+      }
 
       // First, figure out if the device is linked. That determines the
       // remainder of the fields we can expect.
@@ -175,7 +213,11 @@ class ResponseParser
       status.mLinked = body.getBoolean(STATUS_LINKED);
 
       if (status.mLinked) {
-        // TODO don't know the format for that yet.
+        // There should be an account field with a username and email.
+        JSONObject account = body.getJSONObject(STATUS_ACCOUNT);
+
+        status.mUsername = account.getString(STATUS_ACC_USERNAME);
+        status.mEmail = account.getString(STATUS_ACC_EMAIL);
       }
       else {
         // The only thing we'll find if the device is not linked is a
@@ -184,7 +226,7 @@ class ResponseParser
       }
 
       return status;
- 
+
     } catch (JSONException ex) {
       Log.e(LTAG, "Could not parse JSON response: " + ex);
       handler.obtainMessage(API.ERR_PARSE_ERROR).sendToTarget();
