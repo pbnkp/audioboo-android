@@ -51,6 +51,8 @@ public class Globals
   public static final String      PREF_API_KEY      = "api.key";
   public static final String      PREF_API_SECRET   = "api.secret";
 
+  public static final String      PREF_USE_LOCATION = "settings.use_location";
+
 
   /***************************************************************************
    * Singleton data
