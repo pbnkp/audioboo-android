@@ -64,6 +64,8 @@ import java.util.LinkedList;
 import java.math.BigInteger;
 import java.security.MessageDigest;
 
+import android.content.SharedPreferences;
+
 import android.util.Log;
 
 /**
@@ -436,6 +438,7 @@ public class API
             if (ERR_SUCCESS == msg.what) {
               Log.d(LTAG, "Response: " + (String) msg.obj);
               // FIXME parse the Boo id from the response
+              result_handler.obtainMessage(ERR_SUCCESS, "will-be-an-id").sendToTarget();
             }
             else {
               result_handler.obtainMessage(msg.what, msg.obj).sendToTarget();
@@ -775,8 +778,16 @@ public class API
       return;
     }
 
-    // TODO try load key/secret.
-
+    // Try load key/secret.
+    SharedPreferences prefs = Globals.get().getPrefs();
+    String apiKey = prefs.getString(Globals.PREF_API_KEY, null);
+    String apiSecret = prefs.getString(Globals.PREF_API_SECRET, null);
+    if (null != apiKey && null != apiSecret) {
+      mAPIKey = apiKey;
+      mAPISecret = apiSecret;
+      Log.d(LTAG, "Using source key: " + mAPIKey);
+      return;
+    }
 
 
     // Since we could not load the key/secret, we'll need to send a request
@@ -819,7 +830,11 @@ public class API
       mParamNameKey = KEY_SOURCE_KEY;
       mParamNameSignature = KEY_SOURCE_SIGNATURE;
 
-      // TODO store these values
+      // Store these values
+      SharedPreferences.Editor edit = prefs.edit();
+      edit.putString(Globals.PREF_API_KEY, mAPIKey);
+      edit.putString(Globals.PREF_API_SECRET, mAPISecret);
+      edit.commit();
     }
   }
 }
