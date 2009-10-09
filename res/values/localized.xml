@@ -56,4 +56,28 @@
   <string name="publish_label_submit">That's All</string>
 
   <string name="publish_submit_text">Upload</string>
+
+  <!--
+    Account view
+  -->
+  <string name="account_progress_label_status">Determining device status...</string>
+  <string name="account_progress_label_unlink">Unlinking device...</string>
+
+  <string name="account_account_section_title">Account Name</string>
+  <string name="account_not_linked">Not Linked</string>
+  <string name="account_button_unlinked">Link Account</string>
+  <string name="account_button_linked">Unlink Account</string>
+  <string name="account_description_unlinked">Creating an account gives you a
+    special place on audioboo.fm to store &amp; share your boos, as well as
+    attaching your name &amp; photo to anything you record.</string>
+  <string name="account_description_linked">Choose unlink to link to a
+    different account.</string>
+
+  <string name="account_location_section_title">Location</string>
+  <string name="account_location_label">Use Current Location</string>
+
+  <string name="account_unlink_dialog_message">Are you sure you want to unlink
+    this device from your account?</string>
+  <string name="account_unlink_dialog_confirm">Unlink</string>
+  <string name="account_unlink_dialog_cancel">Cancel</string>
 </resources>

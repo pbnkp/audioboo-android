@@ -9,11 +9,21 @@
 -->
 <resources>
   <!--
+    Standard colors.
+  -->
+  <color name="bb_white_80">#ccffffff</color>
+  <color name="bb_white_69">#b2ffffff</color>
+
+  <color name="bb_black_80">#cc000000</color>
+
+  <color name="bb_darkgray_80">#cc222222</color>
+
+  <!--
     Colors for the Recent Boos view. Also see res/color
   -->
-  <color name="recent_boos_author_selected">#ccffffff</color> <!-- 12 -->
+  <color name="recent_boos_author_selected">@color/bb_white_80</color> <!-- 12 -->
   <color name="recent_boos_title_selected">@android:color/white</color> <!-- 16 -->
-  <color name="recent_boos_location_selected">#b2ffffff</color>
+  <color name="recent_boos_location_selected">@color/bb_white_69</color>
 
   <color name="recent_boos_background_even_regular">@android:color/black</color>
   <color name="recent_boos_background_odd_regular">#222222</color>
@@ -30,20 +40,29 @@
   <!--
     Colors for the Record view. Also see res/color
   -->
-  <color name="record_button_text_shadow">#cc000000</color>
-  <color name="record_overlay_background">#cc222222</color>
+  <color name="record_button_text_shadow">@color/bb_black_80</color>
+  <color name="record_overlay_background">@color/bb_darkgray_80</color>
 
 
   <!--
     Colors for the player view
   -->
-  <color name="boo_player_background">#cc222222</color>
-  <color name="boo_player_title">#ccffffff</color>
+  <color name="boo_player_background">@color/bb_darkgray_80</color>
+  <color name="boo_player_title">@color/bb_white_80</color>
 
 
   <!--
     Colors for the publish view
   -->
-  <color name="publish_label">#ccffffff</color>
+  <color name="publish_label">@color/bb_white_80</color>
+
+  <!--
+    Colors for the account view
+  -->
+  <color name="account_progress_label">@color/bb_white_80</color>
+  <color name="account_section_label">@color/bb_white_80</color>
+  <color name="account_name">@color/bb_white_80</color>
+  <color name="account_description">@color/bb_white_80</color>
+  <color name="account_location_label">@color/bb_white_80</color>
 
 </resources>

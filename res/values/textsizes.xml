@@ -40,4 +40,13 @@
     Publish view
   -->
   <dimen name="publish_label">@dimen/text_standard</dimen>
+
+  <!--
+    Account view
+  -->
+  <dimen name="account_progress_label">@dimen/text_large</dimen>
+  <dimen name="account_section_label">@dimen/text_large</dimen>
+  <dimen name="account_name">@dimen/text_standard</dimen>
+  <dimen name="account_description">@dimen/text_standard</dimen>
+  <dimen name="account_location_label">@dimen/text_standard</dimen>
 </resources>
