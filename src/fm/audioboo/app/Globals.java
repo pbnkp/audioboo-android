@@ -20,6 +20,8 @@ import java.io.FileInputStream;
 
 import java.util.StringTokenizer;
 
+import android.content.SharedPreferences;
+
 import android.util.Log;
 
 /**
@@ -40,6 +42,15 @@ public class Globals
   private static final String     CLIENT_ID_PREFIX  = "android-";
   private static final String     CLIENT_ID_UNKNOWN = "unknown-id";
   private static final String     HARDWARE_UNKNOWN  = "unknown-hardware";
+
+  /***************************************************************************
+   * Public constants
+   **/
+  public static final String      PREFERENCES_NAME  = "fm.audioboo.app";
+
+  public static final String      PREF_API_KEY      = "api.key";
+  public static final String      PREF_API_SECRET   = "api.secret";
+
 
   /***************************************************************************
    * Singleton data
@@ -172,5 +183,16 @@ public class Globals
     // all include information about the SDK.
     return String.format("%s:%s:%s:%s",
         Build.BOARD, Build.BRAND, Build.DEVICE, Build.MODEL);
+  }
+
+
+
+  /**
+   * Returns the App's preferences
+   **/
+  public SharedPreferences getPrefs()
+  {
+    return mContext.getSharedPreferences(PREFERENCES_NAME,
+        mContext.MODE_PRIVATE);
   }
 }
