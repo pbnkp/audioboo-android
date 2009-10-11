@@ -16,6 +16,7 @@ import android.app.Activity;
 
 import android.os.Build;
 import android.os.Bundle;
+import android.os.Environment;
 
 import android.telephony.TelephonyManager;
 import java.math.BigInteger;
@@ -74,16 +75,19 @@ public class Globals
   // location changed by less than this amount.
   private static final float      LOCATION_UPDATE_RESOLUTION  = 10;
 
+  // Directory prefix for the data directory.
+  private static final String     DATA_DIR_PREFIX             = "boo_data";
+
   /***************************************************************************
    * Public constants
    **/
   // Preferences
-  public static final String      PREFERENCES_NAME  = "fm.audioboo.app";
+  public static final String      PREFERENCES_NAME    = "fm.audioboo.app";
 
-  public static final String      PREF_API_KEY      = "api.key";
-  public static final String      PREF_API_SECRET   = "api.secret";
+  public static final String      PREF_API_KEY        = "api.key";
+  public static final String      PREF_API_SECRET     = "api.secret";
 
-  public static final String      PREF_USE_LOCATION = "settings.use_location";
+  public static final String      PREF_USE_LOCATION   = "settings.use_location";
 
   // Reusable dialog IDs. The ones defined here start from 10000.
   public static final int         DIALOG_GPS_SETTINGS = 10000;
@@ -108,6 +112,11 @@ public class Globals
 
   // Location listener. Used to continuously update location information.
   private LocationListener  mLocationListener;
+
+  // Base path, prepended before mRelativeFilePath. It's on the external
+  // storage and includes the file bundle.
+  private String            mBasePath;
+
 
 
   /***************************************************************************
@@ -373,5 +382,22 @@ public class Globals
     }
 
     return dialog;
+  }
+
+
+
+  /**
+   * Returns the base path for the app's data.
+   **/
+  public String getBasePath()
+  {
+    if (null == mBasePath) {
+      mBasePath = mContext.getDir(DATA_DIR_PREFIX, Context.MODE_PRIVATE).getPath();
+      // TODO Maybe use external storage?
+      // String base = Environment.getExternalStorageDirectory().getPath();
+      // base += File.separator + "data" + File.separator + getPackageName();
+      // mBasePath = base;
+    }
+    return mBasePath;
   }
 }
