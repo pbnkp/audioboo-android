@@ -20,6 +20,8 @@ import android.content.res.TypedArray;
 
 import android.widget.TabHost;
 
+import android.app.Dialog;
+
 import android.util.Log;
 
 /**
@@ -43,6 +45,8 @@ public class AudioBoo extends TabActivity
     AccountActivity.class,
   };
 
+  // Dialog IDs.
+  private static final int DIALOG_GPS_SETTINGS    = Globals.DIALOG_GPS_SETTINGS;
 
 
   /***************************************************************************
@@ -78,6 +82,7 @@ public class AudioBoo extends TabActivity
         );
     }
     setDefaultTab(0);
+    host.setCurrentTab(1);
   }
 
 
@@ -86,6 +91,11 @@ public class AudioBoo extends TabActivity
   public void onStart()
   {
     super.onStart();
+
+    // Start listening to location updates, if that's required.
+    if (!Globals.get().startLocationUpdates()) {
+      showDialog(DIALOG_GPS_SETTINGS);
+    }
   }
 
 
@@ -98,5 +108,20 @@ public class AudioBoo extends TabActivity
     // actvities don't get restarted. Ignoring in the child activities is also
     // required.
     super.onConfigurationChanged(config);
+  }
+
+
+
+  protected Dialog onCreateDialog(int id)
+  {
+    Dialog dialog = null;
+
+    switch (id) {
+      case DIALOG_GPS_SETTINGS:
+        dialog = Globals.get().createDialog(this, id);
+        break;
+    }
+
+    return dialog;
   }
 }

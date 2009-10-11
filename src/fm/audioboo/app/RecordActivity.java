@@ -11,6 +11,7 @@ package fm.audioboo.app;
 
 import android.app.Activity;
 
+import android.content.Context;
 import android.content.Intent;
 
 import android.os.Bundle;
@@ -33,6 +34,8 @@ import fm.audioboo.widget.BooPlayerView;
 
 import android.view.animation.Animation;
 import android.view.animation.AnimationUtils;
+
+import android.location.Location;
 
 import android.net.Uri;
 
@@ -365,6 +368,15 @@ public class RecordActivity extends Activity
     // at" date, and hijack the mHighMP3Url to point to our flac file.
     mBoo = new Boo();
     mBoo.mHighMP3Url = Uri.parse(String.format("file://%s", filename));
+
+    // We assume the location the phone is in when recording *starts* is the
+    // location to associate with the Boo. That makes this the right point in
+    // time to determine the phone location.
+    Location loc = Globals.get().mLocation;
+    if (null != loc) {
+      mBoo.mLocation = new BooLocation(this, Globals.get().mLocation);
+    }
+
     mBooIsNew = true;
   }
 

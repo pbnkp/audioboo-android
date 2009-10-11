@@ -68,6 +68,7 @@ public class AccountActivity extends Activity
 
   // Dialog IDs.
   private static final int DIALOG_CONFIRM_UNLINK  = 0;
+  private static final int DIALOG_GPS_SETTINGS    = Globals.DIALOG_GPS_SETTINGS;
 
 
 
@@ -77,6 +78,8 @@ public class AccountActivity extends Activity
   // API Status. We'll need that to determine what to display exactly.
   private API.Status  mStatus;
 
+  // Flag, shows whether to use location information or not.
+  private boolean     mUseLocation;
 
 
   /***************************************************************************
@@ -126,7 +129,9 @@ public class AccountActivity extends Activity
       cb.setOnCheckedChangeListener(new ToggleButton.OnCheckedChangeListener() {
         public void onCheckedChanged(CompoundButton buttonView, boolean isChecked)
         {
-          onUseLocationChanged(isChecked);
+          if (mUseLocation != isChecked) {
+            onUseLocationChanged(isChecked);
+          }
         }
       });
     }
@@ -210,7 +215,8 @@ public class AccountActivity extends Activity
     CheckBox cb = (CheckBox) findViewById(R.id.account_use_location);
     if (null != cb) {
       SharedPreferences prefs = Globals.get().getPrefs();
-      cb.setChecked(prefs.getBoolean(Globals.PREF_USE_LOCATION, false));
+      mUseLocation = prefs.getBoolean(Globals.PREF_USE_LOCATION, false);
+      cb.setChecked(mUseLocation);
     }
   }
 
@@ -314,10 +320,24 @@ public class AccountActivity extends Activity
 
   private void onUseLocationChanged(boolean use_location)
   {
+    // Store in the Activity, to help determine whether to call this function.
+    mUseLocation = use_location;
+
+    // Store in preferences.
     SharedPreferences prefs = Globals.get().getPrefs();
     SharedPreferences.Editor edit = prefs.edit();
     edit.putBoolean(Globals.PREF_USE_LOCATION, use_location);
     edit.commit();
+
+    // Start/stop listening for location updates.
+    if (use_location) {
+      if (!Globals.get().startLocationUpdates()) {
+        showDialog(DIALOG_GPS_SETTINGS);
+      }
+    }
+    else {
+      Globals.get().stopLocationUpdates();
+    }
   }
 
 
@@ -374,6 +394,10 @@ public class AccountActivity extends Activity
         dialog = builder.create();
         break;
 
+
+      case DIALOG_GPS_SETTINGS:
+        dialog = Globals.get().createDialog(this, id);
+        break;
     }
 
     return dialog;
