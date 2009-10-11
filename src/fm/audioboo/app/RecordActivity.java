@@ -17,7 +17,6 @@ import android.content.Intent;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
-import android.os.Environment;
 
 import android.content.res.Configuration;
 
@@ -82,11 +81,6 @@ public class RecordActivity extends Activity
   // Boo whenever we reset the recorder.
   private Boo           mBoo;
   private boolean       mBooIsNew;
-
-  // Base path, prepended before mRelativeFilePath. It's on the external
-  // storage and includes the file bundle.
-  private String        mBasePath;
-
 
 
   // Reference to the record button
@@ -296,6 +290,18 @@ public class RecordActivity extends Activity
 
     mSpectralView.setAmplitudes(amp.mAverage, amp.mPeak);
     mRecordButton.setProgress((int) (amp.mPosition / 1000));
+
+    // If the Boo has no location, but Globals does, update the Boo's location.
+    // By doing that here, we'll get the location as early on in the recording
+    // process as possible. That should provide the most "accurate" location
+    // in terms of the point in time that best represents where the recording
+    // was made.
+    if (null == mBoo.mLocation) {
+      Location loc = Globals.get().mLocation;
+      if (null != loc) {
+        mBoo.mLocation = new BooLocation(this, Globals.get().mLocation);
+      }
+    }
   }
 
 
@@ -369,14 +375,6 @@ public class RecordActivity extends Activity
     mBoo = new Boo();
     mBoo.mHighMP3Url = Uri.parse(String.format("file://%s", filename));
 
-    // We assume the location the phone is in when recording *starts* is the
-    // location to associate with the Boo. That makes this the right point in
-    // time to determine the phone location.
-    Location loc = Globals.get().mLocation;
-    if (null != loc) {
-      mBoo.mLocation = new BooLocation(this, Globals.get().mLocation);
-    }
-
     mBooIsNew = true;
   }
 
@@ -399,7 +397,10 @@ public class RecordActivity extends Activity
       android.R.drawable.ic_menu_share,
     };
     for (int i = 0 ; i < menu_titles.length ; ++i) {
-      menu.add(0, i, 0, menu_titles[i]).setIcon(menu_icons[i]);
+      // Only add MENU_PUBLISH if the Boo has a duration.
+      if (MENU_PUBLISH != i || 0.0 != mBoo.mDuration) {
+        menu.add(0, i, 0, menu_titles[i]).setIcon(menu_icons[i]);
+      }
     }
     return true;
   }
@@ -420,8 +421,6 @@ public class RecordActivity extends Activity
         String filename = getRecorderFilename() + Boo.EXTENSION;
         i.putExtra(PublishActivity.EXTRA_BOO_FILENAME, filename);
         startActivity(i);
-        // TODO need to signal to this activity whether upload was
-        // cancelled; if not, reset() needs to be performed automatically.
         break;
 
       default:
@@ -436,23 +435,10 @@ public class RecordActivity extends Activity
 
   private String getRecorderFilename()
   {
-    String filename = getBasePath() + File.separator + RECORDING_BASE_NAME + RECORDING_EXTENSION;
+    String filename = Globals.get().getBasePath() + File.separator + RECORDING_BASE_NAME + RECORDING_EXTENSION;
     File f = new File(filename);
     f.getParentFile().mkdirs();
 
     return filename;
   }
-
-
-
-  private String getBasePath()
-  {
-    if (null == mBasePath) {
-      String base = Environment.getExternalStorageDirectory().getPath();
-      base += File.separator + "data" + File.separator + getPackageName();
-      mBasePath = base;
-    }
-    return mBasePath;
-  }
-
 }
