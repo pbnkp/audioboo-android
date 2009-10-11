@@ -66,7 +66,7 @@ public class Boo implements Serializable
   public Date               mUploadedAt;
 
   // Boo location
-  public Location           mLocation;
+  public BooLocation        mLocation;
 
   // URLs associated with the Boo.
   public transient Uri      mHighMP3Url;
