@@ -121,7 +121,7 @@ public class Boo implements Serializable
     } catch (FileNotFoundException ex) {
       Log.e(LTAG, "File not found: " + filename);
     } catch (IOException ex) {
-      Log.e(LTAG, "Error writing file: " + filename);
+      Log.e(LTAG, "Error writing file '" + filename + "': " + ex.getMessage());
     }
   }
 

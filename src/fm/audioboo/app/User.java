@@ -19,7 +19,7 @@ import java.io.IOException;
 /**
  * Representation of an AudioBoo user's data.
  **/
-public class User
+public class User implements Serializable
 {
   /***************************************************************************
    * Public data

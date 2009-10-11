@@ -17,12 +17,14 @@ import android.location.Address;
 
 import java.util.List;
 
+import java.io.Serializable;
+
 import android.util.Log;
 
 /**
  * Representation of a Boo's or user's location
  **/
-public class BooLocation
+public class BooLocation implements Serializable
 {
   /***************************************************************************
    * Private constants
