@@ -154,8 +154,8 @@ public class API
 
   // Default API host. Used as a fallback if SRV lookup fails.
   private static final String DEFAULT_API_HOST            = "api.audioboo.fm";
-  //FIXME
-//  private static final String DEFAULT_API_HOST            = "api.staging.audioboo.fm";
+  // XXX
+  // private static final String DEFAULT_API_HOST            = "api.staging.audioboo.fm";
 
   // Scheme for API requests.
   private static final String API_REQUEST_URI_SCHEME      = "http";
@@ -596,33 +596,26 @@ public class API
     signedParams.put("audio_clip[title]", boo.mTitle);
     signedParams.put("audio_clip[local_recorded_at]", boo.mRecordedAt.toString());
 
+    if (null != boo.mLocation) {
+      signedParams.put("audio_clip[public_location]", "1");
+      signedParams.put("audio_clip[location_latitude]",
+          String.format("%f", boo.mLocation.mLatitude));
+      signedParams.put("audio_clip[location_longitude]",
+          String.format("%f", boo.mLocation.mLongitude));
+      signedParams.put("audio_clip[location_accuracy]",
+          String.format("%f", boo.mLocation.mAccuracy));
+    }
+
     // Prepare files.
     HashMap<String, String> fileParams = new HashMap<String, String>();
     fileParams.put("audio_clip[uploaded_data]", boo.mHighMP3Url.getPath());
+    if (null != boo.mImageUrl) {
+      fileParams.put("audio_clip[uploaded_image]", boo.mImageUrl.getPath());
+    }
 
     // TODO
-//	NSString* presentedTitle = self.title ? self.title : self.placeholderTitle;
-//	[request setValue:presentedTitle forSignedParameter:@"audio_clip[title]"];
-//	
 //	if (self.tags)
 //		[request setValue:self.tags forSignedParameter:@"audio_clip[tags]"];
-//	if ([[audioWriters lastObject] lastModified])
-//		[request setValue:[[[audioWriters lastObject] lastModified] description] forSignedParameter:@"audio_clip[local_recorded_at]"];
-//	if (self.location) {
-//		[request setValue:@"1" forSignedParameter:@"audio_clip[public_location]"];
-//		[request setValue:[NSString stringWithFormat:@"%lf", self.location.coordinate.latitude] forSignedParameter:@"audio_clip[location_latitude]"];
-//		[request setValue:[NSString stringWithFormat:@"%lf", self.location.coordinate.longitude] forSignedParameter:@"audio_clip[location_longitude]"];
-//		[request setValue:[NSString stringWithFormat:@"%lf", self.location.horizontalAccuracy] forSignedParameter:@"audio_clip[location_accuracy]"];
-//	}
-//	
-//	if ([self hasImageAttachment]) {
-//		[request setFile:self.imagePath forParameter:@"audio_clip[uploaded_image]"];
-//	}
-//	
-//	[request setFile:self.audioPath forParameter:@"audio_clip[uploaded_data]"];
-//	
-//	[connection release];
-//	connection = [[ABURLConnection alloc] initWithRequest:request delegate:self];
 
     mRequester = new Requester(API_UPLOAD, params, signedParams, fileParams,
         new Handler(new Handler.Callback() {
@@ -835,12 +828,12 @@ public class API
       // 2.3 Create the signature.
       String signature = String.format("%s:%s:%s", request_uri,
           concatenateParamtersSorted(signedParams), mAPISecret);
-      // Log.d(LTAG, "signature pre signing: " + signature);
+      Log.d(LTAG, "signature pre signing: " + signature);
       try {
         MessageDigest m = MessageDigest.getInstance("SHA-1");
         m.update(signature.getBytes());
         signature = new BigInteger(1, m.digest()).toString(16);
-        // Log.d(LTAG, "signature: " + signature);
+        Log.d(LTAG, "signature: " + signature);
         params.put(mParamNameSignature, signature);
       } catch (java.security.NoSuchAlgorithmException ex) {
         Log.e(LTAG, "Error: could not sign request: " + ex.getMessage());
@@ -985,6 +978,10 @@ public class API
     HttpRequestBase request = constructRequest(API_STATUS, null, signedParams,
         null);
     byte[] data = fetchRawSynchronous(request, handler);
+    if (null == data) {
+      handler.obtainMessage(ERR_EMPTY_RESPONSE).sendToTarget();
+      return;
+    }
 
     ResponseParser parser = new ResponseParser();
     mStatus = parser.parseStatusResponse(new String(data), handler);
@@ -1059,6 +1056,10 @@ public class API
 
     HttpRequestBase request = constructRequest(API_REGISTER, null, signedParams, null);
     byte[] data = fetchRawSynchronous(request, handler);
+    if (data == null) {
+      Log.e(LTAG, "Empty response to registration call.");
+      return;
+    }
 //    Log.d(LTAG, "registration response: " + new String(data));
 
     ResponseParser parser = new ResponseParser();
