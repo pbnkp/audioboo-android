@@ -80,4 +80,15 @@
     this device from your account?</string>
   <string name="account_unlink_dialog_confirm">Unlink</string>
   <string name="account_unlink_dialog_cancel">Cancel</string>
+
+
+  <!--
+    Global dialogs
+  -->
+  <string name="gps_settings_message">You selected to tag Boos with your
+    current location, but all location sources are disabled.
+    Ignoring this conflict means your Boos will not  be tagged with a
+    location.</string>
+  <string name="gps_settings_start">Location Settings</string>
+  <string name="gps_settings_cancel">Ignore</string>
 </resources>
