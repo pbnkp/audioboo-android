@@ -324,9 +324,9 @@ class ResponseParser
 
 
 
-  private Location parseLocation(JSONObject location) throws JSONException
+  private BooLocation parseLocation(JSONObject location) throws JSONException
   {
-    Location result = new Location();
+    BooLocation result = new BooLocation();
 
     result.mLongitude = location.getDouble(LOCATION_LONGITUDE);
     result.mLatitude = location.getDouble(LOCATION_LATITUDE);
