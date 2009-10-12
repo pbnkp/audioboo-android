@@ -52,7 +52,8 @@
 
   <string name="publish_label_picture">Attach A Picture</string>
   <string name="publish_label_title">Describe Your Boo</string>
-  <string name="publish_label_tags">Tag It</string>
+  <string name="publish_label_tags">Tag It. Separate tags with commas, and quote
+    tags that contain a comma themselves.</string>
   <string name="publish_label_submit">That's All</string>
 
   <string name="publish_submit_text">Upload</string>

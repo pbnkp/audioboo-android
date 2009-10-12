@@ -90,18 +90,14 @@
           android:textSize="@dimen/publish_label"
           android:textColor="@color/publish_label"
           android:textStyle="bold"
-          android:ellipsize="end"
-          android:lines="3"
-          android:text="Tags are currently ignored."
+          android:text="@string/publish_label_tags"
         />
-         <!-- FIXME  android:text="@string/publish_label_tags" -->
-      <EditText android:id="@+id/publish_tags"
+      <fm.audioboo.widget.EditTags android:id="@+id/publish_tags"
           android:layout_width="fill_parent"
-          android:layout_height="wrap_content"
-          android:lines="1"
+          android:layout_height="fill_parent"
           android:scrollHorizontally="true"
           android:selectAllOnFocus="true"
-          android:singleLine="true"
+          android:lines="3"
           android:inputType="textAutoComplete"
         />
 
