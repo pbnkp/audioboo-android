@@ -116,6 +116,10 @@ class ResponseParser
   // Unlink response
   private static final String UNLINKED                = "unlinked";
 
+  // Upload response
+  private static final String AUDIO_CLIP              = "audio_clip";
+  private static final String CLIP_ID                 = "id";
+
   /***************************************************************************
    * Implementation
    **/
@@ -124,7 +128,7 @@ class ResponseParser
    * Returns a filled BooList or null. If null is returned, the Handler will
    * have been sent an error code from the API.ERR_* list.
    **/
-  public Response<BooList> parseBooList(String response, Handler handler)
+  public static Response<BooList> parseBooList(String response, Handler handler)
   {
     try {
       Response<JSONObject> body = retrieveBody(response, handler);
@@ -164,7 +168,7 @@ class ResponseParser
    * Parses a registration response, returns the secret in Pair's first
    * member, and the key in the second.
    **/
-  public Response<Pair<String, String>> parseRegistrationResponse(String response, Handler handler)
+  public static Response<Pair<String, String>> parseRegistrationResponse(String response, Handler handler)
   {
     try {
       Response<JSONObject> body = retrieveBody(response, handler);
@@ -196,7 +200,7 @@ class ResponseParser
    * Returns true if the response contains the "unlinked" field and that is
    * set to "true". Otherwise returns false.
    **/
-  public Response<Boolean> parseUnlinkResponse(String response, Handler handler)
+  public static Response<Boolean> parseUnlinkResponse(String response, Handler handler)
   {
     try {
       Response<JSONObject> body = retrieveBody(response, handler);
@@ -222,7 +226,7 @@ class ResponseParser
   /**
    * Parses the response to API_STATUS requests.
    **/
-  public Response<API.Status> parseStatusResponse(String response, Handler handler)
+  public static Response<API.Status> parseStatusResponse(String response, Handler handler)
   {
     try {
       Response<JSONObject> body = retrieveBody(response, handler);
@@ -262,11 +266,37 @@ class ResponseParser
   }
 
 
-//  D/API     (14870): Response: {"timestamp":1255347399,"version":200,"body":{"audio_clip":{"id":69599}},"window":60}
-//  FIXME 
+
+  /**
+   * Parse the response to an upload request. It should only contain the ID of
+   * the newly uploaded clip.
+   **/
+  public static Response<Integer> parseUploadResponse(String response, Handler handler)
+  {
+    try {
+      Response<JSONObject> body = retrieveBody(response, handler);
+      if (null == body) {
+        return null;
+      }
+
+      JSONObject clip = body.mContent.getJSONObject(AUDIO_CLIP);
+
+      Response<Integer> result = new Response<Integer>();
+      result.mTimestamp = body.mTimestamp;
+      result.mWindow = body.mWindow;
+      result.mContent = clip.getInt(CLIP_ID);
+      return result;
+
+    } catch (JSONException ex) {
+      Log.e(LTAG, "Could not parse JSON response: " + ex);
+      handler.obtainMessage(API.ERR_PARSE_ERROR).sendToTarget();
+      return null;
+    }
+  }
 
 
-  private Date parseTimestamp(String str)
+
+  private static Date parseTimestamp(String str)
   {
     SimpleDateFormat format = API.ISO8601Format();
     try {
@@ -279,7 +309,7 @@ class ResponseParser
 
 
 
-  private Boo parseBoo(JSONObject boo) throws JSONException
+  private static Boo parseBoo(JSONObject boo) throws JSONException
   {
     Boo result = new Boo();
 
@@ -324,7 +354,7 @@ class ResponseParser
 
 
 
-  private User parseUser(JSONObject user) throws JSONException
+  private static User parseUser(JSONObject user) throws JSONException
   {
     if (user.has(USER_ANONYMOUS) && user.getBoolean(USER_ANONYMOUS)) {
       return null;
@@ -354,7 +384,7 @@ class ResponseParser
 
 
 
-  private BooLocation parseLocation(JSONObject location) throws JSONException
+  private static BooLocation parseLocation(JSONObject location) throws JSONException
   {
     BooLocation result = new BooLocation();
 
@@ -371,7 +401,7 @@ class ResponseParser
 
 
 
-  private LinkedList<Tag> parseTags(JSONArray tags) throws JSONException
+  private static LinkedList<Tag> parseTags(JSONArray tags) throws JSONException
   {
     if (0 == tags.length()) {
       return null;
@@ -388,7 +418,7 @@ class ResponseParser
 
 
 
-  private Tag parseTag(JSONObject tag) throws JSONException
+  private static Tag parseTag(JSONObject tag) throws JSONException
   {
     Tag result = new Tag();
 
@@ -409,7 +439,7 @@ class ResponseParser
    * on failure. If null is returned, the Handler has already been sent an
    * appropriate error message.
    **/
-  private Response<JSONObject> retrieveBody(String response, Handler handler) throws JSONException
+  private static Response<JSONObject> retrieveBody(String response, Handler handler) throws JSONException
   {
     JSONObject object = new JSONObject(response);
 
@@ -439,7 +469,7 @@ class ResponseParser
    * If false is returned, the handler has already been sent a ERR_API_ERROR
    * message.
    **/
-  private boolean handleError(JSONObject body, Handler handler) throws JSONException
+  private static boolean handleError(JSONObject body, Handler handler) throws JSONException
   {
     if (!body.has(ERROR)) {
       return true;
@@ -463,7 +493,7 @@ class ResponseParser
    * false. If false is returned, the handler has already been sent a
    * ERR_VERSION_MISMATCH message.
    **/
-  private boolean checkVersion(JSONObject object, Handler handler) throws JSONException
+  private static boolean checkVersion(JSONObject object, Handler handler) throws JSONException
   {
     // Check version of the response first. We expect a particular version
     // at the moment.
