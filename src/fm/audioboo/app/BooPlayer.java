@@ -138,6 +138,7 @@ public class BooPlayer extends Thread
       mMediaPlayer.setOnPreparedListener(new MediaPlayer.OnPreparedListener() {
         public void onPrepared(MediaPlayer mp)
         {
+          mp.start();
           startPlaybackState();
         }
       });
@@ -159,10 +160,10 @@ public class BooPlayer extends Thread
 
       // Now try playing back!
       try {
+        // Log.d(LTAG, "setting data source");
         mMediaPlayer.setDataSource(mContext, boo.mHighMP3Url);
-        mMediaPlayer.prepare();
+        mMediaPlayer.prepareAsync();
 
-        mMediaPlayer.start();
       } catch (java.io.IOException ex) {
         Log.e(LTAG, "Error playing back '" + boo.mHighMP3Url + "': " + ex);
         mMediaPlayer.release();
@@ -177,7 +178,9 @@ public class BooPlayer extends Thread
     {
       // Log.d(LTAG, "Stop playing: " + boo);
       if (null != mMediaPlayer) {
-        mMediaPlayer.stop();
+        if (mMediaPlayer.isPlaying()) {
+          mMediaPlayer.stop();
+        }
         mMediaPlayer.release();
         mMediaPlayer = null;
       }
@@ -357,6 +360,8 @@ public class BooPlayer extends Thread
         {
           currentBoo = mBoo;
         }
+        //Log.d(LTAG, "Should play: " + currentBoo);
+        //Log.d(LTAG, "Playing: " + playingBoo);
 
         if (currentBoo != playingBoo) {
           if (null != playingBoo) {
