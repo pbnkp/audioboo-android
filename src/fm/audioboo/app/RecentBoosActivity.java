@@ -27,6 +27,8 @@ import android.view.MenuItem;
 import android.view.animation.Animation;
 import android.view.animation.AnimationUtils;
 
+import android.widget.Toast;
+
 import android.app.Dialog;
 
 import java.util.LinkedList;
@@ -88,7 +90,10 @@ public class RecentBoosActivity extends ListActivity
 
     public void onPlaybackEnded(BooPlayerView view, int endState)
     {
-      // FIXME toast if endState != success
+      if (BooPlayerView.END_STATE_SUCCESS != endState) {
+        Toast.makeText(RecentBoosActivity.this, R.string.recent_boos_playback_error,
+            Toast.LENGTH_LONG).show();
+      }
       onItemUnselected(mView, mId);
     }
   }
@@ -251,7 +256,7 @@ public class RecentBoosActivity extends ListActivity
         break;
 
       default:
-        // FIXME error toast
+        Toast.makeText(this, "Unreachable line reached.", Toast.LENGTH_LONG).show();
         return false;
     }
 
@@ -290,7 +295,9 @@ public class RecentBoosActivity extends ListActivity
   void onItemUnselected(View view, int id)
   {
     // And also switch the view to unselected.
-    mAdapter.unselect(view, id);
+    if (null != mAdapter) {
+      mAdapter.unselect(view, id);
+    }
 
     // Fade out player view
     final BooPlayerView player = (BooPlayerView) findViewById(R.id.recent_boos_player);

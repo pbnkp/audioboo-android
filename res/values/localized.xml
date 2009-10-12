@@ -29,6 +29,9 @@
     <item>Refresh</item>
   </string-array>
 
+  <!-- Error message when playback ended unsuccessfully -->
+  <string name="recent_boos_playback_error">Playback error, please try again!</string>
+
 
   <!--
     Recording view
