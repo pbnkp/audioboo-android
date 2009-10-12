@@ -27,6 +27,8 @@ import android.view.MenuItem;
 import android.view.animation.Animation;
 import android.view.animation.AnimationUtils;
 
+import android.app.Dialog;
+
 import java.util.LinkedList;
 
 import fm.audioboo.widget.BooPlayerView;
@@ -48,18 +50,24 @@ public class RecentBoosActivity extends ListActivity
   // "recent_boos_actions" in res/values/localized.xml
   private static final int  ACTION_REFRESH  = 0;
 
+  // Dialog IDs
+  private static final int  DIALOG_ERROR    = Globals.DIALOG_ERROR;
 
   /***************************************************************************
    * Data members
    **/
   // Flag, set to true when a request is in progress.
-  private boolean         mRequesting;
+  private boolean           mRequesting;
 
   // Content
-  private BooList         mBoos;
+  private BooList           mBoos;
 
   // Adapter
-  private BooListAdapter  mAdapter;
+  private BooListAdapter    mAdapter;
+
+  // Last error information - used and cleared in onCreateDialog
+  private int               mErrorCode = -1;
+  private API.APIException  mException;
 
 
   /***************************************************************************
@@ -168,6 +176,12 @@ public class RecentBoosActivity extends ListActivity
   {
     if (mRequesting) {
       // Wait for the previous request to finish
+      return;
+    }
+
+    View view = findViewById(R.id.recent_boos_progress);
+    if (null != view) {
+      view.setVisibility(View.VISIBLE);
     }
 
     mRequesting = true;
@@ -179,7 +193,14 @@ public class RecentBoosActivity extends ListActivity
           onReceiveRecentBoos((BooList) msg.obj);
         }
         else {
-          onRecentBoosError(msg.what, (String) msg.obj);
+          mErrorCode = msg.what;
+          mException = (API.APIException) msg.obj;
+          showDialog(DIALOG_ERROR);
+
+          View view = findViewById(R.id.recent_boos_progress);
+          if (null != view) {
+            view.setVisibility(View.INVISIBLE);
+          }
         }
         return true;
       }
@@ -196,14 +217,6 @@ public class RecentBoosActivity extends ListActivity
     mAdapter = new BooListAdapter(this, R.layout.recent_boos_item, mBoos);
     getListView().setOnScrollListener(new BooListAdapter.ScrollListener(mAdapter));
     setListAdapter(mAdapter);
-  }
-
-
-
-  private void onRecentBoosError(int code, String msg)
-  {
-    // FIXME add error view to layout and display that.
-    Log.e(LTAG, "Error: (" + code + ") " + msg);
   }
 
 
@@ -305,4 +318,22 @@ public class RecentBoosActivity extends ListActivity
       player.stop();
     }
   }
+
+
+
+  protected Dialog onCreateDialog(int id)
+  {
+    Dialog dialog = null;
+
+    switch (id) {
+      case DIALOG_ERROR:
+        dialog = Globals.get().createDialog(this, id, mErrorCode, mException);
+        mErrorCode = -1;
+        mException = null;
+        break;
+    }
+
+    return dialog;
+  }
+
 }

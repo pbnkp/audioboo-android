@@ -29,7 +29,7 @@
       android:gravity="center"
     >
 
-    <ProgressBar
+    <ProgressBar android:id="@+id/recent_boos_progress"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:max="10000"
