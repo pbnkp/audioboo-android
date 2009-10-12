@@ -121,4 +121,87 @@
   <string name="gps_settings_cancel">Ignore</string>
 
   <string name="error_message_ack">OK</string>
+
+
+  <!--
+    Values for Boo title generation
+  -->
+  <string-array name="boo_title_generic">
+    <item>Lonelyboo</item>
+    <item>Perhaps its rainingboo</item>
+    <item>Waiting for a friendboo</item>
+    <item>Broadbandboo</item>
+    <item>What a lovely skirtboo</item>
+    <item>Bad hair dayboo</item>
+    <item>Fancy a quick oneboo</item>
+    <item>Anyone for tennisboo</item>
+    <item>Egg and tomato pleaseboo</item>
+    <item>Make mine a shandyboo</item>
+    <item>Don\'t I recognise youboo</item>
+    <item>Bloody circle lineboo</item>
+    <item>Confidenialityboo</item>
+    <item>Need to knowboo</item>
+    <item>Blue skyboo</item>
+    <item>Officeboo</item>
+    <item>Thanks a lotboo</item>
+    <item>Boohooboo</item>
+    <item>Wash that man right out of your hairboo</item>
+    <item>No I\'ll have vinegarboo</item>
+    <item>And she said to himboo</item>
+    <item>Absolutelyboo</item>
+    <item>There\'s a reason for thatboo</item>
+    <item>Please update your profileboo</item>
+    <item>Junk mailboo</item>
+    <item>Crikey that expensiveboo</item>
+    <item>Be back in a jiffyboo</item>
+    <item>Pass the saltboo</item>
+    <item>Remember to water the flowersboo</item>
+    <item>Didn\'t like themboo</item>
+    <item>Left then rightboo</item>
+    <item>Listening to Radio 4boo</item>
+    <item>Left to my own devicesboo</item>
+    <item>I\'m only happy when it rainsboo</item>
+    <item>Are we not menboo</item>
+    <item>Hit me baby one more timeboo</item>
+    <item>It\'s in the postboo</item>
+    <item>Didn\'t feel a thingboo</item>
+    <item>Fancy a brewboo</item>
+    <item>One slice or twoboo</item>
+    <item>Two pintsboo</item>
+    <item>Oh buggerboo</item>
+    <item>A funny thing happened on the wayboo</item>
+    <item>Sadboo</item>
+    <item>Aceboo</item>
+    <item>Strangeboo</item>
+  </string-array>
+
+  <!-- Seasonal -->
+  <string name="boo_title_spring">Springboo</string>
+  <string name="boo_title_summer">Summerboo</string>
+  <string name="boo_title_hot">Hotboo</string>
+  <string name="boo_title_fall">Fallboo</string>
+  <string name="boo_title_autumn">Autumnboo</string>
+  <string name="boo_title_winter">Winterboo</string>
+  <string name="boo_title_chilly">Chillyboo</string>
+
+  <!-- Time of day -->
+  <string name="boo_title_breakfast">Breakfastboo</string>
+  <string name="boo_title_morning">Morningboo</string>
+  <string name="boo_title_lunch">Lunchboo</string>
+  <string name="boo_title_afternoon">Afternoonboo</string>
+  <string name="boo_title_sunny">Sunnyboo</string>
+  <string name="boo_title_tea">Teaboo</string>
+  <string name="boo_title_eod">End of the dayboo</string>
+  <string name="boo_title_evening">Eveningboo</string>
+  <string name="boo_title_dark">Darkboo</string>
+  <string name="boo_title_sleepy">Sleepyboo</string>
+
+  <!-- Special -->
+  <string name="boo_title_meetings">Meetings are evilboo</string>
+  <string name="boo_title_packed_lunch">Packed lunchboo</string>
+  <string name="boo_title_way_home">Possibly on way homeboo</string>
+  <string name="boo_title_home">Hi honey I\'m homeboo</string>
+  <string name="boo_title_party">Partyboo</string>
+  <string name="boo_title_drunk">Drunkenboo</string>
+  <string name="boo_title_hung_over">Hungoverboo</string>
 </resources>
