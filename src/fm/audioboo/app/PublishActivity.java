@@ -168,7 +168,7 @@ public class PublishActivity extends Activity
       if (null != mBoo.mTitle) {
         edit_text.setText(mBoo.mTitle);
       }
-      // TODO add hint
+      edit_text.setHint(Globals.get().mTitleGenerator.getTitle());
     }
 
     // Try to set tags, if they're defined.
@@ -220,10 +220,9 @@ public class PublishActivity extends Activity
       if (null != title && 0 != title.length()) {
         mBoo.mTitle = title;
       }
-    }
-    if (null == mBoo.mTitle && useHint) {
-      // TODO if mTitle is not set, use the hint.
-      mBoo.mTitle = "Android Boo";
+      if (null == mBoo.mTitle && useHint) {
+        mBoo.mTitle = edit_text.getHint().toString();
+      }
     }
 
     // Grab tags

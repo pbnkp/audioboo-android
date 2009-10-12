@@ -131,6 +131,7 @@ public class Globals
   public API                mAPI;
   public ImageCache         mImageCache;
   public BooPlayer          mPlayer;
+  public TitleGenerator     mTitleGenerator;
 
   // Location information, updated regularly if the appropriate settings are
   // switched on.
@@ -180,8 +181,11 @@ public class Globals
 
     mAPI = new API();
     mImageCache = new ImageCache(mContext, IMAGE_CACHE_MAX);
+
     mPlayer = new BooPlayer(mContext);
     mPlayer.start();
+
+    mTitleGenerator = new TitleGenerator(mContext);
   }
 
 
@@ -194,6 +198,8 @@ public class Globals
     mPlayer.mShouldRun = false;
     mPlayer.interrupt();
     mPlayer = null;
+
+    mTitleGenerator = null;
   }
 
 
