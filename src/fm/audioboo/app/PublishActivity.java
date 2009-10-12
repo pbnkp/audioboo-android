@@ -35,6 +35,8 @@ import android.net.Uri;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 
+import android.app.Dialog;
+
 import java.io.File;
 import java.io.FileOutputStream;
 
@@ -59,8 +61,11 @@ public class PublishActivity extends Activity
   // Base file name for the image file
   private static final String IMAGE_NAME        = "current_image.png";
 
-  // Maximum image size.
-  private static final int    IMAGE_MAX_SIZE    = 300;
+  // Maximum image size, in pixels. Images are assumed to be square.
+  private static final int IMAGE_MAX_SIZE       = 300;
+
+  // Dialog IDs.
+  private static final int DIALOG_ERROR         = Globals.DIALOG_ERROR;
 
 
   /***************************************************************************
@@ -74,11 +79,16 @@ public class PublishActivity extends Activity
    * Data
    **/
   // Filename and Boo data.
-  private String  mBooFilename;
-  private Boo     mBoo;
+  private String            mBooFilename;
+  private Boo               mBoo;
 
   // Request code, for figuring out which Intent responses we need to ignore.
-  private int     mRequestCode;
+  private int               mRequestCode;
+
+  // Last error information - used and cleared in onCreateDialog
+  private int               mErrorCode = -1;
+  private API.APIException  mException;
+
 
 
   /***************************************************************************
@@ -105,7 +115,7 @@ public class PublishActivity extends Activity
     }
     mBoo = boo;
     mBooFilename = filename;
-    Log.d(LTAG, "Boo: " + mBoo);
+    // Log.d(LTAG, "Boo: " + mBoo);
 
 
     // Create view, etc.
@@ -140,6 +150,35 @@ public class PublishActivity extends Activity
   public void onStart()
   {
     super.onStart();
+
+    // Initialize UI. It's possible that the Boo already contains a lot
+    // of information, i.e.
+    // - Title
+    // - Tags
+    // - Image
+
+    // Try to set the image, if it exists.
+    if (null != mBoo.mImageUrl) {
+      setImageFile(mBoo.mImageUrl.getPath());
+    }
+
+    // Try to set the title, if it exists.
+    EditText edit_text = (EditText) findViewById(R.id.publish_title);
+    if (null != edit_text) {
+      if (null != mBoo.mTitle) {
+        edit_text.setText(mBoo.mTitle);
+      }
+      // TODO add hint
+    }
+
+    // Try to set tags, if they're defined.
+    if (null != mBoo.mTags) {
+      EditTags tags_view = (EditTags) findViewById(R.id.publish_tags);
+      if (null != tags_view) {
+        tags_view.setTags(mBoo.mTags);
+      }
+    }
+
   }
 
 
@@ -149,7 +188,10 @@ public class PublishActivity extends Activity
   {
     super.onPause();
 
-    // TODO write mBoo to mBooFilename. Let's us resume editing, to a degree.
+    // Save our current progress. The nice part is that this lets us resume
+    // editing, and the title might even be reflected in the recorder view.
+    updateBoo(false);
+    mBoo.writeToFile(mBooFilename);
   }
 
 
@@ -164,36 +206,30 @@ public class PublishActivity extends Activity
 
 
 
-  private void onSubmit()
+  /**
+   * Helper function; grabs information from the UI's views, and stores it
+   * into mBoo. The parameter specifies whether the title field's hint should
+   * be used if the title is empty.
+   **/
+  private void updateBoo(boolean useHint)
   {
-    // Hide form, and show progress view.
-    View view = findViewById(R.id.publish_form);
-    view.setVisibility(View.GONE);
-    view = findViewById(R.id.publish_progress);
-    view.setVisibility(View.VISIBLE);
-
     // Grab Boo title.
     EditText edit_text = (EditText) findViewById(R.id.publish_title);
     if (null != edit_text) {
-      mBoo.mTitle = edit_text.getText().toString();
+      String title = edit_text.getText().toString();
+      if (null != title && 0 != title.length()) {
+        mBoo.mTitle = title;
+      }
     }
-    if (null == mBoo.mTitle || 0 == mBoo.mTitle.length()) {
+    if (null == mBoo.mTitle && useHint) {
       // TODO if mTitle is not set, use the hint.
       mBoo.mTitle = "Android Boo";
     }
 
     // Grab tags
     EditTags tags_view = (EditTags) findViewById(R.id.publish_tags);
-    if (tags_view != null) {
-      List<String> tags = tags_view.getTags();
-      if (null != tags) {
-        mBoo.mTags = new LinkedList<Tag>();
-        for (String tag : tags) {
-          Tag t = new Tag();
-          t.mNormalised = tag;
-          mBoo.mTags.add(t);
-        }
-      }
+    if (null != tags_view) {
+      mBoo.mTags = tags_view.getTags();
     }
 
     // Make a last ditch attempt to get a Location for the Boo, if necessary.
@@ -203,6 +239,19 @@ public class PublishActivity extends Activity
         mBoo.mLocation = new BooLocation(this, Globals.get().mLocation);
       }
     }
+  }
+
+
+  private void onSubmit()
+  {
+    // Hide form, and show progress view.
+    View view = findViewById(R.id.publish_form);
+    view.setVisibility(View.GONE);
+    view = findViewById(R.id.publish_progress);
+    view.setVisibility(View.VISIBLE);
+
+    // Update mBoo's information
+    updateBoo(true);
 
     Globals.get().mAPI.uploadBoo(mBoo, new Handler(new Handler.Callback() {
       public boolean handleMessage(Message msg)
@@ -210,13 +259,12 @@ public class PublishActivity extends Activity
         if (API.ERR_SUCCESS == msg.what) {
           onUploadSucceeded((String) msg.obj);
         }
-        else if (API.ERR_API_ERROR == msg.what) {
-          // FIXME
-          API.APIException ex = (API.APIException) msg.obj;
-          Log.d(LTAG, "API ERROR: " + ex.getMessage() + " " + ex.getCode());
-          // onUploadError(msg.what, (String) msg.obj);
-        } else {
-          onUploadError(msg.what, (String) msg.obj);
+        else {
+          mErrorCode = msg.what;
+          mException = (API.APIException) msg.obj;
+          showDialog(DIALOG_ERROR);
+          setResult(Activity.RESULT_CANCELED);
+          finish();
         }
         return true;
       }
@@ -237,12 +285,12 @@ public class PublishActivity extends Activity
   protected void onActivityResult(int requestCode, int resultCode, Intent data)
   {
     if (mRequestCode != requestCode) {
-      Log.d(LTAG, "Ignoring result for requestCode: " + requestCode);
+      //Log.d(LTAG, "Ignoring result for requestCode: " + requestCode);
       return;
     }
 
     if (Activity.RESULT_CANCELED == resultCode) {
-      Log.d(LTAG, "Ignore cancelled.");
+      //Log.d(LTAG, "Ignore cancelled.");
       return;
     }
 
@@ -335,18 +383,33 @@ public class PublishActivity extends Activity
 
   private void onUploadSucceeded(String booId)
   {
-    Log.d(LTAG, "Boo uploaded to: " + booId);
+    // Log.d(LTAG, "Boo uploaded to: " + booId);
 
-    // TODO delete boo, or signal recording boo that that should reset.
+    // Clean up after ourselves... delete image file.
+    File f = new File(getImageFilename());
+    if (f.exists()) {
+      f.delete();
+    }
 
+    // Signal to caller that we successfully uploaded the Boo.
+    setResult(Activity.RESULT_OK);
     finish();
   }
 
 
 
-  private void onUploadError(int code, String message)
+  protected Dialog onCreateDialog(int id)
   {
-    // FIXME want a popup
-    Log.e(LTAG, "Error uploading boo: " + code + " " + message);
+    Dialog dialog = null;
+
+    switch (id) {
+      case DIALOG_ERROR:
+        dialog = Globals.get().createDialog(this, id, mErrorCode, mException);
+        mErrorCode = -1;
+        mException = null;
+        break;
+    }
+
+    return dialog;
   }
 }
