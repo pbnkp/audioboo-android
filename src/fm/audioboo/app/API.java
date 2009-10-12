@@ -344,6 +344,7 @@ public class API
 
   // API Status.
   private Status        mStatus;
+  private long          mStatusTimeout;
 
 
   /***************************************************************************
@@ -374,6 +375,9 @@ public class API
    **/
   public Status getStatus()
   {
+//    if (System.currentTimeMillis() > mStatusTimeout) {
+//      mStatus = null;
+//    }
     return mStatus;
   }
 
@@ -509,10 +513,10 @@ public class API
           {
             if (ERR_SUCCESS == msg.what) {
               ResponseParser parser = new ResponseParser();
-              boolean unlinked = parser.parseUnlinkResponse((String) msg.obj,
-                result_handler);
+              ResponseParser.Response<Boolean> unlinked
+                  = parser.parseUnlinkResponse((String) msg.obj, result_handler);
 
-              if (unlinked) {
+              if (null != unlinked && unlinked.mContent) {
                 // Freeing the status means that the next request has to fetch
                 // an update.
                 mStatus = null;
@@ -650,11 +654,12 @@ public class API
   {
     // Log.d(LTAG, "Response: " + response);
     ResponseParser parser = new ResponseParser();
-    BooList boos = parser.parseBooList(response, result_handler);
+    ResponseParser.Response<BooList> boos
+        = parser.parseBooList(response, result_handler);
     if (null != boos) {
       // If boos were null, then the ResponseParser would already have sent an
       // error message to the result_handler.
-      result_handler.obtainMessage(ERR_SUCCESS, boos).sendToTarget();
+      result_handler.obtainMessage(ERR_SUCCESS, boos.mContent).sendToTarget();
     }
   }
 
@@ -1009,7 +1014,7 @@ public class API
    **/
   private void updateStatus(Handler handler, boolean signalSuccess)
   {
-    if (null != mStatus) {
+    if (null != getStatus()) {
       return;
     }
 
@@ -1024,7 +1029,12 @@ public class API
     }
 
     ResponseParser parser = new ResponseParser();
-    mStatus = parser.parseStatusResponse(new String(data), handler);
+    ResponseParser.Response<Status> status
+        = parser.parseStatusResponse(new String(data), handler);
+    if (null != status) {
+      mStatus = status.mContent;
+      mStatusTimeout = (status.mTimestamp + status.mWindow) * 1000;
+    }
 
     if (null == mStatus) {
       handler.obtainMessage(ERR_EMPTY_RESPONSE).sendToTarget();
@@ -1103,12 +1113,12 @@ public class API
 //    Log.d(LTAG, "registration response: " + new String(data));
 
     ResponseParser parser = new ResponseParser();
-    Pair<String, String> results = parser.parseRegistrationResponse(
-        new String(data), handler);
+    ResponseParser.Response<Pair<String, String>> results
+        = parser.parseRegistrationResponse(new String(data), handler);
 
     if (null != results) {
-      mAPISecret = results.mFirst;
-      mAPIKey = results.mSecond;
+      mAPISecret = results.mContent.mFirst;
+      mAPIKey = results.mContent.mSecond;
       mParamNameKey = KEY_SOURCE_KEY;
       mParamNameSignature = KEY_SOURCE_SIGNATURE;
       mParamNameTimestamp = KEY_SOURCE_TIMESTAMP;

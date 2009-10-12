@@ -30,6 +30,17 @@ import android.util.Log;
 class ResponseParser
 {
   /***************************************************************************
+   * Response object.
+   **/
+  public static class Response<T>
+  {
+    public int  mTimestamp;
+    public int  mWindow;
+    public T    mContent;
+  };
+
+
+  /***************************************************************************
    * Private constants
    **/
   // Log ID
@@ -113,27 +124,31 @@ class ResponseParser
    * Returns a filled BooList or null. If null is returned, the Handler will
    * have been sent an error code from the API.ERR_* list.
    **/
-  public BooList parseBooList(String response, Handler handler)
+  public Response<BooList> parseBooList(String response, Handler handler)
   {
     try {
-      JSONObject body = retrieveBody(response, handler);
+      Response<JSONObject> body = retrieveBody(response, handler);
       if (null == body) {
         return null;
       }
 
-      BooList result = new BooList();
+      BooList list = new BooList();
 
-      JSONObject totals = body.getJSONObject(TOTALS);
-      result.mOffset = totals.getInt(TOTALS_OFFSET);
-      result.mCount = totals.getInt(TOTALS_COUNT);
+      JSONObject totals = body.mContent.getJSONObject(TOTALS);
+      list.mOffset = totals.getInt(TOTALS_OFFSET);
+      list.mCount = totals.getInt(TOTALS_COUNT);
 
       // Read metadata for individual boos
-      JSONArray boos = body.getJSONArray(AUDIO_CLIPS);
+      JSONArray boos = body.mContent.getJSONArray(AUDIO_CLIPS);
       for (int i = 0 ; i < boos.length() ; ++i) {
-        result.mClips.add(parseBoo(boos.getJSONObject(i)));
+        list.mClips.add(parseBoo(boos.getJSONObject(i)));
       }
-      // Log.d(LTAG, "# clips: " + result.mClips.size());
+      // Log.d(LTAG, "# clips: " + list.mClips.size());
 
+      Response<BooList> result = new Response<BooList>();
+      result.mTimestamp = body.mTimestamp;
+      result.mWindow = body.mWindow;
+      result.mContent = list;
       return result;
 
     } catch (JSONException ex) {
@@ -149,19 +164,23 @@ class ResponseParser
    * Parses a registration response, returns the secret in Pair's first
    * member, and the key in the second.
    **/
-  public Pair<String, String> parseRegistrationResponse(String response, Handler handler)
+  public Response<Pair<String, String>> parseRegistrationResponse(String response, Handler handler)
   {
     try {
-      JSONObject body = retrieveBody(response, handler);
+      Response<JSONObject> body = retrieveBody(response, handler);
       if (null == body) {
         return null;
       }
 
-      JSONObject source = body.getJSONObject(SOURCE);
+      JSONObject source = body.mContent.getJSONObject(SOURCE);
 
-      Pair<String, String> result = new Pair<String, String>(
+      Response<Pair<String, String>> result = new Response<Pair<String, String>>();
+      result.mTimestamp = body.mTimestamp;
+      result.mWindow = body.mWindow;
+      result.mContent = new Pair<String, String>(
           source.getString(API_SECRET),
           source.getString(API_KEY));
+
       return result;
 
     } catch (JSONException ex) {
@@ -177,55 +196,19 @@ class ResponseParser
    * Returns true if the response contains the "unlinked" field and that is
    * set to "true". Otherwise returns false.
    **/
-  public boolean parseUnlinkResponse(String response, Handler handler)
+  public Response<Boolean> parseUnlinkResponse(String response, Handler handler)
   {
     try {
-      JSONObject body = retrieveBody(response, handler);
-      if (null == body) {
-        return false;
-      }
-
-      return body.getBoolean(UNLINKED);
-
-    } catch (JSONException ex) {
-      Log.e(LTAG, "Could not parse JSON response: " + ex);
-      handler.obtainMessage(API.ERR_PARSE_ERROR).sendToTarget();
-      return false;
-    }
-  }
-
-
-
-  /**
-   * Parses the response to API_STATUS requests.
-   **/
-  public API.Status parseStatusResponse(String response, Handler handler)
-  {
-    try {
-      JSONObject body = retrieveBody(response, handler);
+      Response<JSONObject> body = retrieveBody(response, handler);
       if (null == body) {
         return null;
       }
 
-      // First, figure out if the device is linked. That determines the
-      // remainder of the fields we can expect.
-      API.Status status = new API.Status();
-      status.mLinked = body.getBoolean(STATUS_LINKED);
-
-      if (status.mLinked) {
-        // There should be an account field with a username and email.
-        JSONObject account = body.getJSONObject(STATUS_ACCOUNT);
-
-        status.mUsername = account.getString(STATUS_ACC_USERNAME);
-        status.mEmail = account.getString(STATUS_ACC_EMAIL);
-      }
-      else {
-        // The only thing we'll find if the device is not linked is a
-        // link url.
-        status.mLinkUri = Uri.parse(body.getString(STATUS_LINK_URL));
-      }
-
-      return status;
+      Response<Boolean> result = new Response<Boolean>();
+      result.mTimestamp = body.mTimestamp;
+      result.mWindow = body.mWindow;
+      result.mContent = body.mContent.getBoolean(UNLINKED);
+      return result;
 
     } catch (JSONException ex) {
       Log.e(LTAG, "Could not parse JSON response: " + ex);
@@ -234,6 +217,53 @@ class ResponseParser
     }
   }
 
+
+
+  /**
+   * Parses the response to API_STATUS requests.
+   **/
+  public Response<API.Status> parseStatusResponse(String response, Handler handler)
+  {
+    try {
+      Response<JSONObject> body = retrieveBody(response, handler);
+      if (null == body) {
+        return null;
+      }
+
+      // First, figure out if the device is linked. That determines the
+      // remainder of the fields we can expect.
+      API.Status status = new API.Status();
+      status.mLinked = body.mContent.getBoolean(STATUS_LINKED);
+
+      if (status.mLinked) {
+        // There should be an account field with a username and email.
+        JSONObject account = body.mContent.getJSONObject(STATUS_ACCOUNT);
+
+        status.mUsername = account.getString(STATUS_ACC_USERNAME);
+        status.mEmail = account.getString(STATUS_ACC_EMAIL);
+      }
+      else {
+        // The only thing we'll find if the device is not linked is a
+        // link url.
+        status.mLinkUri = Uri.parse(body.mContent.getString(STATUS_LINK_URL));
+      }
+
+      Response<API.Status> result = new Response<API.Status>();
+      result.mTimestamp = body.mTimestamp;
+      result.mWindow = body.mWindow;
+      result.mContent = status;
+      return result;
+
+    } catch (JSONException ex) {
+      Log.e(LTAG, "Could not parse JSON response: " + ex);
+      handler.obtainMessage(API.ERR_PARSE_ERROR).sendToTarget();
+      return null;
+    }
+  }
+
+
+//  D/API     (14870): Response: {"timestamp":1255347399,"version":200,"body":{"audio_clip":{"id":69599}},"window":60}
+//  FIXME 
 
 
   private Date parseTimestamp(String str)
@@ -379,25 +409,27 @@ class ResponseParser
    * on failure. If null is returned, the Handler has already been sent an
    * appropriate error message.
    **/
-  private JSONObject retrieveBody(String response, Handler handler) throws JSONException
+  private Response<JSONObject> retrieveBody(String response, Handler handler) throws JSONException
   {
     JSONObject object = new JSONObject(response);
 
-    // XXX not sure what to do with the metadata here.
-    // result.mWindow = object.getInt(WINDOW);
-    // result.mTimestamp = new Date(object.getInt(TIMESTAMP));
+    Response<JSONObject> result = new Response<JSONObject>();
+
+    // Parse metadata.
+    result.mWindow = object.getInt(WINDOW);
+    result.mTimestamp = object.getInt(TIMESTAMP);
 
     if (!checkVersion(object, handler)) {
       return null;
     }
 
-    JSONObject body = object.getJSONObject(BODY);
+    result.mContent = object.getJSONObject(BODY);
 
-    if (!handleError(body, handler)) {
+    if (!handleError(result.mContent, handler)) {
       return null;
     }
 
-    return body;
+    return result;
   }
 
 
