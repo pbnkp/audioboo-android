@@ -247,14 +247,14 @@ public class API
     public boolean keepRunning = true;
 
     private String                  mApi;
-    private HashMap<String, String> mParams;
-    private HashMap<String, String> mSignedParams;
+    private HashMap<String, Object> mParams;
+    private HashMap<String, Object> mSignedParams;
     private HashMap<String, String> mFileParams;
     private Handler                 mHandler;
 
     public Requester(String api,
-        HashMap<String, String> params,
-        HashMap<String, String> signedParams,
+        HashMap<String, Object> params,
+        HashMap<String, Object> signedParams,
         HashMap<String, String> fileParams,
         Handler handler)
     {
@@ -502,7 +502,7 @@ public class API
 
     // This request has no parameters. We pass empty signed parameters to force
     // singing.
-    HashMap<String, String> signedParams = new HashMap<String, String>();
+    HashMap<String, Object> signedParams = new HashMap<String, Object>();
     mRequester = new Requester(API_UNLINK, null, signedParams, null,
         new Handler(new Handler.Callback() {
           public boolean handleMessage(Message msg)
@@ -563,7 +563,7 @@ public class API
    **/
   public String getSignedLinkUrl()
   {
-    HashMap<String, String> signedParams = new HashMap<String, String>();
+    HashMap<String, Object> signedParams = new HashMap<String, Object>();
     signedParams.put("callback[success]", "audioboo:///link_success");
     signedParams.put("callback[cancelled]", "audioboo:///link_cancelled");
     signedParams.put("callback[failure]", "audioboo:///link_failure");
@@ -587,14 +587,23 @@ public class API
     }
 
     // Prepare parameters.
-    HashMap<String, String> params = null;
-//    params = new HashMap<String, String>();
+    HashMap<String, Object> params = null;
+//    params = new HashMap<String, Object>();
 //    params.put("debug_signature", "true");
 
     // Prepare signed parameters
-    HashMap<String, String> signedParams = new HashMap<String, String>();
+    HashMap<String, Object> signedParams = new HashMap<String, Object>();
     signedParams.put("audio_clip[title]", boo.mTitle);
     signedParams.put("audio_clip[local_recorded_at]", boo.mRecordedAt.toString());
+
+    // Tags
+    if (null != boo.mTags) {
+      LinkedList<String> tags = new LinkedList<String>();
+      for (Tag t : boo.mTags) {
+        tags.add(t.mNormalised);
+      }
+      signedParams.put("audio_clip[tags]", tags);
+    }
 
     if (null != boo.mLocation) {
       signedParams.put("audio_clip[public_location]", "1");
@@ -612,10 +621,6 @@ public class API
     if (null != boo.mImageUrl) {
       fileParams.put("audio_clip[uploaded_image]", boo.mImageUrl.getPath());
     }
-
-    // TODO
-//	if (self.tags)
-//		[request setValue:self.tags forSignedParameter:@"audio_clip[tags]"];
 
     mRequester = new Requester(API_UPLOAD, params, signedParams, fileParams,
         new Handler(new Handler.Callback() {
@@ -658,14 +663,23 @@ public class API
   /**
    * Concatenates parameters into a URL-encoded query string.
    **/
-  private String constructQueryString(HashMap<String, String> params)
+  private String constructQueryString(HashMap<String, Object> params)
   {
     String query_string = "";
 
     if (null != params) {
-      for (Map.Entry<String, String> param : params.entrySet()) {
-        query_string += String.format("%s=%s&",
-            Uri.encode(param.getKey()), Uri.encode(param.getValue()));
+      for (Map.Entry<String, Object> param : params.entrySet()) {
+        Object obj = param.getValue();
+        if (obj instanceof String) {
+          query_string += String.format("%s=%s&",
+              Uri.encode(param.getKey()), Uri.encode((String) obj));
+        }
+        else if (obj instanceof LinkedList<?>) {
+          for (String s : (LinkedList<String>) obj) {
+            query_string += String.format("%s=%s[]&",
+                Uri.encode(param.getKey()), Uri.encode(s));
+          }
+        }
       }
       if (0 < query_string.length()) {
         query_string = query_string.substring(0, query_string.length() - 1);
@@ -680,20 +694,28 @@ public class API
   /**
    * Concatenates parameters into a string without URL encoding.
    **/
-  private String concatenateParamtersSorted(HashMap<String, String> params)
+  private String concatenateParametersSorted(HashMap<String, Object> params)
   {
     String result = "";
 
     if (null != params) {
       // Create a sorted map.
-      TreeMap<String, String> sorted = new TreeMap<String, String>();
-      for (Map.Entry<String, String> param : params.entrySet()) {
+      TreeMap<String, Object> sorted = new TreeMap<String, Object>();
+      for (Map.Entry<String, Object> param : params.entrySet()) {
         sorted.put(param.getKey(), param.getValue());
       }
 
       // Now concatenate the sorted values.
-      for (Map.Entry<String, String> param : sorted.entrySet()) {
-        result += String.format("%s=%s&", param.getKey(), param.getValue());
+      for (Map.Entry<String, Object> param : sorted.entrySet()) {
+        Object obj = param.getValue();
+        if (obj instanceof String) {
+          result += String.format("%s=%s&", param.getKey(), (String) obj);
+        }
+        else if (obj instanceof LinkedList<?>) {
+          for (String s : (LinkedList<String>) obj) {
+            result += String.format("%s[]=%s&", param.getKey(), s);
+          }
+        }
       }
       if (0 < result.length()) {
         result = result.substring(0, result.length() - 1);
@@ -777,8 +799,8 @@ public class API
    * Construct an HTTP request based on the API and parameters to query.
    **/
   private HttpRequestBase constructRequest(String api,
-      HashMap<String, String> params,
-      HashMap<String, String> signedParams,
+      HashMap<String, Object> params,
+      HashMap<String, Object> signedParams,
       HashMap<String, String> fileParams)
   {
     // Construct request URI.
@@ -801,13 +823,13 @@ public class API
 
   private HttpRequestBase constructRequestInternal(String request_uri,
       int request_type,
-      HashMap<String, String> params,
-      HashMap<String, String> signedParams,
+      HashMap<String, Object> params,
+      HashMap<String, Object> signedParams,
       HashMap<String, String> fileParams)
   {
     // 1. Initialize params map. We always send the API version, and the API key
     if (null == params) {
-      params = new HashMap<String, String>();
+      params = new HashMap<String, Object>();
     }
     params.put(KEY_API_VERSION, String.valueOf(API_VERSION));
     params.put(KEY_API_FORMAT, API_FORMAT);
@@ -820,20 +842,20 @@ public class API
 
       // 2.2 Then all signed parameters need to be copied to the parameters
       //     with a prefix.
-      for (Map.Entry<String, String> param : signedParams.entrySet()) {
+      for (Map.Entry<String, Object> param : signedParams.entrySet()) {
         params.put(String.format("%s%s", SIGNED_PARAM_PREFIX, param.getKey()),
               param.getValue());
       }
 
       // 2.3 Create the signature.
       String signature = String.format("%s:%s:%s", request_uri,
-          concatenateParamtersSorted(signedParams), mAPISecret);
-      Log.d(LTAG, "signature pre signing: " + signature);
+          concatenateParametersSorted(signedParams), mAPISecret);
+      // Log.d(LTAG, "signature pre signing: " + signature);
       try {
         MessageDigest m = MessageDigest.getInstance("SHA-1");
         m.update(signature.getBytes());
         signature = new BigInteger(1, m.digest()).toString(16);
-        Log.d(LTAG, "signature: " + signature);
+        // Log.d(LTAG, "signature: " + signature);
         params.put(mParamNameSignature, signature);
       } catch (java.security.NoSuchAlgorithmException ex) {
         Log.e(LTAG, "Error: could not sign request: " + ex.getMessage());
@@ -858,9 +880,18 @@ public class API
           MultipartEntity content = new MultipartEntity();
 
           // Append all parameters as parts.
-          for (Map.Entry<String, String> param : params.entrySet()) {
+          for (Map.Entry<String, Object> param : params.entrySet()) {
+            Object obj = param.getValue();
             try {
-              content.addPart(param.getKey(), new StringBody(param.getValue()));
+              if (obj instanceof String) {
+                content.addPart(param.getKey(), new StringBody((String) obj));
+              }
+              else if (obj instanceof LinkedList<?>) {
+                String key = param.getKey() + "[]";
+                for (String s : (LinkedList<String>) obj) {
+                  content.addPart(key, new StringBody(s));
+                }
+              }
             } catch (java.io.UnsupportedEncodingException ex) {
               Log.e(LTAG, "Unsupported encoding, skipping parameter: "
                   + param.getKey() + "=" + param.getValue());
@@ -887,8 +918,17 @@ public class API
 
           // Push parameters into a list.
           LinkedList<BasicNameValuePair> p = new LinkedList<BasicNameValuePair>();
-          for (Map.Entry<String, String> param : params.entrySet()) {
-            p.add(new BasicNameValuePair(param.getKey(), param.getValue()));
+          for (Map.Entry<String, Object> param : params.entrySet()) {
+            Object obj = param.getValue();
+            if (obj instanceof String) {
+              p.add(new BasicNameValuePair(param.getKey(), (String) obj));
+            }
+            else if (obj instanceof LinkedList<?>) {
+              String key = param.getKey() + "[]";
+              for (String s : (LinkedList<String>) obj) {
+                p.add(new BasicNameValuePair(key, s));
+              }
+            }
           }
 
           try {
@@ -974,7 +1014,7 @@ public class API
     }
 
     // Construct status request. We pass an signedParams map to force signing
-    HashMap<String, String> signedParams = new HashMap<String, String>();
+    HashMap<String, Object> signedParams = new HashMap<String, Object>();
     HttpRequestBase request = constructRequest(API_STATUS, null, signedParams,
         null);
     byte[] data = fetchRawSynchronous(request, handler);
@@ -1045,7 +1085,7 @@ public class API
     // VERSION.INCREMENTAL: 148830
     // VERSION.RELEASE: 1.5
     // VERSION.SDK: 3
-    HashMap<String, String> signedParams = new HashMap<String, String>();
+    HashMap<String, Object> signedParams = new HashMap<String, Object>();
     signedParams.put("source[unique_identifier]", Globals.get().getClientID());
     signedParams.put("source[device_name]", "none"); // No comparable concept exists.
     signedParams.put("source[device_model]", Uri.encode(Build.MODEL));
