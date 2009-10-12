@@ -55,6 +55,14 @@ public class BooPlayerView extends LinearLayout implements Handler.Callback
   private static final int  MSG_ON_START = 0;
   private static final int  MSG_ON_STOP  = 1;
 
+  // Button states
+  private static final int  STATE_STOPPED   = 0;  // Shows play button, but no
+                                                  // progress/indeterminate
+  private static final int  STATE_BUFFERING = 1;  // Shows stop button and
+                                                  // indeterminate
+  private static final int  STATE_PLAYING   = 2;  // Shows stop button and
+                                                  // progress.
+
 
   /***************************************************************************
    * Public constants
@@ -100,6 +108,9 @@ public class BooPlayerView extends LinearLayout implements Handler.Callback
   // Audio manager - used in more than one place.
   private AudioManager        mAudioManager;
 
+  // Expected button state
+  private int                 mButtonState;
+
 
   /***************************************************************************
    * Button Listener
@@ -143,12 +154,12 @@ public class BooPlayerView extends LinearLayout implements Handler.Callback
     {
       switch (state) {
         case BooPlayer.STATE_PLAYBACK:
-          mButton.setIndeterminate(false);
+          setButtonState(STATE_PLAYING);
           mButton.setProgress((int) (progress * PROGRESS_MULTIPLIER));
           break;
 
         case BooPlayer.STATE_BUFFERING:
-          mButton.setIndeterminate(true);
+          setButtonState(STATE_BUFFERING);
           break;
 
         case BooPlayer.STATE_FINISHED:
@@ -220,13 +231,43 @@ public class BooPlayerView extends LinearLayout implements Handler.Callback
     // Set the button to a neutral state. startPlaying() will set it to a
     // indeterminate state, and actual playback will mean it'll switch to
     // a playback state.
-    mButton.setChecked(true);
-    mButton.setIndeterminate(false);
-    mButton.setProgress(0);
+    setButtonState(STATE_STOPPED);
 
     // If we're supposed to play back immediately, then do so.
     if (playImmediately) {
       startPlaying();
+    }
+  }
+
+
+
+  private void setButtonState(int newState)
+  {
+    if (mButtonState == newState) {
+      // Bail. No state change.
+      return;
+    }
+
+    switch (newState) {
+      case STATE_BUFFERING:
+        mButton.setChecked(false);
+        mButton.setIndeterminate(true);
+        if (null != mBoo && 0.0 != mBoo.mDuration) {
+          mButton.setMax((int) (mBoo.mDuration * PROGRESS_MULTIPLIER));
+        }
+        break;
+
+      case STATE_PLAYING:
+        mButton.setChecked(false);
+        mButton.setIndeterminate(false);
+        break;
+
+      case STATE_STOPPED:
+      default:
+        mButton.setChecked(true);
+        mButton.setIndeterminate(false);
+        mButton.setProgress(0);
+        break;
     }
   }
 
@@ -240,10 +281,7 @@ public class BooPlayerView extends LinearLayout implements Handler.Callback
     Globals.get().mPlayer.play(mBoo);
 
     // Initialize button state
-    mButton.setChecked(false);
-    mButton.setIndeterminate(true);
-    mButton.setMax((int) (mBoo.mDuration * PROGRESS_MULTIPLIER));
-    mButton.setProgress(0);
+    setButtonState(STATE_BUFFERING);
   }
 
 
@@ -260,9 +298,7 @@ public class BooPlayerView extends LinearLayout implements Handler.Callback
   public void stop()
   {
     // Set button to a neutral state
-    mButton.setChecked(true);
-    mButton.setIndeterminate(false);
-    mButton.setProgress(0);
+    setButtonState(STATE_STOPPED);
 
     // Stops playback.
     if (null != mBoo) {
@@ -331,9 +367,7 @@ public class BooPlayerView extends LinearLayout implements Handler.Callback
     // Set up play/pause button
     mButton = (PlayPauseButton) content.findViewById(R.id.boo_player_button);
     if (null != mButton) {
-      mButton.setChecked(false);
-      mButton.setIndeterminate(true);
-
+      setButtonState(STATE_STOPPED);
 
       mButton.setOnCheckedChangeListener(new ButtonListener(this));
     }
