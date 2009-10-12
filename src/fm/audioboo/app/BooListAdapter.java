@@ -28,10 +28,6 @@ import android.net.Uri;
 import android.graphics.Bitmap;
 import android.graphics.drawable.BitmapDrawable;
 
-// FIXME?
-import android.view.animation.Animation;
-import android.view.animation.AnimationUtils;
-
 import android.os.Handler;
 import android.os.Message;
 
