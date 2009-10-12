@@ -41,6 +41,13 @@
     <item>Publish</item>
   </string-array>
 
+  <!-- Recording errors - we want to report the code -->
+  <string name="record_error_message">Recording Error %d: please try again.
+    Try rebooting your phone. If the error persists, please report the error
+    with a desription of what you were doing when it occurred.</string>
+
+  <string name="record_error_ack">OK</string>
+
 
   <!--
     Boo player view

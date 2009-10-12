@@ -34,6 +34,9 @@ import fm.audioboo.widget.BooPlayerView;
 import android.view.animation.Animation;
 import android.view.animation.AnimationUtils;
 
+import android.app.Dialog;
+import android.app.AlertDialog;
+
 import android.location.Location;
 
 import android.net.Uri;
@@ -66,8 +69,11 @@ public class RecordActivity extends Activity
   private static final String RECORDING_EXTENSION         = ".flac";
 
   // Options menu IDs
-  private static final int  MENU_RESTART  = 0;
-  private static final int  MENU_PUBLISH  = 1;
+  private static final int  MENU_RESTART                  = 0;
+  private static final int  MENU_PUBLISH                  = 1;
+
+  // Dialog IDs.
+  private static final int  DIALOG_RECORDING_ERROR        = 0;
 
 
   /***************************************************************************
@@ -91,6 +97,9 @@ public class RecordActivity extends Activity
 
   // Reference to overlay view
   private View          mOverlay;
+
+  // Last error. Used and cleared in onCreateDialog
+  private int           mErrorCode = -1;
 
 
   /***************************************************************************
@@ -358,8 +367,13 @@ public class RecordActivity extends Activity
               updateRecordingState(amp);
               break;
 
+            case FLACRecorder.MSG_OK:
+              // Ignore.
+              break;
+
             default:
-              reportError(m.what);
+              mErrorCode = m.what;
+              showDialog(DIALOG_RECORDING_ERROR);
               break;
           }
 
@@ -376,14 +390,6 @@ public class RecordActivity extends Activity
     mBoo.mHighMP3Url = Uri.parse(String.format("file://%s", filename));
 
     mBooIsNew = true;
-  }
-
-
-
-  private void reportError(int code)
-  {
-    Log.d(LTAG, "Error: " + code);
-    // TODO
   }
 
 
@@ -441,4 +447,31 @@ public class RecordActivity extends Activity
 
     return filename;
   }
+
+
+
+  protected Dialog onCreateDialog(int id)
+  {
+    Dialog dialog = null;
+
+    switch (id) {
+      case DIALOG_RECORDING_ERROR:
+        {
+          String content = getResources().getString(R.string.record_error_message);
+          content = String.format(content, mErrorCode);
+          mErrorCode = -1;
+
+          AlertDialog.Builder builder = new AlertDialog.Builder(this);
+          builder.setMessage(content)
+            .setCancelable(false)
+            .setPositiveButton(getResources().getString(R.string.record_error_ack), null);
+          dialog = builder.create();
+        }
+        break;
+    }
+
+    return dialog;
+  }
+
+
 }
