@@ -78,18 +78,21 @@ public class API
   /***************************************************************************
    * Public constants
    **/
-  // Error constants.
+  // Error message IDs.
+  // - ERR_SUCCESS may have the message object set, depending on the type of
+  //   request. If it's set, it's the expected response data.
+  // - ERR_API_ERROR has the message object set to an instance of APIException
+  // - Other error codes do not have the message object set.
   public static final int ERR_SUCCESS           = 0;
-  public static final int ERR_INVALID_URI       = 1001;
-  public static final int ERR_EMPTY_RESPONSE    = 1002;
-  public static final int ERR_TRANSMISSION      = 1003;
-  public static final int ERR_VERSION_MISMATCH  = 1004;
-  public static final int ERR_PARSE_ERROR       = 1005;
-  public static final int ERR_API_ERROR         = 1006;
-  public static final int ERR_INVALID_STATE     = 1007;
+  public static final int ERR_API_ERROR         = 10001;
+  public static final int ERR_EMPTY_RESPONSE    = 10002;
+  public static final int ERR_TRANSMISSION      = 10003;
+  public static final int ERR_VERSION_MISMATCH  = 10004;
+  public static final int ERR_PARSE_ERROR       = 10005;
+  public static final int ERR_INVALID_STATE     = 10006;
 
   // API version we're requesting
-  public static final int API_VERSION = 200;
+  public static final int API_VERSION           = 200;
 
 
   /***************************************************************************
@@ -213,11 +216,11 @@ public class API
   private static final HashMap<String, Integer> REQUEST_TYPES;
   static {
     REQUEST_TYPES = new HashMap<String, Integer>();
-    REQUEST_TYPES.put(API_RECENT, RT_GET);
-    REQUEST_TYPES.put(API_UPLOAD, RT_MULTIPART);
+    REQUEST_TYPES.put(API_RECENT,   RT_GET);
+    REQUEST_TYPES.put(API_UPLOAD,   RT_MULTIPART);
     REQUEST_TYPES.put(API_REGISTER, RT_FORM);
-    REQUEST_TYPES.put(API_STATUS, RT_GET);
-    REQUEST_TYPES.put(API_UNLINK, RT_FORM);
+    REQUEST_TYPES.put(API_STATUS,   RT_GET);
+    REQUEST_TYPES.put(API_UNLINK,   RT_FORM);
     // XXX Add request types for different API calls; if they're not specified
     //     here, the default is RT_GET.
   }
@@ -301,7 +304,10 @@ public class API
           break;
         }
         else {
-          updateStatus(mHandler, false);
+          if (!updateStatus(mHandler, false)) {
+            keepRunning = false;
+            break;
+          }
         }
 
         // Construct request.
@@ -375,9 +381,9 @@ public class API
    **/
   public Status getStatus()
   {
-//    if (System.currentTimeMillis() > mStatusTimeout) {
-//      mStatus = null;
-//    }
+    if (System.currentTimeMillis() > mStatusTimeout) {
+      mStatus = null;
+    }
     return mStatus;
   }
 
@@ -448,12 +454,7 @@ public class API
 
   /**
    * Fetch recent Boos.
-   *
-   * The Handler instance handed to this function should expect
-   * a) msg.what to be ERR_SUCCESS, in which case msg.obj is a LinkedList<Boo>
-   * b) msg.what to be other than ERR_SUCCESS, in which case it will correspond
-   *    to one of the error codes defined above. Also, msg.obj may either be
-   *    null, or a String providing details about the error.
+   * On success, the message object will be a LinkedList<Boo>.
    **/
   public void fetchRecentBoos(final Handler result_handler)
   {
@@ -468,7 +469,13 @@ public class API
           public boolean handleMessage(Message msg)
           {
             if (ERR_SUCCESS == msg.what) {
-              parseRecentBoosResponse((String) msg.obj, result_handler);
+              ResponseParser.Response<BooList> boos
+                  = ResponseParser.parseBooList((String) msg.obj, result_handler);
+              if (null != boos) {
+                // If boos were null, then the ResponseParser would already have sent an
+                // error message to the result_handler.
+                result_handler.obtainMessage(ERR_SUCCESS, boos.mContent).sendToTarget();
+              }
             }
             else {
               result_handler.obtainMessage(msg.what, msg.obj).sendToTarget();
@@ -484,6 +491,7 @@ public class API
 
   /**
    * Unlinks the device, if it's currently linked.
+   * On success, the message object will not be set.
    **/
   public void unlinkDevice(final Handler result_handler)
   {
@@ -537,10 +545,9 @@ public class API
 
 
 
-
-
   /**
    * Updates the device status, if necessary.
+   * On success, the message object will not be set.
    **/
   public void updateStatus(final Handler result_handler)
   {
@@ -552,7 +559,7 @@ public class API
     // Set status to null, otherwise nothing will be fetched.
     mStatus = null;
 
-    // This request has no parameters. The result hanlder also handles
+    // This request has no parameters. The result handler also handles
     // any responses itself.
     mRequester = new Requester(API_STATUS, null, null, null,
         result_handler);
@@ -581,6 +588,8 @@ public class API
 
   /**
    * Uploads a Boo.
+   * On success, the message object will contain an Integer representing the
+   * ID of the newly uploaded Boo.
    **/
   public void uploadBoo(Boo boo, final Handler result_handler)
   {
@@ -645,23 +654,6 @@ public class API
         }
     ));
     mRequester.start();
-  }
-
-
-
-  /**
-   * Parse recent Boos response, and notify the result handler when done.
-   **/
-  private void parseRecentBoosResponse(String response, Handler result_handler)
-  {
-    // Log.d(LTAG, "Response: " + response);
-    ResponseParser.Response<BooList> boos
-        = ResponseParser.parseBooList(response, result_handler);
-    if (null != boos) {
-      // If boos were null, then the ResponseParser would already have sent an
-      // error message to the result_handler.
-      result_handler.obtainMessage(ERR_SUCCESS, boos.mContent).sendToTarget();
-    }
   }
 
 
@@ -782,8 +774,7 @@ public class API
       if (null == entity) {
         Log.e(LTAG, "Response is empty: " + request.getURI().toString());
         if (null != handler) {
-          handler.obtainMessage(ERR_EMPTY_RESPONSE, request.getURI().toString()
-              ).sendToTarget();
+          handler.obtainMessage(ERR_EMPTY_RESPONSE).sendToTarget();
         }
         return null;
       }
@@ -791,9 +782,10 @@ public class API
       return readStreamRaw(entity.getContent());
 
     } catch (IOException ex) {
-      Log.e(LTAG, "An exception occurred when reading the API response: " + ex);
+      Log.e(LTAG, "An exception occurred when reading the API response: "
+          + ex.getMessage());
       if (null != handler) {
-        handler.obtainMessage(ERR_TRANSMISSION, ex.getMessage()).sendToTarget();
+        handler.obtainMessage(ERR_TRANSMISSION).sendToTarget();
       }
       return null;
     }
@@ -1013,20 +1005,25 @@ public class API
   /**
    * If no status is known, performs a status request.
    **/
-  private void updateStatus(Handler handler, boolean signalSuccess)
+  private boolean updateStatus(Handler handler, boolean signalSuccess)
   {
     if (null != getStatus()) {
-      return;
+      return true;
     }
+
+    // Prepare parameters
+    HashMap<String, Object> params = null;
+//    params = new HashMap<String, Object>();
+//    params.put("debug_signature", "true");
 
     // Construct status request. We pass an signedParams map to force signing
     HashMap<String, Object> signedParams = new HashMap<String, Object>();
-    HttpRequestBase request = constructRequest(API_STATUS, null, signedParams,
+    HttpRequestBase request = constructRequest(API_STATUS, params, signedParams,
         null);
     byte[] data = fetchRawSynchronous(request, handler);
     if (null == data) {
       handler.obtainMessage(ERR_EMPTY_RESPONSE).sendToTarget();
-      return;
+      return false;
     }
 
     ResponseParser.Response<Status> status
@@ -1038,12 +1035,15 @@ public class API
 
     if (null == mStatus) {
       handler.obtainMessage(ERR_EMPTY_RESPONSE).sendToTarget();
+      return false;
     }
     else {
       if (signalSuccess) {
         handler.obtainMessage(ERR_SUCCESS).sendToTarget();
       }
     }
+
+    return true;
   }
 
 
