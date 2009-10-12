@@ -48,6 +48,8 @@
 
   <string name="record_error_ack">OK</string>
 
+  <!-- Toast for succesfully publishing a Boo -->
+  <string name="record_publish_success_toast">Boo Published!</string>
 
   <!--
     Boo player view

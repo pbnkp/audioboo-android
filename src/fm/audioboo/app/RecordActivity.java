@@ -27,6 +27,8 @@ import android.view.MenuItem;
 import android.widget.ToggleButton;
 import android.widget.CompoundButton;
 
+import android.widget.Toast;
+
 import fm.audioboo.widget.RecordButton;
 import fm.audioboo.widget.SpectralView;
 import fm.audioboo.widget.BooPlayerView;
@@ -100,6 +102,9 @@ public class RecordActivity extends Activity
 
   // Last error. Used and cleared in onCreateDialog
   private int           mErrorCode = -1;
+
+  // Request code - sent to PublishActivity so it can respond appropriately.
+  private int           mRequestCode;
 
 
   /***************************************************************************
@@ -426,7 +431,7 @@ public class RecordActivity extends Activity
         Intent i = new Intent(this, PublishActivity.class);
         String filename = getRecorderFilename() + Boo.EXTENSION;
         i.putExtra(PublishActivity.EXTRA_BOO_FILENAME, filename);
-        startActivity(i);
+        startActivityForResult(i, ++mRequestCode);
         break;
 
       default:
@@ -435,6 +440,36 @@ public class RecordActivity extends Activity
     }
 
     return true;
+  }
+
+
+
+  protected void onActivityResult(int requestCode, int resultCode, Intent data)
+  {
+    if (mRequestCode != requestCode) {
+      //Log.d(LTAG, "Ignoring result for requestCode: " + requestCode);
+      return;
+    }
+
+    // If the activity got cancelled, we'll not do anything. If an error occurred
+    // during publishing, that will end up sending the cancel error code, but
+    // the publish activity is responsible for displaying errors itself.
+    if (Activity.RESULT_CANCELED == resultCode) {
+      return;
+    }
+
+    // For anything but RESULT_OK, let's log an error - that's unexpected.
+    if (Activity.RESULT_OK != resultCode) {
+      Log.e(LTAG, "Unexpected result code: " + resultCode + " - " + data);
+      return;
+    }
+
+    // If the activity sent OK, then we'll reset everything. No need to keep old
+    // Boos around.
+    resetFLACRecorder();
+
+    // Toast that we're done.
+    Toast.makeText(this, R.string.record_publish_success_toast, Toast.LENGTH_LONG).show();
   }
 
 
