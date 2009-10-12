@@ -352,6 +352,10 @@ public class API
   private Status        mStatus;
   private long          mStatusTimeout;
 
+  // Informational - it's not really used yet, but this is the last server
+  // timestamp we got from an updateStatus request.
+  private int           mServerTimestamp;
+
 
   /***************************************************************************
    * Implementation
@@ -381,7 +385,8 @@ public class API
    **/
   public Status getStatus()
   {
-    if (System.currentTimeMillis() > mStatusTimeout) {
+    long current = System.currentTimeMillis();
+    if (current > mStatusTimeout) {
       mStatus = null;
     }
     return mStatus;
@@ -804,7 +809,7 @@ public class API
     // Construct request URI.
     String request_uri = String.format("%s://%s/%s",
         API_REQUEST_URI_SCHEME, mAPIHost, api);
-    Log.d(LTAG, "Request URI: " + request_uri);
+    // Log.d(LTAG, "Request URI: " + request_uri);
 
     // Figure out the type of request to construct.
     Integer request_type_obj = REQUEST_TYPES.get(api);
@@ -1008,6 +1013,9 @@ public class API
   private boolean updateStatus(Handler handler, boolean signalSuccess)
   {
     if (null != getStatus()) {
+      if (signalSuccess) {
+        handler.obtainMessage(ERR_SUCCESS).sendToTarget();
+      }
       return true;
     }
 
@@ -1030,7 +1038,8 @@ public class API
         = ResponseParser.parseStatusResponse(new String(data), handler);
     if (null != status) {
       mStatus = status.mContent;
-      mStatusTimeout = (status.mTimestamp + status.mWindow) * 1000;
+      mStatusTimeout = System.currentTimeMillis() + (status.mWindow * 1000);
+      mServerTimestamp = status.mTimestamp;
     }
 
     if (null == mStatus) {
