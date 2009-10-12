@@ -177,6 +177,12 @@ public class AccountActivity extends Activity
 
   private void initUI()
   {
+    if (null == mStatus) {
+      // Shouldn't happen, but can if the user switches tabs before the status
+      // request completes.
+      return;
+    }
+
     // First thing, show the content view.
     switchToViewState(VIEW_FLAGS_FORM);
 
