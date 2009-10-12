@@ -171,7 +171,7 @@ public class API
   // FIXME disable SRV lookup for now.
   private static final int    SRV_LOOKUP_ATTEMPTS_MAX     = 0; 
 
-  // Request/response format for API calls. XXX Leading dot is expected.
+  // Request/response format for API calls.
   private static final String API_FORMAT                  = "json";
 
   // URI snippets for various APIs
@@ -512,9 +512,8 @@ public class API
           public boolean handleMessage(Message msg)
           {
             if (ERR_SUCCESS == msg.what) {
-              ResponseParser parser = new ResponseParser();
               ResponseParser.Response<Boolean> unlinked
-                  = parser.parseUnlinkResponse((String) msg.obj, result_handler);
+                  = ResponseParser.parseUnlinkResponse((String) msg.obj, result_handler);
 
               if (null != unlinked && unlinked.mContent) {
                 // Freeing the status means that the next request has to fetch
@@ -631,9 +630,12 @@ public class API
           public boolean handleMessage(Message msg)
           {
             if (ERR_SUCCESS == msg.what) {
-              Log.d(LTAG, "Response: " + (String) msg.obj);
-              // FIXME parse the Boo id from the response
-              result_handler.obtainMessage(ERR_SUCCESS, "will-be-an-id").sendToTarget();
+              ResponseParser.Response<Integer> result
+                  = ResponseParser.parseUploadResponse((String) msg.obj,
+                    result_handler);
+              if (null != result) {
+                result_handler.obtainMessage(ERR_SUCCESS, result.mContent).sendToTarget();
+              }
             }
             else {
               result_handler.obtainMessage(msg.what, msg.obj).sendToTarget();
@@ -653,9 +655,8 @@ public class API
   private void parseRecentBoosResponse(String response, Handler result_handler)
   {
     // Log.d(LTAG, "Response: " + response);
-    ResponseParser parser = new ResponseParser();
     ResponseParser.Response<BooList> boos
-        = parser.parseBooList(response, result_handler);
+        = ResponseParser.parseBooList(response, result_handler);
     if (null != boos) {
       // If boos were null, then the ResponseParser would already have sent an
       // error message to the result_handler.
@@ -1028,9 +1029,8 @@ public class API
       return;
     }
 
-    ResponseParser parser = new ResponseParser();
     ResponseParser.Response<Status> status
-        = parser.parseStatusResponse(new String(data), handler);
+        = ResponseParser.parseStatusResponse(new String(data), handler);
     if (null != status) {
       mStatus = status.mContent;
       mStatusTimeout = (status.mTimestamp + status.mWindow) * 1000;
@@ -1112,9 +1112,8 @@ public class API
     }
 //    Log.d(LTAG, "registration response: " + new String(data));
 
-    ResponseParser parser = new ResponseParser();
     ResponseParser.Response<Pair<String, String>> results
-        = parser.parseRegistrationResponse(new String(data), handler);
+        = ResponseParser.parseRegistrationResponse(new String(data), handler);
 
     if (null != results) {
       mAPISecret = results.mContent.mFirst;
