@@ -18,10 +18,10 @@ import android.text.Editable;
 import android.text.TextWatcher;
 
 import fm.audioboo.app.Pair;
+import fm.audioboo.app.Tag;
 
 import fm.audioboo.app.R;
 
-import java.util.List;
 import java.util.LinkedList;
 
 import android.util.Log;
@@ -282,16 +282,17 @@ public class EditTags extends EditText
   }
 
 
+
   /**
    * Return the contents of this edit field, as a list of tags.
    **/
-  public List<String> getTags()
+  public LinkedList<Tag> getTags()
   {
-    LinkedList<String> results = null;
+    LinkedList<Tag> results = null;
 
     CharSequence text = getText();
     if (null != text && 0 != text.length()) {
-      results = new LinkedList<String>();
+      results = new LinkedList<Tag>();
 
       StringBuilder builder = new StringBuilder();
       ScanState state = ScanState.AFTER_SEPARATOR;
@@ -302,7 +303,9 @@ public class EditTags extends EditText
         if (ScanState.AFTER_SEPARATOR == state) {
           String tag = cleanTag(builder.toString(), false);
           if (null != tag) {
-            results.add(tag);
+            Tag t = new Tag();
+            t.mNormalised = tag;
+            results.add(t);
           }
           builder = new StringBuilder();
         }
@@ -310,11 +313,37 @@ public class EditTags extends EditText
 
       String tag = cleanTag(builder.toString(), true);
       if (null != tag) {
-        results.add(tag);
+        Tag t = new Tag();
+        t.mNormalised = tag;
+        results.add(t);
       }
     }
 
     return results;
+  }
+
+
+
+  /**
+   * Sets the content as a list of Tag.
+   **/
+  public void setTags(LinkedList<Tag> tags)
+  {
+    // Normalize tags.
+    String sep = String.format("%c", SEPARATOR);
+    String tagstring = "";
+
+    for (Tag tag : tags) {
+      if (tag.mNormalised.contains(sep)) {
+        tagstring += String.format("%c%s%c%c ", QUOTE, tag.mNormalised,
+              QUOTE, SEPARATOR);
+      }
+      else {
+        tagstring += String.format("%s%c ", tag.mNormalised, SEPARATOR);
+      }
+    }
+
+    setText(tagstring);
   }
 
 
