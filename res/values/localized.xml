@@ -54,7 +54,7 @@
   <string name="publish_label_title">Describe Your Boo</string>
   <string name="publish_label_tags">Tag It. Separate tags with commas, and quote
     tags that contain a comma themselves.</string>
-  <string name="publish_label_submit">That's All</string>
+  <string name="publish_label_submit">That\'s All</string>
 
   <string name="publish_submit_text">Upload</string>
 
@@ -84,6 +84,21 @@
 
 
   <!--
+    Error codes and their messages. See res/values/errors.xml for details
+  -->
+  <string-array name="error_messages">
+    <item>The server returned an empty response.</item>
+    <item>An error occurred when retrieving a response from the server.</item>
+    <item>The server did not send the expected response version.</item>
+    <item>An error occurred when trying to parse the server response.</item>
+    <item>An invalid program state was reached.</item>
+  </string-array>
+
+  <string name="error_message_extra">Please try again. If the problem persist,
+    please report the error with a description of what you were doing when it
+    occurred.</string>
+
+  <!--
     Global dialogs
   -->
   <string name="gps_settings_message">You selected to tag Boos with your
@@ -92,4 +107,6 @@
     location.</string>
   <string name="gps_settings_start">Location Settings</string>
   <string name="gps_settings_cancel">Ignore</string>
+
+  <string name="error_message_ack">OK</string>
 </resources>

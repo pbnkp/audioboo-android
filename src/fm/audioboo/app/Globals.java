@@ -25,6 +25,7 @@ import java.security.MessageDigest;
 import java.io.FileInputStream;
 
 import java.util.StringTokenizer;
+import java.util.HashMap;
 
 import android.content.SharedPreferences;
 
@@ -78,6 +79,7 @@ public class Globals
   // Directory prefix for the data directory.
   private static final String     DATA_DIR_PREFIX             = "boo_data";
 
+
   /***************************************************************************
    * Public constants
    **/
@@ -91,6 +93,7 @@ public class Globals
 
   // Reusable dialog IDs. The ones defined here start from 10000.
   public static final int         DIALOG_GPS_SETTINGS = 10000;
+  public static final int         DIALOG_ERROR        = 10001;
 
 
   /***************************************************************************
@@ -104,19 +107,21 @@ public class Globals
    **/
   // Generated at startup; the algorithm always produces the same string for the
   // same device.
-  private String            mClientID;
+  private String                    mClientID;
 
   // Current location provider. Used to determine e.g. if the user needs to be
   // asked to enable location providers.
-  private String            mLocationProvider;
+  private String                    mLocationProvider;
 
   // Location listener. Used to continuously update location information.
-  private LocationListener  mLocationListener;
+  private LocationListener          mLocationListener;
 
   // Base path, prepended before mRelativeFilePath. It's on the external
   // storage and includes the file bundle.
-  private String            mBasePath;
+  private String                    mBasePath;
 
+  // Map of error codes to error messages.
+  private HashMap<Integer, String>  mErrorMessages;
 
 
   /***************************************************************************
@@ -350,10 +355,47 @@ public class Globals
 
 
   /**
+   * Returns an error message corresponding to an error code.
+   * See API.java, res/values/errors.xml and res/values/localized.xml for
+   * details.
+   **/
+  public String getErrorMessage(int code)
+  {
+    if (null == mErrorMessages) {
+      int[] codes = mContext.getResources().getIntArray(R.array.error_codes);
+      String[] messages = mContext.getResources().getStringArray(R.array.error_messages);
+
+      if (codes.length != messages.length || 0 == codes.length) {
+        Log.e(LTAG, "Programmer error: the error code and error messages arrays"
+            + " are of different sizes, or don't exist.");
+        return null;
+      }
+
+      HashMap<Integer, String> messagemap = new HashMap<Integer, String>();
+      for (int i = 0 ; i < codes.length ; ++i) {
+        messagemap.put(codes[i], messages[i]);
+      }
+
+      mErrorMessages = messagemap;
+    }
+
+    return mErrorMessages.get(code);
+  }
+
+
+
+  /**
    * Creates Dialog instances for the Dialog IDs defined above. Dialogs belong
    * to the Activity passed as the first parameter.
    **/
   public Dialog createDialog(final Activity activity, int id)
+  {
+    return createDialog(activity, id, -1, null);
+  }
+
+
+  public Dialog createDialog(final Activity activity, int id, int code,
+      API.APIException exception)
   {
     Dialog dialog = null;
 
@@ -361,23 +403,52 @@ public class Globals
 
     switch (id) {
       case DIALOG_GPS_SETTINGS:
-        AlertDialog.Builder builder = new AlertDialog.Builder(activity);
-        builder.setMessage(res.getString(R.string.gps_settings_message))
-          .setCancelable(false)
-          .setPositiveButton(res.getString(R.string.gps_settings_start),
-              new DialogInterface.OnClickListener() {
-                public void onClick(DialogInterface dialog, int id) {
-                  Intent i = new Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS);
-                  activity.startActivity(i);
-                }
-              })
-          .setNegativeButton(res.getString(R.string.gps_settings_cancel),
-              new DialogInterface.OnClickListener() {
-                public void onClick(DialogInterface dialog, int id) {
-                  dialog.cancel();
-                }
-              });
-        dialog = builder.create();
+        {
+          AlertDialog.Builder builder = new AlertDialog.Builder(activity);
+          builder.setMessage(res.getString(R.string.gps_settings_message))
+            .setCancelable(false)
+            .setPositiveButton(res.getString(R.string.gps_settings_start),
+                new DialogInterface.OnClickListener() {
+                  public void onClick(DialogInterface dialog, int id) {
+                    Intent i = new Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS);
+                    activity.startActivity(i);
+                  }
+                })
+            .setNegativeButton(res.getString(R.string.gps_settings_cancel),
+                new DialogInterface.OnClickListener() {
+                  public void onClick(DialogInterface dialog, int id) {
+                    dialog.cancel();
+                  }
+                });
+          dialog = builder.create();
+        }
+        break;
+
+
+      case DIALOG_ERROR:
+        {
+          // Determine error code and message.
+          int report_code = code;
+          String message = null;
+          if (API.ERR_API_ERROR == code) {
+            message = exception.getMessage();
+            report_code = exception.getCode();
+          }
+          else {
+            message = getErrorMessage(code);
+          }
+
+          // Format full text for the dialog.
+          String content = String.format("%s\n\n%s", message,
+              res.getString(R.string.error_message_extra));
+
+          // Create dialog
+          AlertDialog.Builder builder = new AlertDialog.Builder(activity);
+          builder.setMessage(content)
+            .setCancelable(false)
+            .setPositiveButton(res.getString(R.string.error_message_ack), null);
+          dialog = builder.create();
+        }
         break;
     }
 

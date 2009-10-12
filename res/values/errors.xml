@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+ This file is part of AudioBoo, an android program for audio blogging.
+ Copyright (C) 2009 BestBefore Media Ltd. All rights reserved.
+
+ Author: Jens Finkhaeuser <jens@finkhaeuser.de>
+
+ $Id$
+-->
+<resources>
+  <!--
+    You can't seem to create maps in these resource files. So we've got a list
+    of error codes here. Their index into this array is used to look up
+    corresponding messages in localized.xml.
+
+    XXX That means the order of items in this array, the "error_messages" array
+        in localized.xml, and the error codes in API.java must be kept in sync.
+  -->
+  <array name="error_codes">
+    <!-- There is no message for ERR_SUCCESS -->
+    <!-- There is no message for ERR_API_ERROR either - the message is delivered
+         by the server. -->
+    <item>10002</item> <!-- ERR_EMPTY_RESPONSE -->
+    <item>10003</item> <!-- ERR_TRANSMISSION -->
+    <item>10004</item> <!-- ERR_VERSION_MISMATCH -->
+    <item>10005</item> <!-- ERR_PARSE_ERROR -->
+    <item>10006</item> <!-- ERR_INVALID_STATE -->
+  </array>
+
+</resources>
