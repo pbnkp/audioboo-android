@@ -113,7 +113,7 @@ public class FLACPlayer extends Thread
   public void run()
   {
     mShouldRun = true;
-    mPaused = false;
+    mPaused = true;
 
     // Try to initialize the decoder.
     mDecoder = new FLACStreamDecoder(mPath);
