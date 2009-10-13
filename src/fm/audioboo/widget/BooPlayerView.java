@@ -221,6 +221,13 @@ public class BooPlayerView extends LinearLayout implements Handler.Callback
 
 
 
+  public PlaybackEndListener getPlaybackEndListener()
+  {
+    return mListener;
+  }
+
+
+
   public void play(Boo boo)
   {
     play(boo, true);
@@ -347,6 +354,13 @@ public class BooPlayerView extends LinearLayout implements Handler.Callback
     if (null != mBoo) {
       Globals.get().mPlayer.resumePlaying();
     }
+  }
+
+
+
+  public boolean isPaused()
+  {
+    return (BooPlayer.STATE_PAUSED == Globals.get().mPlayer.getPlaybackState());
   }
 
 

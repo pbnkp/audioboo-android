@@ -77,8 +77,8 @@ public class RecentBoosActivity extends ListActivity
    **/
   private class PlaybackEndListener extends BooPlayerView.PlaybackEndListener
   {
-    private View  mView;
-    private int   mId;
+    public View mView;
+    public int  mId;
 
 
     public PlaybackEndListener(View view, int id)
@@ -145,7 +145,17 @@ public class RecentBoosActivity extends ListActivity
       // Resume playback.
       BooPlayerView player = (BooPlayerView) findViewById(R.id.recent_boos_player);
       if (null != player) {
-        player.resume();
+        if (player.isPaused()) {
+          player.resume();
+        }
+        else {
+          // This is a bit tricky... the only place where we reliably remember
+          // the view/id for unselecting an item is in the playback end listener.
+          PlaybackEndListener listener = (PlaybackEndListener) player.getPlaybackEndListener();
+          if (null != listener) {
+            onItemUnselected(listener.mView, listener.mId);
+          }
+        }
       }
     }
 
@@ -291,7 +301,7 @@ public class RecentBoosActivity extends ListActivity
 
 
 
-  void onItemUnselected(View view, int id)
+  private void onItemUnselected(View view, int id)
   {
     // And also switch the view to unselected.
     if (null != mAdapter) {

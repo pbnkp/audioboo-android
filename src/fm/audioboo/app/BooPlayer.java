@@ -403,11 +403,11 @@ public class BooPlayer extends Thread
 
 
 
-  public boolean hasStarted()
+  public int getPlaybackState()
   {
     synchronized (mLock)
     {
-      return (STATE_PLAYING == mState);
+      return mState;
     }
   }
 
