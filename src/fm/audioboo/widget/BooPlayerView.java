@@ -52,8 +52,11 @@ public class BooPlayerView extends LinearLayout implements Handler.Callback
   private static final int  STREAM_TYPE         = AudioManager.STREAM_MUSIC;
 
   // Messages used to invoke onStart/onStop on main thread.
-  private static final int  MSG_ON_START = 0;
-  private static final int  MSG_ON_STOP  = 1;
+  private static final int  MSG_ON_START  = 0;  // Start clicked
+  private static final int  MSG_ON_STOP   = 1;  // Stop clicked
+  private static final int  MSG_PLAYBACK  = 2;  // Display playback progress
+  private static final int  MSG_BUFFERING = 3;  // Display buffering progress
+  private static final int  MSG_FINISHED  = 4;  // Revert to initial state.
 
   // Button states
   private static final int  STATE_STOPPED   = 0;  // Shows play button, but no
@@ -105,6 +108,10 @@ public class BooPlayerView extends LinearLayout implements Handler.Callback
   // Listener
   private PlaybackEndListener mListener;
 
+  // If we've already notified the listener since the last play call, this
+  // will be true and we won't notify the listener again.
+  private boolean             mEndedSent;
+
   // Audio manager - used in more than one place.
   private AudioManager        mAudioManager;
 
@@ -153,21 +160,20 @@ public class BooPlayerView extends LinearLayout implements Handler.Callback
     public void onProgress(int state, double progress)
     {
       switch (state) {
-        case BooPlayer.STATE_PLAYBACK:
-          setButtonState(STATE_PLAYING);
-          mButton.setProgress((int) (progress * PROGRESS_MULTIPLIER));
+        case BooPlayer.STATE_PLAYING:
+          mHandler.obtainMessage(MSG_PLAYBACK, new Double(progress)).sendToTarget();
           break;
 
         case BooPlayer.STATE_BUFFERING:
-          setButtonState(STATE_BUFFERING);
+          mHandler.obtainMessage(MSG_BUFFERING).sendToTarget();
           break;
 
         case BooPlayer.STATE_FINISHED:
-          mHandler.obtainMessage(MSG_ON_STOP, END_STATE_SUCCESS).sendToTarget();
+          mHandler.obtainMessage(MSG_FINISHED, END_STATE_SUCCESS).sendToTarget();
           break;
 
         case BooPlayer.STATE_ERROR:
-          mHandler.obtainMessage(MSG_ON_STOP, END_STATE_ERROR).sendToTarget();
+          mHandler.obtainMessage(MSG_FINISHED, END_STATE_ERROR).sendToTarget();
           break;
       }
     }
@@ -218,6 +224,7 @@ public class BooPlayerView extends LinearLayout implements Handler.Callback
 
   public void play(Boo boo, boolean playImmediately)
   {
+    // Log.d(LTAG, "view play");
     mBoo = boo;
 
     // Set title
@@ -275,6 +282,7 @@ public class BooPlayerView extends LinearLayout implements Handler.Callback
 
   private void startPlaying()
   {
+    // Log.d(LTAG, "view start");
     // Grab the play/pause button from the View. That's handed to the
     // BooPlayer.
     Globals.get().mPlayer.setProgressListener(new BooProgressListener(this));
@@ -282,6 +290,9 @@ public class BooPlayerView extends LinearLayout implements Handler.Callback
 
     // Initialize button state
     setButtonState(STATE_BUFFERING);
+
+    // Reset flag whether an ended message was sent or not.
+    mEndedSent = false;
   }
 
 
@@ -297,19 +308,22 @@ public class BooPlayerView extends LinearLayout implements Handler.Callback
 
   public void stop()
   {
-    // Set button to a neutral state
-    setButtonState(STATE_STOPPED);
+    // Log.d(LTAG, "view stop");
 
     // Stops playback.
     if (null != mBoo) {
       Globals.get().mPlayer.stopPlaying();
     }
+
+    // Set button to a neutral state
+    setButtonState(STATE_STOPPED);
   }
 
 
 
   public void pause()
   {
+    // Log.d(LTAG, "view pause");
     // Pauses playback.
     if (null != mBoo) {
       Globals.get().mPlayer.pausePlaying();
@@ -320,6 +334,7 @@ public class BooPlayerView extends LinearLayout implements Handler.Callback
 
   public void resume()
   {
+    // Log.d(LTAG, "view resume");
     // Resumes playback.
     if (null != mBoo) {
       Globals.get().mPlayer.resumePlaying();
@@ -378,43 +393,31 @@ public class BooPlayerView extends LinearLayout implements Handler.Callback
 
 
 
-  private void onStop(int state)
-  {
-    // isChecked == true is sent once before we've actually started playback;
-    // it's best to ignore that.
-    if (!Globals.get().mPlayer.hasStarted()) {
-      // Log.d(LTAG, "ignore first onStop");
-      return;
-    }
-
-    // We don't care here whether the button is checked or not, we just
-    // stop playback.
-    stop();
-
-    // Propagate this event to the user
-    if (null != mListener) {
-      mListener.onPlaybackEnded(this, state);
-    }
-  }
-
-
-
-  private void onStart()
-  {
-    startPlaying();
-  }
-
-
-
   public boolean handleMessage(Message msg)
   {
     switch (msg.what) {
       case MSG_ON_START:
-        onStart();
+        startPlaying();
         break;
 
       case MSG_ON_STOP:
-        onStop(msg.arg1);
+        stop();
+        sendEnded(msg.arg1);
+        break;
+
+      case MSG_PLAYBACK:
+        setButtonState(STATE_PLAYING);
+        Double d = (Double) msg.obj;
+        mButton.setProgress((int) (d * PROGRESS_MULTIPLIER));
+        break;
+
+      case MSG_BUFFERING:
+        setButtonState(STATE_BUFFERING);
+        break;
+
+      case MSG_FINISHED:
+        setButtonState(STATE_STOPPED);
+        sendEnded(msg.arg1);
         break;
 
       default:
@@ -423,5 +426,15 @@ public class BooPlayerView extends LinearLayout implements Handler.Callback
     }
 
     return true;
+  }
+
+
+
+  private void sendEnded(int state)
+  {
+    if (null != mListener && !mEndedSent) {
+      mEndedSent = true;
+      mListener.onPlaybackEnded(this, state);
+    }
   }
 }
