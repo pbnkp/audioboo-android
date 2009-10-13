@@ -278,9 +278,8 @@ public class RecentBoosActivity extends ListActivity
     // Fade in player view
     BooPlayerView player = (BooPlayerView) findViewById(R.id.recent_boos_player);
     if (null != player) {
-      // Capture clicks for the whole window, so that underlying views don't receive
-      // them.
-      player.setClickable(true);
+      player.setVisibility(View.VISIBLE);
+      player.bringToFront();
 
       Animation animation = AnimationUtils.loadAnimation(this, R.anim.fade_in);
       player.startAnimation(animation);
@@ -307,7 +306,8 @@ public class RecentBoosActivity extends ListActivity
         public void onAnimationEnd(Animation animation)
         {
           // When the player finished fading out, stop capturing clicks.
-          player.setClickable(false);
+          player.setVisibility(View.GONE);
+          getListView().bringToFront();
         }
 
         public void onAnimationRepeat(Animation animation)
