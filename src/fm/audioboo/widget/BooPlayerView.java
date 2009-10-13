@@ -59,6 +59,7 @@ public class BooPlayerView extends LinearLayout implements Handler.Callback
   private static final int  MSG_FINISHED  = 4;  // Revert to initial state.
 
   // Button states
+  private static final int  STATE_NONE      = -1; // Only initial state.
   private static final int  STATE_STOPPED   = 0;  // Shows play button, but no
                                                   // progress/indeterminate
   private static final int  STATE_BUFFERING = 1;  // Shows stop button and
@@ -116,7 +117,7 @@ public class BooPlayerView extends LinearLayout implements Handler.Callback
   private AudioManager        mAudioManager;
 
   // Expected button state
-  private int                 mButtonState;
+  private int                 mButtonState = STATE_NONE;
 
 
   /***************************************************************************
@@ -133,6 +134,11 @@ public class BooPlayerView extends LinearLayout implements Handler.Callback
 
     public void onCheckedChanged(CompoundButton buttonView, boolean isChecked)
     {
+      boolean shouldBeChecked = (STATE_STOPPED == mButtonState);
+      if (shouldBeChecked == isChecked) {
+        return;
+      }
+
       if (isChecked) {
         mHandler.obtainMessage(MSG_ON_STOP, END_STATE_SUCCESS).sendToTarget();
       }
@@ -224,7 +230,7 @@ public class BooPlayerView extends LinearLayout implements Handler.Callback
 
   public void play(Boo boo, boolean playImmediately)
   {
-    // Log.d(LTAG, "view play");
+    // Log.d(LTAG, "view play: " + playImmediately);
     mBoo = boo;
 
     // Set title
@@ -250,10 +256,12 @@ public class BooPlayerView extends LinearLayout implements Handler.Callback
 
   private void setButtonState(int newState)
   {
+    // Log.d(LTAG, String.format("Got button state %d, switching to %d", mButtonState, newState));
     if (mButtonState == newState) {
       // Bail. No state change.
       return;
     }
+    mButtonState = newState;
 
     switch (newState) {
       case STATE_BUFFERING:
@@ -395,6 +403,7 @@ public class BooPlayerView extends LinearLayout implements Handler.Callback
 
   public boolean handleMessage(Message msg)
   {
+    // Log.d(LTAG, "Got message: " + msg.what);
     switch (msg.what) {
       case MSG_ON_START:
         startPlaying();
