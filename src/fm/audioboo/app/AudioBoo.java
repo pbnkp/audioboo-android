@@ -111,6 +111,16 @@ public class AudioBoo extends TabActivity
 
 
 
+  @Override
+  public void onStop()
+  {
+    super.onStop();
+
+    Globals.get().mPlayer.stopPlaying();
+  }
+
+
+
   protected Dialog onCreateDialog(int id)
   {
     Dialog dialog = null;
