@@ -244,6 +244,11 @@ public class BooPlayer extends Thread
 
     public boolean prepare(Boo boo)
     {
+      // Immediately send playback state - that's technically a violation of the
+      // API, but there's just no buffering for local files, and it avoids a
+      // briefly flashing buffer indicator.
+      startPlaybackState();
+
       String filename = boo.mHighMP3Url.getPath();
       mFlacPlayer = new FLACPlayer(mContext, filename);
 
@@ -320,10 +325,10 @@ public class BooPlayer extends Thread
   // Internal player state
   private int                   mState = STATE_NONE;
   private int                   mPendingState = STATE_NONE;
+  private boolean               mResetState;
 
   // Boo that's currently being played
   private Boo                   mBoo;
-  private Boo                   mPendingBoo;
 
   // Used for progress tracking
   private double                mPlaybackProgress;
@@ -347,7 +352,10 @@ public class BooPlayer extends Thread
   {
     synchronized (mLock)
     {
-      mPendingBoo = boo; 
+      if (null != mBoo && mBoo != boo) {
+        mResetState = true;
+      }
+      mBoo = boo;
       mPendingState = STATE_PLAYING;
     }
     interrupt();
@@ -363,7 +371,6 @@ public class BooPlayer extends Thread
     // Log.d(LTAG, "stop from outside");
     synchronized (mLock)
     {
-      mPendingBoo = null;
       mPendingState = STATE_NONE;
     }
     interrupt();
@@ -419,6 +426,7 @@ public class BooPlayer extends Thread
   public void run()
   {
     mShouldRun = true;
+    mResetState = false;
 
     Boo playingBoo = null;
     while (mShouldRun)
@@ -427,7 +435,6 @@ public class BooPlayer extends Thread
         // Figure out the action to take from here. This needs to be done under lock
         // so relevant data won't change under our noses.
         Boo currentBoo = null;
-        Boo pendingBoo = null;
         int currentState = STATE_ERROR;
         int pendingState = STATE_NONE;
         int action = T_NONE;
@@ -437,14 +444,14 @@ public class BooPlayer extends Thread
         synchronized (mLock)
         {
           currentBoo = mBoo;
-          pendingBoo = mPendingBoo;
           currentState = mState;
           pendingState = mPendingState;
 
           // If the current and pending Boo don't match, then we need to reset
           // the state machine. Then we'll go from there.
-          if (null != currentBoo && currentBoo != pendingBoo) {
-            reset = true;
+          reset = mResetState;
+          if (mResetState) {
+            mResetState = false;
             currentState = STATE_NONE;
           }
 
@@ -518,7 +525,7 @@ public class BooPlayer extends Thread
         }
 
         // Now perform the appropriate action to attain the new state.
-        performAction(action, pendingBoo);
+        performAction(action, currentBoo);
 
         // Sleep until the next interrupt occurs.
         sleep(SLEEP_TIME);
@@ -616,11 +623,6 @@ public class BooPlayer extends Thread
 
     sendStateBuffering();
 
-    synchronized (mLock)
-    {
-      mBoo = boo;
-    }
-
     // Examine the Boo's Uri. From that we determine what player to instanciate.
     String path = boo.mHighMP3Url.getPath();
     int ext_sep = path.lastIndexOf(".");
@@ -690,6 +692,12 @@ public class BooPlayer extends Thread
       mTimerTask = null;
     }
 
+    synchronized (mLock)
+    {
+      mBoo = null;
+    }
+
+    // Log.d(LTAG, "sending State ended: " + sendState);
     if (sendState) {
       sendStateEnded();
     }
@@ -709,12 +717,12 @@ public class BooPlayer extends Thread
       return;
     }
 
-    mListener.onProgress(STATE_PLAYING, mPlaybackProgress);
-
     // If we made it here, then we'll start a tick timer for sending
     // continuous progress to the users of this class.
     mPlaybackProgress = 0f;
     mTimestamp = System.currentTimeMillis();
+
+    mListener.onProgress(STATE_PLAYING, mPlaybackProgress);
 
     try {
       mTimer = new Timer();
