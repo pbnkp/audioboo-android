@@ -92,6 +92,7 @@ public class FLACPlayer extends Thread
   public void pausePlayback()
   {
     mPaused = true;
+    interrupt();
   }
 
 
@@ -99,6 +100,7 @@ public class FLACPlayer extends Thread
   public void resumePlayback()
   {
     mPaused = false;
+    interrupt();
   }
 
 
