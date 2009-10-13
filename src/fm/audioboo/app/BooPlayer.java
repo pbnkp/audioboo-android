@@ -363,7 +363,7 @@ public class BooPlayer extends Thread
     // Log.d(LTAG, "stop from outside");
     synchronized (mLock)
     {
-      mBoo = mPendingBoo = null;
+      mPendingBoo = null;
       mPendingState = STATE_NONE;
     }
     interrupt();
@@ -508,7 +508,7 @@ public class BooPlayer extends Thread
 
         // If we need to reset the state machine, let's do so now.
         if (reset) {
-          stopInternal();
+          stopInternal(false);
         }
 
         // If the pending state is an error state, also send an error state
@@ -561,7 +561,7 @@ public class BooPlayer extends Thread
         break;
 
       case T_STOP:
-        stopInternal();
+        stopInternal(true);
         break;
 
       case T_PAUSE:
@@ -571,7 +571,7 @@ public class BooPlayer extends Thread
       case T_RESET:
         // A reset is identical to stop followed by prepare. The boo needs
         // to be non-null.
-        stopInternal();
+        stopInternal(false);
         prepareInternal(boo);
         break;
 
@@ -677,7 +677,7 @@ public class BooPlayer extends Thread
 
 
 
-  private void stopInternal()
+  private void stopInternal(boolean sendState)
   {
     if (null != mPlayer) {
       mPlayer.stop();
@@ -690,7 +690,9 @@ public class BooPlayer extends Thread
       mTimerTask = null;
     }
 
-    sendStateEnded();
+    if (sendState) {
+      sendStateEnded();
+    }
   }
 
 
