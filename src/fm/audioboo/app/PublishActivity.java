@@ -256,7 +256,7 @@ public class PublishActivity extends Activity
       public boolean handleMessage(Message msg)
       {
         if (API.ERR_SUCCESS == msg.what) {
-          onUploadSucceeded((String) msg.obj);
+          onUploadSucceeded((Integer) msg.obj);
         }
         else {
           mErrorCode = msg.what;
@@ -380,7 +380,7 @@ public class PublishActivity extends Activity
 
 
 
-  private void onUploadSucceeded(String booId)
+  private void onUploadSucceeded(int booId)
   {
     // Log.d(LTAG, "Boo uploaded to: " + booId);
 
