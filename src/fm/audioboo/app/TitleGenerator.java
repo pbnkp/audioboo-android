@@ -146,7 +146,9 @@ public class TitleGenerator
       sel.add(mChillyboo);
     }
 
-    selection.add(sel.get(Math.abs(mRNG.nextInt()) % sel.size()));
+    if (0 != sel.size()) {
+      selection.add(sel.get(Math.abs(mRNG.nextInt()) % sel.size()));
+    }
   }
 
 
@@ -202,7 +204,9 @@ public class TitleGenerator
       sel.add(mSleepyboo);
     }
 
-    selection.add(sel.get(Math.abs(mRNG.nextInt()) % sel.size()));
+    if (0 != sel.size()) {
+      selection.add(sel.get(Math.abs(mRNG.nextInt()) % sel.size()));
+    }
   }
 
 
@@ -271,7 +275,9 @@ public class TitleGenerator
       sel.add(mHungOverboo);
     }
 
-    selection.add(sel.get(Math.abs(mRNG.nextInt()) % sel.size()));
+    if (0 != sel.size()) {
+      selection.add(sel.get(Math.abs(mRNG.nextInt()) % sel.size()));
+    }
   }
 
 
