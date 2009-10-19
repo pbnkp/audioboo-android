@@ -25,9 +25,10 @@
   <dimen name="boo_player_title">@dimen/text_small</dimen>
 
   <!--
-    Record button
+    Record view
   -->
   <dimen name="record_button_text">@dimen/text_larger</dimen>
+  <dimen name="record_initial_countdown">120sp</dimen>
 
   <!--
     Recent boos view

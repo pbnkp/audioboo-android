@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+ This file is part of PackRat, an android program for managing media collections.
+ Copyright (C) 2009 Jens Finkhaeuser <unwesen@users.sourceforge.net>
+ All rights reserved.
+
+ $Id$
+-->
+<set xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shareInterpolator="false"
+    android:fillAfter="true"
+  >
+  <alpha android:fillAfter="true"
+      android:startOffset="0"
+      android:fromAlpha="1.0"
+      android:toAlpha="0.0"
+      android:duration="1000"
+    />
+  <scale android:fromXScale="1.0"
+      android:toXScale="0.3"
+      android:fromYScale="1.0"
+      android:toYScale="0.3"
+      android:duration="1000"
+      android:pivotX="50%"
+      android:pivotY="0%"
+    />
+</set>

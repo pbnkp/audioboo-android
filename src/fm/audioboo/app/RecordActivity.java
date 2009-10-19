@@ -17,6 +17,7 @@ import android.content.Intent;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
+import android.os.Vibrator;
 
 import android.content.res.Configuration;
 
@@ -24,8 +25,8 @@ import android.view.View;
 import android.view.Menu;
 import android.view.MenuItem;
 
-import android.widget.ToggleButton;
 import android.widget.CompoundButton;
+import android.widget.TextView;
 
 import android.widget.Toast;
 
@@ -76,6 +77,9 @@ public class RecordActivity extends Activity
 
   // Dialog IDs.
   private static final int  DIALOG_RECORDING_ERROR        = 0;
+
+  // Vibration duration in msec - half a second seems about right.
+  private static final long VIBRATE_DURATION              = 500;
 
 
   /***************************************************************************
@@ -234,6 +238,66 @@ public class RecordActivity extends Activity
 
 
 
+  private void startCountdown()
+  {
+    View v = findViewById(R.id.record_overlay);
+    v.setVisibility(View.VISIBLE);
+
+    TextView tv = (TextView) findViewById(R.id.record_countdown);
+    v.setVisibility(View.VISIBLE);
+
+    countDownStep(3);
+  }
+
+
+
+  private void countDownStep(final int step)
+  {
+    TextView tv = (TextView) findViewById(R.id.record_countdown);
+
+    // If step has reached zero, hide all countdown-related views and start
+    // recording.
+    if (0 == step) {
+      tv.setVisibility(View.GONE);
+
+      View v = findViewById(R.id.record_overlay);
+      v.setVisibility(View.GONE);
+
+      startRecording();
+      return;
+    }
+
+    // Else display the step..
+    tv.setText(String.format("%d", step));
+
+    // ... start a 1 second animation that ends up in this function again ...
+    Animation animation = AnimationUtils.loadAnimation(this, R.anim.countdown);
+    animation.setAnimationListener(new Animation.AnimationListener() {
+      public void onAnimationEnd(Animation animation)
+      {
+        // When the player finished fading out, stop capturing clicks.
+        countDownStep(step - 1);
+      }
+
+      public void onAnimationRepeat(Animation animation)
+      {
+        // pass
+      }
+
+      public void onAnimationStart(Animation animation)
+      {
+        // pass
+      }
+    });
+    tv.startAnimation(animation);
+
+    // ... and vibrate!
+    Vibrator v = (Vibrator)getSystemService(Context.VIBRATOR_SERVICE);
+    v.vibrate(VIBRATE_DURATION);
+  }
+
+
+
   private void initUI()
   {
     // This function is called either from onStart() or from
@@ -254,7 +318,8 @@ public class RecordActivity extends Activity
       public void onCheckedChanged(CompoundButton buttonView, boolean isChecked)
       {
         if (isChecked) {
-          startRecording();
+          startCountdown();
+//          startRecording();
         }
         else {
           stopRecording();
