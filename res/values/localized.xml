@@ -75,6 +75,7 @@
   -->
   <string name="account_progress_label_status">Determining device status...</string>
   <string name="account_progress_label_unlink">Unlinking device...</string>
+  <string name="account_progress_label_link">Processing link request...</string>
 
   <string name="account_account_section_title">Account Name</string>
   <string name="account_not_linked">Not Linked</string>

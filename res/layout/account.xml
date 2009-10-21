@@ -32,7 +32,7 @@
         android:layout_height="wrap_content"
         android:layout_marginTop="20dp"
         android:textSize="@dimen/account_progress_label"
-        android:textColor="@color/account_progress_label"
+        android:textColor="@color/account_progress_label_light"
         android:textStyle="bold"
         android:ellipsize="end"
         android:lines="1"

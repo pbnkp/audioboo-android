@@ -59,7 +59,8 @@
   <!--
     Colors for the account view
   -->
-  <color name="account_progress_label">@color/bb_white_80</color>
+  <color name="account_progress_label_light">@color/bb_white_80</color>
+  <color name="account_progress_label_dark">@color/bb_black_80</color>
   <color name="account_section_label">@color/bb_white_80</color>
   <color name="account_name">@color/bb_white_80</color>
   <color name="account_description">@color/bb_white_80</color>

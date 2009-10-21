@@ -30,6 +30,8 @@ import android.widget.TextView;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
 
+import android.graphics.Bitmap;
+
 import android.content.DialogInterface;
 import android.app.Dialog;
 import android.app.AlertDialog;
@@ -70,6 +72,9 @@ public class AccountActivity extends Activity
   private static final int DIALOG_CONFIRM_UNLINK  = 0;
   private static final int DIALOG_GPS_SETTINGS    = Globals.DIALOG_GPS_SETTINGS;
 
+  // Background resource IDs for the progress view
+  private static final int BG_BLACK               = android.R.color.black;
+  private static final int BG_WHITE               = android.R.color.white;
 
 
   /***************************************************************************
@@ -154,7 +159,8 @@ public class AccountActivity extends Activity
     }
 
     // First thing, show the progress view.
-    switchToViewState(VIEW_FLAGS_PROGRESS, R.string.account_progress_label_status);
+    switchToViewState(VIEW_FLAGS_PROGRESS, R.string.account_progress_label_status,
+        BG_BLACK);
 
     Globals.get().mAPI.updateStatus(new Handler(new Handler.Callback() {
       public boolean handleMessage(Message msg)
@@ -240,8 +246,9 @@ public class AccountActivity extends Activity
 
   private void onLinkRequested()
   {
-    // First, switch on the webview.
-    switchToViewState(VIEW_FLAGS_WEB);
+    // First, switch on the progress view
+    switchToViewState(VIEW_FLAGS_PROGRESS, R.string.account_progress_label_link,
+        BG_WHITE);
 
     // Send link request.
     String link_url = Globals.get().mAPI.getSignedLinkUrl();
@@ -287,6 +294,20 @@ public class AccountActivity extends Activity
           switchToViewState(VIEW_FLAGS_FORM);
         }
       }
+
+      @Override
+      public void onPageFinished(WebView view, String url)
+      {
+        switchToViewState(VIEW_FLAGS_WEB);
+      }
+
+      @Override
+      public void onPageStarted(WebView view, String url, Bitmap favicon)
+      {
+        switchToViewState(VIEW_FLAGS_PROGRESS,
+            R.string.account_progress_label_link, BG_WHITE);
+
+      }
     });
     webview.loadUrl(link_url);
   }
@@ -303,7 +324,8 @@ public class AccountActivity extends Activity
   private void performUnlink()
   {
     // Switch to progress view state.
-    switchToViewState(VIEW_FLAGS_PROGRESS, R.string.account_progress_label_unlink);
+    switchToViewState(VIEW_FLAGS_PROGRESS,
+        R.string.account_progress_label_unlink, BG_BLACK);
 
     // Fire off unlink request.
     Globals.get().mAPI.unlinkDevice(new Handler(new Handler.Callback() {
@@ -350,12 +372,13 @@ public class AccountActivity extends Activity
 
   private void switchToViewState(int[] flags)
   {
-    switchToViewState(flags, -1);
+    switchToViewState(flags, -1, BG_BLACK);
   }
 
 
 
-  private void switchToViewState(int[] flags, int progress_text_id)
+  private void switchToViewState(int[] flags, int progress_text_id,
+      int progress_background_id)
   {
     for (int i = 0 ; i < flags.length ; ++i) {
       View view = findViewById(VIEW_IDS[i]);
@@ -368,6 +391,22 @@ public class AccountActivity extends Activity
         view.setText(getResources().getString(progress_text_id));
       }
     }
+
+    View v = findViewById(R.id.account_progress);
+    if (null != v) {
+      v.setBackgroundResource(progress_background_id);
+
+      TextView tv = (TextView) v.findViewById(R.id.account_progress_label);
+      if (null != tv) {
+        int label_color = R.color.account_progress_label_light;
+        if (BG_WHITE == progress_background_id) {
+          label_color = R.color.account_progress_label_dark;
+        }
+
+        tv.setTextColor(getResources().getColorStateList(label_color));
+      }
+    }
+
   }
 
 
