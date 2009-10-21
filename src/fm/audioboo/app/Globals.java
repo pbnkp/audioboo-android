@@ -403,6 +403,13 @@ public class Globals
   public Dialog createDialog(final Activity activity, int id, int code,
       API.APIException exception)
   {
+    return createDialog(activity, id, code, exception, null);
+  }
+
+
+  public Dialog createDialog(final Activity activity, int id, int code,
+      API.APIException exception, DialogInterface.OnClickListener error_ack_listener)
+  {
     Dialog dialog = null;
 
     Resources res = activity.getResources();
@@ -452,7 +459,8 @@ public class Globals
           AlertDialog.Builder builder = new AlertDialog.Builder(activity);
           builder.setMessage(content)
             .setCancelable(false)
-            .setPositiveButton(res.getString(R.string.error_message_ack), null);
+            .setPositiveButton(res.getString(R.string.error_message_ack),
+                error_ack_listener);
           dialog = builder.create();
         }
         break;

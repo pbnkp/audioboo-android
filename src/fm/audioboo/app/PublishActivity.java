@@ -35,6 +35,7 @@ import android.net.Uri;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 
+import android.content.DialogInterface;
 import android.app.Dialog;
 
 import java.io.File;
@@ -262,8 +263,6 @@ public class PublishActivity extends Activity
           mErrorCode = msg.what;
           mException = (API.APIException) msg.obj;
           showDialog(DIALOG_ERROR);
-          setResult(Activity.RESULT_CANCELED);
-          finish();
         }
         return true;
       }
@@ -403,7 +402,13 @@ public class PublishActivity extends Activity
 
     switch (id) {
       case DIALOG_ERROR:
-        dialog = Globals.get().createDialog(this, id, mErrorCode, mException);
+        dialog = Globals.get().createDialog(this, id, mErrorCode, mException,
+            new DialogInterface.OnClickListener() {
+              public void onClick(DialogInterface dialog, int id) {
+                setResult(Activity.RESULT_CANCELED);
+                PublishActivity.this.finish();
+              }
+            });
         mErrorCode = -1;
         mException = null;
         break;
