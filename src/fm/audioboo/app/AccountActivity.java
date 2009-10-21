@@ -71,6 +71,7 @@ public class AccountActivity extends Activity
   // Dialog IDs.
   private static final int DIALOG_CONFIRM_UNLINK  = 0;
   private static final int DIALOG_GPS_SETTINGS    = Globals.DIALOG_GPS_SETTINGS;
+  private static final int DIALOG_ERROR           = Globals.DIALOG_ERROR;
 
   // Background resource IDs for the progress view
   private static final int BG_BLACK               = android.R.color.black;
@@ -85,6 +86,9 @@ public class AccountActivity extends Activity
 
   // Flag, shows whether to use location information or not.
   private boolean     mUseLocation;
+
+  // Last error code reported.
+  private int         mLastErrorCode = API.ERR_SUCCESS;
 
 
   /***************************************************************************
@@ -163,6 +167,8 @@ public class AccountActivity extends Activity
         BG_BLACK);
 
     Globals.get().mAPI.updateStatus(new Handler(new Handler.Callback() {
+      private int mStatusRetries = 0;
+
       public boolean handleMessage(Message msg)
       {
         if (API.ERR_SUCCESS == msg.what) {
@@ -170,9 +176,16 @@ public class AccountActivity extends Activity
           initUI();
         }
         else {
-          // Go into an infinite loop of trying to update the status.
-          // XXX Could be handled better.
-          Globals.get().mAPI.updateStatus(new Handler(this));
+          ++mStatusRetries;
+          if (API.STATUS_UPDATE_MAX_RETRIES <= mStatusRetries) {
+            Log.e(LTAG, "Giving up after " + mStatusRetries + " attempts.");
+            mLastErrorCode = msg.what;
+            showDialog(DIALOG_ERROR);
+          }
+          else {
+            // Try again.
+            Globals.get().mAPI.updateStatus(new Handler(this));
+          }
         }
         return true;
       }
@@ -442,6 +455,10 @@ public class AccountActivity extends Activity
 
       case DIALOG_GPS_SETTINGS:
         dialog = Globals.get().createDialog(this, id);
+        break;
+
+      case DIALOG_ERROR:
+        dialog = Globals.get().createDialog(this, id, mLastErrorCode, null);
         break;
     }
 

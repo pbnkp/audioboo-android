@@ -83,17 +83,19 @@ public class API
   //   request. If it's set, it's the expected response data.
   // - ERR_API_ERROR has the message object set to an instance of APIException
   // - Other error codes do not have the message object set.
-  public static final int ERR_SUCCESS           = 0;
-  public static final int ERR_API_ERROR         = 10001;
-  public static final int ERR_EMPTY_RESPONSE    = 10002;
-  public static final int ERR_TRANSMISSION      = 10003;
-  public static final int ERR_VERSION_MISMATCH  = 10004;
-  public static final int ERR_PARSE_ERROR       = 10005;
-  public static final int ERR_INVALID_STATE     = 10006;
+  public static final int ERR_SUCCESS               = 0;
+  public static final int ERR_API_ERROR             = 10001;
+  public static final int ERR_EMPTY_RESPONSE        = 10002;
+  public static final int ERR_TRANSMISSION          = 10003;
+  public static final int ERR_VERSION_MISMATCH      = 10004;
+  public static final int ERR_PARSE_ERROR           = 10005;
+  public static final int ERR_INVALID_STATE         = 10006;
 
   // API version we're requesting
-  public static final int API_VERSION           = 200;
+  public static final int API_VERSION               = 200;
 
+  // Maximum number of retries to use when updating the device status.
+  public static final int STATUS_UPDATE_MAX_RETRIES = 3;
 
   /***************************************************************************
    * The APIException class is sent as the message object in ERR_API_ERROR
@@ -1030,7 +1032,7 @@ public class API
         null);
     byte[] data = fetchRawSynchronous(request, handler);
     if (null == data) {
-      handler.obtainMessage(ERR_EMPTY_RESPONSE).sendToTarget();
+      Log.e(LTAG, "No response to status update call.");
       return false;
     }
 
