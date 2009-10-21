@@ -209,6 +209,13 @@ public class RecordActivity extends Activity
   {
     super.onResume();
 
+    hideOrShowPlayer();
+  }
+
+
+
+  private void hideOrShowPlayer()
+  {
     // Show the player view, if there's a Boo to match.
     if (null != mBoo) {
       // Only show the player if the Boo has a duration. Otherwise there's
@@ -319,7 +326,6 @@ public class RecordActivity extends Activity
       {
         if (isChecked) {
           startCountdown();
-//          startRecording();
         }
         else {
           stopRecording();
@@ -459,6 +465,13 @@ public class RecordActivity extends Activity
     mBoo = new Boo();
     mBoo.mHighMP3Url = Uri.parse(String.format("file://%s", filename));
 
+    // Ensure that no Boo is written here.
+    filename += Boo.EXTENSION;
+    File f = new File(filename);
+    if (f.exists()) {
+      f.delete();
+    }
+
     mBooIsNew = true;
   }
 
@@ -532,6 +545,8 @@ public class RecordActivity extends Activity
     // If the activity sent OK, then we'll reset everything. No need to keep old
     // Boos around.
     resetFLACRecorder();
+    initUI();
+    hideOrShowPlayer();
 
     // Toast that we're done.
     Toast.makeText(this, R.string.record_publish_success_toast, Toast.LENGTH_LONG).show();
