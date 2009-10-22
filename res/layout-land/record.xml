@@ -52,13 +52,21 @@
   </LinearLayout>
 
   <!-- Disabled overlay -->
-  <View android:id="@+id/record_overlay"
+  <LinearLayout android:id="@+id/record_overlay"
       android:layout_width="fill_parent"
       android:layout_height="fill_parent"
+      android:gravity="center"
       android:clickable="true"
       android:visibility="gone"
       android:background="@color/record_overlay_background"
-    />
+    >
+    <TextView android:id="@+id/record_countdown"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textSize="@dimen/record_initial_countdown"
+        android:textStyle="bold"
+      />
+  </LinearLayout>
 
 
   <!-- Player view -->
