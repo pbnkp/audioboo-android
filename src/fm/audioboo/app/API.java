@@ -206,8 +206,8 @@ public class API
   private static final String SIGNED_PARAM_PREFIX         = "signed_";
 
   // Service key/secret
-  private static final String SERVICE_KEY                 = "06b4c02d1aa1cb98562264c1";
-  private static final String SERVICE_SECRET              = "0334a90b23ee15b9d05859f21d6759169dd6758512ea852e8e7fb673b583c581";
+  private static final String SERVICE_KEY                 = "75d2035cc37d81c27a5d79b9";
+  private static final String SERVICE_SECRET              = "75056ca984faa8e23ea97e1537796ab105458c9bc0d1efaaab054ae7b54cc89e";
 
   // Request types: we have GET, FORM and MULTIPART.
   private static final int RT_GET                         = 0;
