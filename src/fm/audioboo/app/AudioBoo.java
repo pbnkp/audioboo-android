@@ -81,6 +81,8 @@ public class AudioBoo extends TabActivity
           )
         );
     }
+    drawables.recycle();
+
     setDefaultTab(0);
   }
 
