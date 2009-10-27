@@ -239,8 +239,6 @@ public class RecordActivity extends Activity
     // Ignore when the keyboard opens to the extent that we don't fetch boos
     // again.
     super.onConfigurationChanged(config);
-
-    initUI();
   }
 
 
