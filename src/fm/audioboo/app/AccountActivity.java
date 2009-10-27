@@ -15,10 +15,9 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
 
-import android.net.Uri;
-
 import android.content.res.Configuration;
 import android.content.SharedPreferences;
+import android.content.Intent;
 
 import android.view.View;
 
@@ -26,11 +25,6 @@ import android.widget.CompoundButton;
 import android.widget.ToggleButton;
 import android.widget.CheckBox;
 import android.widget.TextView;
-
-import android.webkit.WebView;
-import android.webkit.WebViewClient;
-
-import android.graphics.Bitmap;
 
 import android.content.DialogInterface;
 import android.app.Dialog;
@@ -52,20 +46,16 @@ public class AccountActivity extends Activity
 
   // View states
   private static final int VIEW_FLAGS_FORM[] = new int[] {
-    View.GONE, View.VISIBLE, View.GONE,
+    View.GONE, View.VISIBLE,
   };
   private static final int VIEW_FLAGS_PROGRESS[] = new int[] {
-    View.VISIBLE, View.GONE, View.GONE,
-  };
-  private static final int VIEW_FLAGS_WEB[] = new int[] {
-    View.GONE, View.GONE, View.VISIBLE,
+    View.VISIBLE, View.GONE,
   };
 
   // View IDs the above states
   private static final int VIEW_IDS[] = new int[] {
     R.id.account_progress,
     R.id.account_content,
-    R.id.account_webview,
   };
 
   // Dialog IDs.
@@ -89,6 +79,9 @@ public class AccountActivity extends Activity
 
   // Last error code reported.
   private int         mLastErrorCode = API.ERR_SUCCESS;
+
+  // Request code - sent to AccountLinkActivity so it can respond appropriately.
+  private int         mRequestCode;
 
 
   /***************************************************************************
@@ -259,70 +252,8 @@ public class AccountActivity extends Activity
 
   private void onLinkRequested()
   {
-    // First, switch on the progress view
-    switchToViewState(VIEW_FLAGS_PROGRESS, R.string.account_progress_label_link,
-        BG_WHITE);
-
-    // Send link request.
-    String link_url = Globals.get().mAPI.getSignedLinkUrl();
-
-    // Load link URL.
-    WebView webview = (WebView) findViewById(R.id.account_webview);
-    webview.setWebViewClient(new WebViewClient() {
-      @Override
-      public boolean shouldOverrideUrlLoading(WebView view, String url)
-      {
-        Uri parsed_uri = Uri.parse(url);
-
-        // Check whether we need to treat the new URI specially.
-        if (parsed_uri.getScheme().equals("audioboo")) {
-          // XXX We only get this scheme on success at the moment. Weird,
-          //     but so be it.
-          mStatus = null;
-          determineStatus();
-          return true;
-        }
-
-        view.loadUrl(url);
-        return true;
-      }
-
-      @Override
-      public void onLoadResource(WebView view, String url)
-      {
-        // If the url is just audioboo's base URL, i.e. has no path, then
-        // we assume the form needs to be displayed and everything was
-        // cancelled.
-        Uri parsed_uri = Uri.parse(url);
-        if ((null == parsed_uri.getPath() || parsed_uri.getPath().equals("/"))
-            && parsed_uri.getHost().endsWith("audioboo.fm"))
-        {
-          view.stopLoading();
-
-          ToggleButton tb = (ToggleButton) findViewById(R.id.account_link);
-          if (null != tb) {
-            tb.setChecked(mStatus.mLinked);
-          }
-
-          switchToViewState(VIEW_FLAGS_FORM);
-        }
-      }
-
-      @Override
-      public void onPageFinished(WebView view, String url)
-      {
-        switchToViewState(VIEW_FLAGS_WEB);
-      }
-
-      @Override
-      public void onPageStarted(WebView view, String url, Bitmap favicon)
-      {
-        switchToViewState(VIEW_FLAGS_PROGRESS,
-            R.string.account_progress_label_link, BG_WHITE);
-
-      }
-    });
-    webview.loadUrl(link_url);
+    Intent i = new Intent(this, AccountLinkActivity.class);
+    startActivityForResult(i, ++mRequestCode);
   }
 
 
@@ -464,4 +395,17 @@ public class AccountActivity extends Activity
 
     return dialog;
   }
+
+
+
+  protected void onActivityResult(int requestCode, int resultCode, Intent data)
+  {
+    if (mRequestCode != requestCode) {
+      return;
+    }
+
+    mStatus = null;
+    determineStatus();
+  }
+
 }

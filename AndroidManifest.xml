@@ -71,5 +71,9 @@
         android:configChanges="orientation|keyboardHidden"
       />
 
+    <activity android:name=".AccountLinkActivity"
+        android:configChanges="orientation|keyboardHidden"
+      />
+
   </application>
 </manifest>
