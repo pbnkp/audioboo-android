@@ -65,6 +65,7 @@
         android:layout_height="wrap_content"
         android:textSize="@dimen/record_initial_countdown"
         android:textStyle="bold"
+        android:background="@android:color/transparent"
       />
   </LinearLayout>
 
