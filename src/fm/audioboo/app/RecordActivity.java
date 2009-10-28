@@ -19,6 +19,9 @@ import android.os.Handler;
 import android.os.Message;
 import android.os.Vibrator;
 
+import android.os.PowerManager;
+import android.os.PowerManager.WakeLock;
+
 import android.content.res.Configuration;
 
 import android.view.View;
@@ -110,6 +113,9 @@ public class RecordActivity extends Activity
   // Request code - sent to PublishActivity so it can respond appropriately.
   private int           mRequestCode;
 
+  // For keeping the screen on during recording
+  private WakeLock      mWakeLock;
+
 
   /***************************************************************************
    * Implementation
@@ -118,6 +124,9 @@ public class RecordActivity extends Activity
   public void onCreate(Bundle savedInstanceState)
   {
     super.onCreate(savedInstanceState);
+
+    PowerManager pm = (PowerManager) getSystemService(Context.POWER_SERVICE);
+    mWakeLock = pm.newWakeLock(PowerManager.SCREEN_DIM_WAKE_LOCK, "AudioBoo Recording");
   }
 
 
@@ -151,6 +160,9 @@ public class RecordActivity extends Activity
       resetFLACRecorder();
     }
 
+    // Force screen to stay on.
+    mWakeLock.acquire();
+
     // Log.d(LTAG, "Resume recording!");
     mFlacRecorder.resumeRecording();
     mSpectralView.startAnimation();
@@ -164,6 +176,9 @@ public class RecordActivity extends Activity
 
   private void stopRecording()
   {
+    // Clear screen on flag
+    mWakeLock.release();
+
     // Log.d(LTAG, "Pause recording!");
     mFlacRecorder.pauseRecording();
     mSpectralView.stopAnimation();
@@ -200,6 +215,11 @@ public class RecordActivity extends Activity
     String filename = getRecorderFilename();
     filename += Boo.EXTENSION;
     mBoo.writeToFile(filename);
+
+    // Release the lock if we're holding it.
+    if (mWakeLock.isHeld()) {
+      mWakeLock.release();
+    }
   }
 
 
