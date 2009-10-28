@@ -504,11 +504,18 @@ public class RecordActivity extends Activity
       android.R.drawable.ic_menu_share,
     };
     for (int i = 0 ; i < menu_titles.length ; ++i) {
-      // Only add MENU_PUBLISH if the Boo has a duration.
-      if (MENU_PUBLISH != i || 0.0 != mBoo.mDuration) {
-        menu.add(0, i, 0, menu_titles[i]).setIcon(menu_icons[i]);
-      }
+      menu.add(0, i, 0, menu_titles[i]).setIcon(menu_icons[i]);
     }
+    return true;
+  }
+
+
+
+  @Override
+  public boolean onPrepareOptionsMenu(Menu menu)
+  {
+    MenuItem publish = menu.getItem(MENU_PUBLISH);
+    publish.setEnabled(0.0 != mBoo.mDuration);
     return true;
   }
 
