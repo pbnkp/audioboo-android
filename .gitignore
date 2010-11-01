@@ -1,0 +1,10 @@
+libs/armeabi*
+libs/dnsjava-1.6.6.jar
+local.properties
+ndk
+obj
+bin
+externals/dnsjava
+gen
+jni/flac
+jni/ogg

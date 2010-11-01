@@ -5,7 +5,7 @@
 #
 # Author: Jens Finkhaeuser <jens@finkhaeuser.de>
 #
-# $Id$
+# $Id: bootstrap.sh 1272 2010-11-01 14:07:29Z unwesen $
 
 # 1. Make sure we're in the project root. We'll look for AndroidManifest.xml,
 #    and check whether that includes a reference to AudioBoo.
@@ -33,22 +33,10 @@ if [ ! -L "${NDK_LINK}" ] ; then
   exit 3
 fi
 
-# 3. In the NDK's directory, create symbolic links back to this project.
-ln -snf "${PROJECT_PATH}/native/src" "${NDK_LINK}/sources/AudioBoo"
-ln -snf "${PROJECT_PATH}/native/apps/debug" "${NDK_LINK}/apps/AudioBoo-debug"
-ln -snf "${PROJECT_PATH}/native/apps/release" "${NDK_LINK}/apps/AudioBoo-release"
+# 3. Build native stuff. Force rebuilding; if you don't want to rebuild, run
+#    ndk/ndk-build manually without the -B parameter:
+#    $ ndk/ndk-build V=1
+ndk/ndk-build -B "$@"
 
-# 4. Create Application.mk in the apps directories.
-for target in debug release ; do
-  cat "${PROJECT_PATH}/native/apps/Application.mk.in" | \
-    sed -e "s;@PATH@;${PROJECT_PATH};g" \
-        -e "s;@OPTIMIZATION@;${target};g" \
-        >"${PROJECT_PATH}/native/apps/${target}/Application.mk"
-done
-
-# 5. Build native stuff. By default, build the release version, but if the
-#    a command line target "debug" is provided, build the debug version
-./build-native.sh "$@"
-
-# 6. Build external libs. The artefacts end up in the libs subdirectory.
+# 4. Build external libs. The artefacts end up in the libs subdirectory.
 ./build-externals.sh "$@"
