@@ -176,16 +176,26 @@ public class RecordActivity extends Activity
 
   private void stopRecording()
   {
-    // Clear screen on flag
-    mWakeLock.release();
+    // Release the lock if we're holding it.
+    if (mWakeLock.isHeld()) {
+      Log.d(LTAG, "Release wakelock.");
+      mWakeLock.release();
+    }
 
-    // Log.d(LTAG, "Pause recording!");
-    mFlacRecorder.pauseRecording();
-    mSpectralView.stopAnimation();
+    if (null != mSpectralView) {
+      Log.d(LTAG, "Stop animating.");
+      mSpectralView.stopAnimation();
+    }
 
-    // Every time we stop recording, we really want the current recording
-    // duration to be remembered in the Boo we're holding.
-    mBoo.mDuration = mFlacRecorder.getDuration();
+    if (null != mFlacRecorder) {
+      Log.d(LTAG, "Pause recording.");
+      mFlacRecorder.pauseRecording();
+      mFlacRecorder.interrupt();
+
+      // Every time we stop recording, we really want the current recording
+      // duration to be remembered in the Boo we're holding.
+      mBoo.mDuration = mFlacRecorder.getDuration();
+    }
 
     // Show player.
     showPlayer();
@@ -198,28 +208,13 @@ public class RecordActivity extends Activity
   {
     super.onPause();
 
-    // Pause recording in onPause
-    if (null != mFlacRecorder) {
-      mBoo.mDuration = mFlacRecorder.getDuration();
-      mFlacRecorder.pauseRecording();
-      mFlacRecorder.interrupt();
-    }
-
-    if (null != mSpectralView) {
-      mSpectralView.stopAnimation();
-    }
-
+    stopRecording();
     stopPlayer();
 
     // Write Boo
     String filename = getRecorderFilename();
     filename += Boo.EXTENSION;
     mBoo.writeToFile(filename);
-
-    // Release the lock if we're holding it.
-    if (mWakeLock.isHeld()) {
-      mWakeLock.release();
-    }
   }
 
 
