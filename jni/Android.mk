@@ -50,6 +50,7 @@ LOCAL_SRC_FILES := \
 	jni/FLACStreamEncoder.cpp \
 	jni/FLACStreamDecoder.cpp \
 	jni/util.cpp
+LOCAL_LDLIBS := -llog
 
 LOCAL_STATIC_LIBRARIES := audioboo-ogg audioboo-flac
 
