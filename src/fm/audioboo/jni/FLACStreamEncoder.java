@@ -1,6 +1,6 @@
 /**
  * This file is part of AudioBoo, an android program for audio blogging.
- * Copyright (C) 2009 BestBefore Media Ltd. All rights reserved.
+ * Copyright (C) 2009,2010 BestBefore Media Ltd. All rights reserved.
  *
  * Author: Jens Finkhaeuser <jens@finkhaeuser.de>
  *
@@ -8,6 +8,8 @@
  **/
 
 package fm.audioboo.jni;
+
+import java.nio.ByteBuffer;
 
 
 /**
@@ -94,7 +96,7 @@ public class FLACStreamEncoder
    * as the provided buffer size.
    * Returns the number of bytes actually written.
    **/
-  native public int write(byte[] buffer, int bufsize);
+  native public int write(ByteBuffer buffer, int bufsize);
 
   // Load native library
   static {

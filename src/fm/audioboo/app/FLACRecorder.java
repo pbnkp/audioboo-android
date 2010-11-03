@@ -1,6 +1,6 @@
 /**
  * This file is part of AudioBoo, an android program for audio blogging.
- * Copyright (C) 2009 BestBefore Media Ltd. All rights reserved.
+ * Copyright (C) 2009,2010 BestBefore Media Ltd. All rights reserved.
  *
  * Author: Jens Finkhaeuser <jens@finkhaeuser.de>
  *
@@ -18,6 +18,8 @@ import android.media.AudioRecord;
 import android.media.MediaRecorder;
 
 import fm.audioboo.jni.FLACStreamEncoder;
+
+import java.nio.ByteBuffer;
 
 import android.util.Log;
 
@@ -221,7 +223,7 @@ public class FLACRecorder extends Thread
 
       // Start recording loop
       mDuration = 0.0;
-      byte[] buffer = new byte[bufsize];
+      ByteBuffer buffer = ByteBuffer.allocateDirect(bufsize);
       boolean oldShouldRecord = mShouldRecord;
       while (mShouldRun) {
         // Toggle recording state, if necessary
@@ -240,7 +242,7 @@ public class FLACRecorder extends Thread
 
         // If we're supposed to be recording, read data.
         if (mShouldRecord) {
-          int result = recorder.read(buffer, 0, bufsize);
+          int result = recorder.read(buffer, bufsize);
           switch (result) {
             case AudioRecord.ERROR_INVALID_OPERATION:
               Log.e(LTAG, "Invalid operation.");
@@ -258,6 +260,7 @@ public class FLACRecorder extends Thread
                 double read_ms = (1000.0 * result) / bytesPerSecond;
                 mDuration += read_ms;
 
+                long start = System.currentTimeMillis();
                 int write_result = mEncoder.write(buffer, result);
                 if (write_result != result) {
                   Log.e(LTAG, "Attempted to write " + result
@@ -268,6 +271,8 @@ public class FLACRecorder extends Thread
                   Amplitudes amp = getAmplitudes();
                   mHandler.obtainMessage(MSG_AMPLITUDES, amp).sendToTarget();
                 }
+                long end = System.currentTimeMillis();
+                Log.d(LTAG, "Write of " + result + " bytes took " + (end - start) + " msec.");
               }
           }
         }

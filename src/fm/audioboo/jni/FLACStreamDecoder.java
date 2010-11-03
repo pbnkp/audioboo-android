@@ -1,6 +1,6 @@
 /**
  * This file is part of AudioBoo, an android program for audio blogging.
- * Copyright (C) 2009 BestBefore Media Ltd. All rights reserved.
+ * Copyright (C) 2009,2010 BestBefore Media Ltd. All rights reserved.
  *
  * Author: Jens Finkhaeuser <jens@finkhaeuser.de>
  *
@@ -13,6 +13,9 @@ package fm.audioboo.jni;
 /**
  * This is *not* a full JNI wrapper for the FLAC codec, but merely exports
  * the minimum of functions necessary for the purposes of the AudioBoo client.
+ *
+ * Note that we're not using ByteBuffer here as we do in FLACStreamEncoder;
+ * this is because AudioTrack (see FLACPlayer) doesn't support ByteBuffer.
  **/
 public class FLACStreamDecoder
 {
