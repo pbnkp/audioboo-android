@@ -98,6 +98,11 @@ public class FLACStreamEncoder
    **/
   native public int write(ByteBuffer buffer, int bufsize);
 
+  /**
+   * Flushes internal buffers to FIFO.
+   **/
+  native public void flush();
+
   // Load native library
   static {
     System.loadLibrary("audioboo-native");

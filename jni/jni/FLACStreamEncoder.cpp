@@ -14,6 +14,8 @@
 #include <string.h>
 #include <alloca.h>
 #include <limits.h>
+#include <pthread.h>
+#include <unistd.h>
 
 #include "FLAC/metadata.h"
 #include "FLAC/stream_encoder.h"
@@ -34,17 +36,90 @@ static char const * const FLACStreamEncoder_mObject     = "mObject";
 
 static char const * const IllegalArgumentException_classname  = "java.lang.IllegalArgumentException";
 
+static char const * const LTAG                          = "FLACStreamEncoder/native";
+
 static int COMPRESSION_LEVEL                            = 5;
 
 
 
 /*****************************************************************************
  * Native FLACStreamEncoder representation
+ *
+ * FLACStreamEncoder uses a writer thread to write its internal buffer. The
+ * implementation is deliberately simple, and writing functions like this:
+ *
+ * 1. There's a thread on which Java makes JNI calls to write some data, the
+ *    JNI thread.
+ *    There's also a thread on which data is written to disk via FLAC, the
+ *    writer thread.
+ * 2. Data is passed from the JNI thread to the writer thread via a locked
+ *    singly linked list of buffers; the JNI thread appends buffers to the
+ *    list, and once appended, relinquishes ownership which passes to the
+ *    writer thread. The writer thread processes the list in a FIFO fashion;
+ *    we'll call the list the write FIFO.
+ * 3. Upon being called by Java to write data, the JNI thread writes the
+ *    data to an internal buffer.
+ *    If that buffer becomes full,
+ *    a) it's appended to the write FIFO, and ownership is relinquished.
+ *    b) a new buffer is allocated for subsequent write calls
+ *    c) the writer thread is woken.
  **/
 
 class FLACStreamEncoder
 {
 public:
+  // Write FIFO
+  struct write_fifo_t
+  {
+    write_fifo_t(FLAC__int32 * buf, int fillsize)
+      : m_next(NULL)
+      , m_buffer(buf) // Taking ownership here.
+      , m_buffer_fill_size(fillsize)
+    {
+    }
+
+
+    ~write_fifo_t()
+    {
+      // We have ownership!
+      delete [] m_buffer;
+      delete m_next;
+    }
+
+
+    write_fifo_t * last() volatile
+    {
+      volatile write_fifo_t * last = this;
+      while (last->m_next) {
+        last = last->m_next;
+      }
+      return (write_fifo_t *) last;
+    }
+
+
+    write_fifo_t *  m_next;
+    FLAC__int32 *   m_buffer;
+    int             m_buffer_fill_size;
+  };
+
+  // Thread trampoline arguments
+  struct trampoline
+  {
+    typedef void * (FLACStreamEncoder::* func_t)(void * args);
+
+    FLACStreamEncoder * m_encoder;
+    func_t              m_func;
+    void *              m_args;
+
+    trampoline(FLACStreamEncoder * encoder, func_t func, void * args)
+      : m_encoder(encoder)
+      , m_func(func)
+      , m_args(args)
+    {
+    }
+  };
+
+
   /**
    * Takes ownership of the outfile.
    **/
@@ -58,6 +133,11 @@ public:
     , m_max_amplitude(0)
     , m_average_sum(0)
     , m_average_count(0)
+    , m_write_buffer(NULL)
+    , m_write_buffer_size(0)
+    , m_write_buffer_offset(0)
+    , m_fifo(NULL)
+    , m_kill_writer(false)
   {
   }
 
@@ -98,6 +178,30 @@ public:
       return "Could not initialize FLAC__StreamEncoder for the given file!";
     }
 
+    // Allocate write buffer. Based on observations noted down in issue #106, we'll
+    // choose this to be 32k in size. Actual allocation happens lazily.
+    m_write_buffer_size = 32768;
+
+    // The write FIFO gets created lazily. But we'll initialize the mutex for it
+    // here.
+    int err = pthread_mutex_init(&m_fifo_mutex, NULL);
+    if (err) {
+      return "Could not initialize FIFO mutex!";
+    }
+
+    // Similarly, create the condition variable for the writer thread.
+    err = pthread_cond_init(&m_writer_condition, NULL);
+    if (err) {
+      return "Could not initialize writer thread condition!";
+    }
+
+    // Start thread!
+    err = pthread_create(&m_writer, NULL, &FLACStreamEncoder::trampoline_func,
+        new trampoline(this, &FLACStreamEncoder::writer_thread, NULL));
+    if (err) {
+      return "Could not start writer thread!";
+    }
+
     return NULL;
   }
 
@@ -108,6 +212,22 @@ public:
    **/
   ~FLACStreamEncoder()
   {
+    // Flush thread.
+    flush_to_fifo();
+
+    pthread_mutex_lock(&m_fifo_mutex);
+    m_kill_writer = true;
+    pthread_mutex_unlock(&m_fifo_mutex);
+
+    pthread_cond_broadcast(&m_writer_condition);
+
+    // Clean up thread related stuff.
+    void * retval = NULL;
+    pthread_join(m_writer, &retval);
+    pthread_cond_destroy(&m_writer_condition);
+    pthread_mutex_destroy(&m_fifo_mutex);
+
+    // Clean up FLAC stuff
     if (m_encoder) {
       FLAC__stream_encoder_finish(m_encoder);
       FLAC__stream_encoder_delete(m_encoder);
@@ -123,38 +243,136 @@ public:
 
 
   /**
+   * Flushes internal buffers to disk.
+   **/
+  int flush()
+  {
+    flush_to_fifo();
+
+    // Signal writer to wake up.
+    pthread_cond_signal(&m_writer_condition);
+  }
+
+
+
+  /**
    * Writes bufsize elements from buffer to the stream. Returns the number of
    * bytes actually written.
    **/
   int write(char * buffer, int bufsize)
   {
+    //aj::log(ANDROID_LOG_DEBUG, LTAG, "Asked to write buffer of size %d", bufsize);
+
     // We have 8 or 16 bit pcm in the buffer, but FLAC expects 32 bit samples,
     // where some of the 32 bits are unused.
     int bufsize32 = bufsize / (m_bits_per_sample / 8);
-    FLAC__int32 * buf = reinterpret_cast<FLAC__int32*>(alloca(
-          sizeof(FLAC__int32) * bufsize32));
+    //aj::log(ANDROID_LOG_DEBUG, LTAG, "Required size: %d", bufsize32);
 
-    if (8 == m_bits_per_sample) {
-      copyBuffer<int8_t>(buf, buffer, bufsize);
-    }
-    else if (16 == m_bits_per_sample) {
-      copyBuffer<int16_t>(buf, buffer, bufsize);
-    }
-    else {
-      // XXX should never happen, just exit.
-      return 0;
+    // Protect from overly large buffers on the JNI side.
+    if (bufsize32 > m_write_buffer_size) {
+      // The only way we can handle this sanely without fragmenting buffers and
+      // so forth is to use a separate code path here. In this, we'll flush the
+      // current write buffer to the FIFO, and immediately append a new
+      // FIFO entry that's as large as bufsize32.
+      flush_to_fifo();
+
+      m_write_buffer = new FLAC__int32[bufsize32];
+      m_write_buffer_offset = 0;
+
+      int ret = copyBuffer(buffer, bufsize, bufsize32);
+      flush_to_fifo();
+
+      // Signal writer to wake up.
+      pthread_cond_signal(&m_writer_condition);
+
+      return ret;
     }
 
-    // Encode!
-    FLAC__bool ok = FLAC__stream_encoder_process_interleaved(m_encoder,
-        buf, bufsize32);
-    if (!ok) {
-      // We don't really know how much was written, we have to assume it was
-      // nothing.
-      return 0;
+
+    // If the current write buffer cannot hold the amount of data we've
+    // got, push it onto the write FIFO and create a new buffer.
+    if (m_write_buffer && m_write_buffer_offset + bufsize32 > m_write_buffer_size) {
+      //aj::log(ANDROID_LOG_DEBUG, LTAG, "JNI buffer is full, pushing to FIFO");
+      flush_to_fifo();
+
+      // Signal writer to wake up.
+      pthread_cond_signal(&m_writer_condition);
     }
 
-    return bufsize;
+    // If we need to create a new buffer, do so now.
+    if (!m_write_buffer) {
+      //aj::log(ANDROID_LOG_DEBUG, LTAG, "Need new buffer.");
+      m_write_buffer = new FLAC__int32[m_write_buffer_size];
+      m_write_buffer_offset = 0;
+    }
+
+    // At this point we know that there's a write buffer, and we know that
+    // there's enough space in it to write the data we've received.
+    return copyBuffer(buffer, bufsize, bufsize32);
+  }
+
+
+
+  /**
+   * Writer thread function.
+   **/
+  void * writer_thread(void * args)
+  {
+    // Loop while m_kill_writer is false.
+    pthread_mutex_lock(&m_fifo_mutex);
+    do {
+      //aj::log(ANDROID_LOG_DEBUG, LTAG, "Going to sleep...");
+      pthread_cond_wait(&m_writer_condition, &m_fifo_mutex);
+      //aj::log(ANDROID_LOG_DEBUG, LTAG, "Wakeup: should I die after this? %s", (m_kill_writer ? "yes" : "no"));
+
+      // Grab ownership over the current FIFO, and release the lock again.
+      write_fifo_t * fifo = (write_fifo_t *) m_fifo;
+      m_fifo = NULL;
+      pthread_mutex_unlock(&m_fifo_mutex);
+
+      // Now we can take all the time we want to iterate over the FIFO's
+      // contents. We just need to make sure to grab the lock again before
+      // going into the next iteration of this loop.
+      int retry = 0;
+
+      write_fifo_t * current = fifo;
+      while (current) {
+        //aj::log(ANDROID_LOG_DEBUG, LTAG, "Encoding current entry %p, buffer %p, size %d",
+        //    current, current->m_buffer, current->m_buffer_fill_size);
+
+        // Encode!
+        FLAC__bool ok = FLAC__stream_encoder_process_interleaved(m_encoder,
+            current->m_buffer, current->m_buffer_fill_size);
+        if (ok) {
+          retry = 0;
+        }
+        else {
+          // We don't really know how much was written, we have to assume it was
+          // nothing.
+          if (++retry > 3) {
+            aj::log(ANDROID_LOG_ERROR, LTAG, "Giving up on writing current FIFO!");
+            break;
+          }
+          else {
+            // Sleep a little before retrying.
+            aj::log(ANDROID_LOG_ERROR, LTAG, "Writing FIFO entry %p failed; retrying...");
+            usleep(5000); // 5msec
+          }
+          continue;
+        }
+
+        current = current->m_next;
+      }
+
+      // Once we've written everything, delete the fifo and grab the lock again.
+      delete fifo;
+      pthread_mutex_lock(&m_fifo_mutex);
+    } while (!m_kill_writer);
+    pthread_mutex_unlock(&m_fifo_mutex);
+
+    //aj::log(ANDROID_LOG_DEBUG, LTAG, "Writer thread dies.");
+
+    return NULL;
   }
 
 
@@ -178,6 +396,62 @@ public:
 
 
 private:
+  /**
+   * Append current write buffer to FIFO, and clear it.
+   **/
+  inline void flush_to_fifo()
+  {
+    if (!m_write_buffer) {
+      return;
+    }
+
+    //aj::log(ANDROID_LOG_DEBUG, LTAG, "Flushing to FIFO.");
+
+    write_fifo_t * next = new write_fifo_t(m_write_buffer,
+        m_write_buffer_offset);
+    m_write_buffer = NULL;
+
+    pthread_mutex_lock(&m_fifo_mutex);
+    if (m_fifo) {
+      write_fifo_t * last = m_fifo->last();
+      last->m_next = next;
+    }
+    else {
+      m_fifo = next;
+    }
+    //aj::log(ANDROID_LOG_DEBUG, LTAG, "FIFO: %p, new entry: %p", m_fifo, next);
+    pthread_mutex_unlock(&m_fifo_mutex);
+  }
+
+
+
+  /**
+   * Wrapper around templatized copyBuffer that writes to the current write
+   * buffer at the current offset.
+   **/
+  inline int copyBuffer(char * buffer, int bufsize, int bufsize32)
+  {
+    FLAC__int32 * buf = m_write_buffer + m_write_buffer_offset;
+
+    //aj::log(ANDROID_LOG_DEBUG, LTAG, "Writing at %p[%d] = %p", m_write_buffer, m_write_buffer_offset, buf);
+    if (8 == m_bits_per_sample) {
+      copyBuffer<int8_t>(buf, buffer, bufsize);
+      m_write_buffer_offset += bufsize32;
+    }
+    else if (16 == m_bits_per_sample) {
+      copyBuffer<int16_t>(buf, buffer, bufsize);
+      m_write_buffer_offset += bufsize32;
+    }
+    else {
+      // XXX should never happen, just exit.
+      return 0;
+    }
+
+    return bufsize;
+  }
+
+
+
   /**
    * Copies inbuf to outpuf, assuming that inbuf is really a buffer of
    * sized_sampleT.
@@ -216,6 +490,23 @@ private:
   }
 
 
+  // Thread trampoline
+  static void * trampoline_func(void * args)
+  {
+    trampoline * tramp = static_cast<trampoline *>(args);
+    FLACStreamEncoder * encoder = tramp->m_encoder;
+    trampoline::func_t func = tramp->m_func;
+
+    void * result = (encoder->*func)(tramp->m_args);
+
+    // Ownership tor tramp is passed to us, so we'll delete it here.
+    delete tramp;
+    return result;
+  }
+
+
+
+
   // Configuration values passed to ctor
   char *  m_outfile;
   int     m_sample_rate;
@@ -229,6 +520,20 @@ private:
   float   m_max_amplitude;
   float   m_average_sum;
   int     m_average_count;
+
+  // JNI thread's buffer.
+  FLAC__int32 * m_write_buffer;
+  int           m_write_buffer_size;
+  int           m_write_buffer_offset;
+
+  // Write FIFO
+  volatile write_fifo_t * m_fifo;
+  pthread_mutex_t         m_fifo_mutex;
+
+  // Writer thread
+  pthread_t       m_writer;
+  pthread_cond_t  m_writer_condition;
+  volatile bool   m_kill_writer;
 };
 
 
@@ -334,6 +639,22 @@ Java_fm_audioboo_jni_FLACStreamEncoder_write(JNIEnv * env, jobject obj,
 
   char * buf = static_cast<char *>(env->GetDirectBufferAddress(buffer));
   return encoder->write(buf, bufsize);
+}
+
+
+
+void
+Java_fm_audioboo_jni_FLACStreamEncoder_flush(JNIEnv * env, jobject obj)
+{
+  FLACStreamEncoder * encoder = get_encoder(env, obj);
+
+  if (NULL == encoder) {
+    aj::throwByName(env, IllegalArgumentException_classname,
+        "Called without a valid encoder instance!");
+    return;
+  }
+
+  encoder->flush();
 }
 
 
