@@ -663,11 +663,14 @@ Java_fm_audioboo_jni_FLACStreamDecoder_read(JNIEnv * env, jobject obj,
     return 0;
   }
 
-  jboolean copy = false;
+  jboolean copy = JNI_FALSE;
   char * buf = reinterpret_cast<char *>(env->GetByteArrayElements(buffer,
         &copy));
 
-  return decoder->read(buf, bufsize);
+  jint ret = decoder->read(buf, bufsize);
+
+  env->ReleaseByteArrayElements(buffer, reinterpret_cast<jbyte *>(buf), 0);
+  return ret;
 }
 
 
