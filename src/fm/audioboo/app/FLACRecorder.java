@@ -207,9 +207,6 @@ public class FLACRecorder extends Thread
         return;
       }
 
-      // Let's be generous with the buffer size... beats underruns
-      bufsize *= 2;
-
       AudioRecord recorder = new AudioRecord(MediaRecorder.AudioSource.MIC,
         SAMPLE_RATE, CHANNEL_CONFIG, FORMAT, bufsize);
 
@@ -261,7 +258,7 @@ public class FLACRecorder extends Thread
                 double read_ms = (1000.0 * result) / bytesPerSecond;
                 mDuration += read_ms;
 
-                long start = System.currentTimeMillis();
+                //long start = System.currentTimeMillis();
                 int write_result = mEncoder.write(buffer, result);
                 if (write_result != result) {
                   Log.e(LTAG, "Attempted to write " + result
@@ -272,8 +269,8 @@ public class FLACRecorder extends Thread
                   Amplitudes amp = getAmplitudes();
                   mHandler.obtainMessage(MSG_AMPLITUDES, amp).sendToTarget();
                 }
-                long end = System.currentTimeMillis();
-                Log.d(LTAG, "Write of " + result + " bytes took " + (end - start) + " msec.");
+                //long end = System.currentTimeMillis();
+                //Log.d(LTAG, "Write of " + result + " bytes took " + (end - start) + " msec.");
               }
           }
         }
