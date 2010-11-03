@@ -13,6 +13,9 @@
 
 #include <jni.h>
 
+#include <android/log.h>
+
+
 namespace audioboo {
 namespace jni {
 
@@ -61,5 +64,9 @@ char * convert_jstring_path(JNIEnv * env, jstring input);
 void throwByName(JNIEnv * env, const char * name, const char * msg);
 
 
+/**
+ * Log stuff printf-style.
+ **/
+void log(int priority, char const * tag, char const * format, ...);
 
 }} // namespace audioboo::jni

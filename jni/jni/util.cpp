@@ -7,10 +7,12 @@
  * $Id$
  **/
 
+#include "util.h"
+
 #include <limits.h>
 #include <string.h>
-
-#include "util.h"
+#include <stdarg.h>
+#include <stdio.h>
 
 namespace audioboo {
 namespace jni {
@@ -54,6 +56,22 @@ void throwByName(JNIEnv * env, const char * name, const char * msg)
   env->DeleteLocalRef(cls);
 }
 
+
+/**
+ * Log stuff printf-style
+ **/
+void log(int priority, char const * tag, char const * format, ...)
+{
+  va_list argptr;
+  va_start(argptr, format);
+
+  char line[4096];
+  vsnprintf(line, sizeof(line), format, argptr);
+
+  va_end(argptr);
+
+  __android_log_write(priority, tag, line);
+}
 
 
 }} // namespace audioboo::jni
