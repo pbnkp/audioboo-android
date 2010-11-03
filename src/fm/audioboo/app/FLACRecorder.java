@@ -236,6 +236,7 @@ public class FLACRecorder extends Thread
           else {
             Log.d(LTAG, "Stop recording!");
             recorder.stop();
+            mEncoder.flush();
           }
           oldShouldRecord = mShouldRecord;
         }
