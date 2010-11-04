@@ -66,6 +66,7 @@ public class Boo implements Serializable
 
   // Timestamps
   public Date                   mRecordedAt;
+  public Date                   mUpdatedAt;
   public Date                   mUploadedAt;
 
   // Boo location
@@ -106,6 +107,9 @@ public class Boo implements Serializable
       Boo boo = (Boo) is.readObject();
       is.close();
 
+      if (null == boo.mUpdatedAt) {
+        boo.mUpdatedAt = new Date(f.lastModified());
+      }
       if (null == boo.mFilename) {
         boo.mFilename = filename;
       }
@@ -135,6 +139,8 @@ public class Boo implements Serializable
    **/
   public void writeToFile(String filename)
   {
+    mUpdatedAt = new Date();
+
     try {
       ObjectOutputStream os = new ObjectOutputStream(new FileOutputStream(new File(filename)));
       os.writeObject(this);
