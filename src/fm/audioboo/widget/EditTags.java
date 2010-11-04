@@ -22,6 +22,7 @@ import fm.audioboo.app.Tag;
 
 import fm.audioboo.app.R;
 
+import java.util.List;
 import java.util.LinkedList;
 
 import android.util.Log;
@@ -286,9 +287,9 @@ public class EditTags extends EditText
   /**
    * Return the contents of this edit field, as a list of tags.
    **/
-  public LinkedList<Tag> getTags()
+  public List<Tag> getTags()
   {
-    LinkedList<Tag> results = null;
+    List<Tag> results = null;
 
     CharSequence text = getText();
     if (null != text && 0 != text.length()) {
@@ -327,7 +328,7 @@ public class EditTags extends EditText
   /**
    * Sets the content as a list of Tag.
    **/
-  public void setTags(LinkedList<Tag> tags)
+  public void setTags(List<Tag> tags)
   {
     // Normalize tags.
     String sep = String.format("%c", SEPARATOR);
