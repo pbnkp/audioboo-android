@@ -13,6 +13,7 @@ import android.net.Uri;
 
 import java.util.Date;
 import java.util.List;
+import java.util.LinkedList;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -75,7 +76,9 @@ public class Boo implements Serializable
   public transient Uri          mImageUrl;
   public transient Uri          mDetailUrl;
 
-  // Paths pointing to this Boo's recordings, in order.
+  // Local information
+  public String                 mFilename;
+  //   Paths pointing to this Boo's recordings, in order.
   public List<String>           mRecordings = new LinkedList<String>();
 
   // Usage statistics.
@@ -102,6 +105,16 @@ public class Boo implements Serializable
       ObjectInputStream is = new ObjectInputStream(new FileInputStream(f));
       Boo boo = (Boo) is.readObject();
       is.close();
+
+      if (null == boo.mFilename) {
+        boo.mFilename = filename;
+      }
+      if (null == boo.mRecordings) {
+        boo.mRecordings = new LinkedList<String>();
+        if (null != boo.mHighMP3Url && boo.mHighMP3Url.getScheme().equals("file")) {
+          boo.mRecordings.add(boo.mHighMP3Url.getPath());
+        }
+      }
 
       return boo;
     } catch (FileNotFoundException ex) {
