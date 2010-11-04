@@ -12,7 +12,7 @@ package fm.audioboo.app;
 import android.net.Uri;
 
 import java.util.Date;
-import java.util.LinkedList;
+import java.util.List;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -39,12 +39,14 @@ public class Boo implements Serializable
   private static final String LTAG = "Boo";
 
 
-
   /***************************************************************************
    * Public constants
    **/
   // Serialized file extension.
   public static final String EXTENSION = ".boo";
+
+  // Serialization UID
+  public static final long serialVersionUID = 5505418760954089521L;
 
 
 
@@ -52,31 +54,38 @@ public class Boo implements Serializable
    * Public data
    **/
   // Basic information
-  public int                mId;
-  public String             mTitle;
+  public int                    mId;
+  public String                 mTitle;
 
-  public double             mDuration;
+  public double                 mDuration;
 
-  public LinkedList<Tag>    mTags;
+  public List<Tag>              mTags;
 
-  public User               mUser;
+  public User                   mUser;
 
   // Timestamps
-  public Date               mRecordedAt;
-  public Date               mUploadedAt;
+  public Date                   mRecordedAt;
+  public Date                   mUploadedAt;
 
   // Boo location
-  public BooLocation        mLocation;
+  public BooLocation            mLocation;
 
   // URLs associated with the Boo.
-  public transient Uri      mHighMP3Url;
-  public transient Uri      mImageUrl;
-  public transient Uri      mDetailUrl;
+  public transient Uri          mHighMP3Url;
+  public transient Uri          mImageUrl;
+  public transient Uri          mDetailUrl;
+
+  // Paths pointing to this Boo's recordings, in order.
+  public List<String>           mRecordings = new LinkedList<String>();
 
   // Usage statistics.
-  public int                mPlays;
-  public int                mComments;
+  public int                    mPlays;
+  public int                    mComments;
 
+
+  /***************************************************************************
+   * Implementation
+   **/
 
   /**
    * Tries to construct a Boo from a file with the given filename.
@@ -129,7 +138,8 @@ public class Boo implements Serializable
 
   public String toString()
   {
-    return String.format("<%d:%s:%f:[%s]>", mId, mTitle, mDuration, mUser);
+    return String.format("<%d:%s:%f:[%s]:%d>", mId, mTitle, mDuration, mUser,
+        (null == mRecordings ? 0 : mRecordings.size()));
   }
 
 
