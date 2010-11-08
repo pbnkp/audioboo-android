@@ -274,8 +274,8 @@ public class BooPlayerView extends LinearLayout implements Handler.Callback
       case STATE_BUFFERING:
         mButton.setChecked(false);
         mButton.setIndeterminate(true);
-        if (null != mBoo && 0.0 != mBoo.mDuration) {
-          mButton.setMax((int) (mBoo.mDuration * PROGRESS_MULTIPLIER));
+        if (null != mBoo && 0.0 != mBoo.getDuration()) {
+          mButton.setMax((int) (mBoo.getDuration() * PROGRESS_MULTIPLIER));
         }
         break;
 
