@@ -34,7 +34,7 @@ public class FLACRecorder extends Thread
   /***************************************************************************
    * Public constants
    **/
-  // Message codes
+  // Message codes - XXX Also see BooRecorder
   public static final int MSG_OK                    = 0;
   public static final int MSG_INVALID_FORMAT        = 1;
   public static final int MSG_HARDWARE_UNAVAILABLE  = 2;
@@ -64,9 +64,43 @@ public class FLACRecorder extends Thread
     public float  mPeak;
     public float  mAverage;
 
+
+    public Amplitudes()
+    {
+    }
+
+
+    public Amplitudes(Amplitudes other)
+    {
+      mPosition = other.mPosition;
+      mPeak = other.mPeak;
+      mAverage = other.mAverage;
+    }
+
+
     public String toString()
     {
       return String.format("%dms: %f/%f", mPosition, mAverage, mPeak);
+    }
+
+
+    public void accumulate(Amplitudes other)
+    {
+      // Position is simple; the overall position is the sum of
+      // both positions.
+      long oldPos = mPosition;
+      mPosition += other.mPosition;
+
+      // The higher peak is the overall peak.
+      if (other.mPeak > mPeak) {
+        mPeak = other.mPeak;
+      }
+
+      // Average is more complicated, because it needs to be weighted
+      // on the time it took to calculate it.
+      float weightedOld = mAverage * (oldPos / (float) mPosition);
+      float weightedNew = other.mAverage * (other.mPosition / (float) mPosition);
+      mAverage = weightedOld + weightedNew;
     }
   }
 
