@@ -43,7 +43,7 @@ public class Boo implements Serializable
   /***************************************************************************
    * Recording metadata.
    **/
-  public static class Recording
+  public static class Recording implements Serializable
   {
     String  mFilename;
     double  mDuration;
@@ -242,6 +242,7 @@ public class Boo implements Serializable
     if (null == rec) {
       rec = new Recording(
           Globals.get().getBooManager().getNewRecordingFilename(this));
+      mRecordings.add(rec);
     }
 
     return rec;
