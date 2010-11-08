@@ -1,6 +1,6 @@
 /**
  * This file is part of AudioBoo, an android program for audio blogging.
- * Copyright (C) 2009 BestBefore Media Ltd. All rights reserved.
+ * Copyright (C) 2009,2010 BestBefore Media Ltd. All rights reserved.
  *
  * Author: Jens Finkhaeuser <jens@finkhaeuser.de>
  *
@@ -41,10 +41,43 @@ public class Boo implements Serializable
 
 
   /***************************************************************************
+   * Recording metadata.
+   **/
+  public static class Recording
+  {
+    String  mFilename;
+    double  mDuration;
+
+    public Recording(String filename, double duration)
+    {
+      mFilename = filename;
+      mDuration = duration;
+    }
+
+
+    public Recording(String filename)
+    {
+      mFilename = filename;
+    }
+
+
+    public String toString()
+    {
+      return String.format("<%f:%s>", mDuration, mFilename);
+    }
+  }
+
+
+
+  /***************************************************************************
    * Public constants
    **/
   // Serialized file extension.
   public static final String EXTENSION = ".boo";
+  // Data dir extension
+  public static final String DATA_EXTENSION = ".data";
+  // Recording extension
+  public static final String RECORDING_EXTENSION = ".rec";
 
   // Serialization UID
   public static final long serialVersionUID = 5505418760954089521L;
@@ -58,7 +91,7 @@ public class Boo implements Serializable
   public int                    mId;
   public String                 mTitle;
 
-  public double                 mDuration;
+  public double                 mDuration; // XXX Deprecated; use getDuration()
 
   public List<Tag>              mTags;
 
@@ -80,7 +113,7 @@ public class Boo implements Serializable
   // Local information
   public String                 mFilename;
   //   Paths pointing to this Boo's recordings, in order.
-  public List<String>           mRecordings = new LinkedList<String>();
+  public List<Recording>        mRecordings;
 
   // Usage statistics.
   public int                    mPlays;
@@ -114,9 +147,10 @@ public class Boo implements Serializable
         boo.mFilename = filename;
       }
       if (null == boo.mRecordings) {
-        boo.mRecordings = new LinkedList<String>();
+        boo.mRecordings = new LinkedList<Recording>();
         if (null != boo.mHighMP3Url && boo.mHighMP3Url.getScheme().equals("file")) {
-          boo.mRecordings.add(boo.mHighMP3Url.getPath());
+          boo.mRecordings.add(new Recording(boo.mHighMP3Url.getPath(),
+                boo.mDuration));
         }
       }
 
@@ -137,6 +171,16 @@ public class Boo implements Serializable
   /**
    * Serializes the Boo class to a file specified by the given filename.
    **/
+  public void writeToFile()
+  {
+    if (null == mFilename) {
+      throw new IllegalStateException("No filename set when attempting to save Boo.");
+    }
+    writeToFile(mFilename);
+  }
+
+
+
   public void writeToFile(String filename)
   {
     mUpdatedAt = new Date();
@@ -155,9 +199,60 @@ public class Boo implements Serializable
 
 
 
+  /**
+   * Returns the Boo's duration. If the Boo is downloaded, this function returns
+   * mDuration. If it's locally recorded, it returns the accumulated duration of
+   * all individual recordings.
+   **/
+  public double getDuration()
+  {
+    if (null != mRecordings && mRecordings.size() > 0) {
+      double duration = 0;
+      for (Recording rec : mRecordings) {
+        duration += rec.mDuration;
+      }
+      return duration;
+    }
+
+    // Still valid for downloaded Boos.
+    return mDuration;
+  }
+
+
+
+  /**
+   * Returns a new Recording metadata object for use in recording Boos. If the
+   * latest known Recording is empty (does not have a duration), that is
+   * returned, otherwise a new Recording is created and registered.
+   **/
+  public Recording getLastEmptyRecording()
+  {
+    if (null == mRecordings) {
+      mRecordings = new LinkedList<Recording>();
+    }
+
+    Recording rec = null;
+    if (0 != mRecordings.size()) {
+      Recording r = mRecordings.get(mRecordings.size() - 1);
+      if (0 == r.mDuration) {
+        rec = r;
+      }
+    }
+
+    if (null == rec) {
+      rec = new Recording(
+          Globals.get().getBooManager().getNewRecordingFilename(this));
+    }
+
+    return rec;
+  }
+
+
+
+
   public String toString()
   {
-    return String.format("<%d:%s:%f:[%s]:%d>", mId, mTitle, mDuration, mUser,
+    return String.format("<%d:%s:%f:[%s]:%d>", mId, mTitle, getDuration(), mUser,
         (null == mRecordings ? 0 : mRecordings.size()));
   }
 
