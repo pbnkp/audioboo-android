@@ -21,6 +21,8 @@ import fm.audioboo.jni.FLACStreamEncoder;
 
 import java.nio.ByteBuffer;
 
+import java.lang.ref.WeakReference;
+
 import android.util.Log;
 
 /**
@@ -64,7 +66,7 @@ public class FLACRecorder extends Thread
 
     public String toString()
     {
-      return String.format("%ldms: %f/%f", mPosition, mAverage, mPeak);
+      return String.format("%dms: %f/%f", mPosition, mAverage, mPeak);
     }
   }
 
@@ -80,30 +82,26 @@ public class FLACRecorder extends Thread
    * Private data
    **/
   // Flag that signals whether the thread should record or ignore PCM data.
-  private boolean           mShouldRecord;
-
-  // Context in which this object was created
-  private Context           mContext;
+  private boolean                 mShouldRecord = false;
 
   // Stream encoder
-  private FLACStreamEncoder mEncoder;
+  private FLACStreamEncoder       mEncoder;
 
   // File path for the output file.
-  private String            mPath;
+  private String                  mPath;
 
   // Handler to notify at the above report interval
-  private Handler           mHandler;
+  private Handler                 mHandler;
 
   // Remember the duration of the recording. This is in msec.
-  private double            mDuration;
+  private double                  mDuration;
 
 
   /***************************************************************************
    * Implementation
    **/
-  public FLACRecorder(Context context, String path, Handler handler)
+  public FLACRecorder(String path, Handler handler)
   {
-    mContext = context;
     mPath = path;
     mHandler = handler;
   }
@@ -190,7 +188,7 @@ public class FLACRecorder extends Thread
   public void run()
   {
     mShouldRun = true;
-    mShouldRecord = false;
+    boolean oldShouldRecord = false;
 
     try {
       // Set up recorder
@@ -221,7 +219,6 @@ public class FLACRecorder extends Thread
       // Start recording loop
       mDuration = 0.0;
       ByteBuffer buffer = ByteBuffer.allocateDirect(bufsize);
-      boolean oldShouldRecord = mShouldRecord;
       while (mShouldRun) {
         // Toggle recording state, if necessary
         if (mShouldRecord != oldShouldRecord) {
