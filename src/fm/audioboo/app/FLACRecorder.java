@@ -224,11 +224,11 @@ public class FLACRecorder extends Thread
         if (mShouldRecord != oldShouldRecord) {
           // State changed! Let's see what we are supposed to do.
           if (mShouldRecord) {
-            Log.d(LTAG, "Start recording!");
+            // Log.d(LTAG, "Start recording!");
             recorder.startRecording();
           }
           else {
-            Log.d(LTAG, "Stop recording!");
+            // Log.d(LTAG, "Stop recording!");
             recorder.stop();
             mEncoder.flush();
           }
