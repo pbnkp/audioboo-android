@@ -29,15 +29,20 @@ import android.util.Log;
 public class BooRecorder
 {
   /***************************************************************************
+   * Public constants
+   **/
+  // Message ID for end of recording; at this point stats are finalized.
+  // XXX Note that the message ID must be at least one higher than the highest
+  // FLACRecorder message ID.
+  public static final int MSG_END_OF_RECORDING  = FLACRecorder.MSG_AMPLITUDES + 1;
+
+
+  /***************************************************************************
    * Private constants
    **/
   // Log ID
   private static final String LTAG  = "BooRecorder";
 
-  // Message ID for end of recording; at this point stats are finalized.
-  // XXX Note that the message ID must be at least one higher than the highest
-  // FLACRecorder message ID.
-  private static final int MSG_END_OF_RECORDING  = FLACRecorder.MSG_AMPLITUDES + 1;
 
 
   /***************************************************************************
@@ -102,8 +107,10 @@ public class BooRecorder
               mAmplitudes.accumulate(mLastAmplitudes);
             }
 
-            mRecording.mDuration = getDuration();
+            mRecording.mDuration = mLastAmplitudes.mPosition / 1000.0;
             mRecording = null;
+
+            mUpchainHandler.obtainMessage(MSG_END_OF_RECORDING).sendToTarget();
             return true;
 
 
