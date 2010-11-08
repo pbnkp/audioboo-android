@@ -22,10 +22,13 @@ import android.telephony.TelephonyManager;
 import java.math.BigInteger;
 import java.security.MessageDigest;
 
+import java.io.File;
 import java.io.FileInputStream;
 
 import java.util.StringTokenizer;
 import java.util.HashMap;
+import java.util.List;
+import java.util.LinkedList;
 
 import android.content.SharedPreferences;
 
@@ -117,8 +120,11 @@ public class Globals
   private LocationListener          mLocationListener;
 
   // Base path, prepended before mRelativeFilePath. It's on the external
-  // storage and includes the file bundle.
+  // storage and includes the file bundle. FIXME remove
   private String                    mBasePath;
+
+  // Boo manager instance.
+  private BooManager                mBooManager;
 
   // Map of error codes to error messages.
   private HashMap<Integer, String>  mErrorMessages;
@@ -476,6 +482,7 @@ public class Globals
    **/
   public String getBasePath()
   {
+    // FIXME remove
     if (null == mBasePath) {
       mBasePath = mContext.getDir(DATA_DIR_PREFIX, Context.MODE_PRIVATE).getPath();
       // TODO Maybe use external storage?
@@ -484,5 +491,33 @@ public class Globals
       // mBasePath = base;
     }
     return mBasePath;
+  }
+
+
+
+  /**
+   * Return the global BooManager instance.
+   **/
+  public BooManager getBooManager()
+  {
+    if (null == mBooManager) {
+      List<String> paths = new LinkedList<String>();
+
+      // Data on SD card; first preferred path.
+      String base = Environment.getExternalStorageDirectory().getPath();
+      base += File.separator + "data" + File.separator + mContext.getPackageName() + File.separator + "boos";
+      paths.add(base);
+
+      // Private data, for compatibility with old versions and fallbacks.
+      base = mContext.getDir(DATA_DIR_PREFIX, Context.MODE_PRIVATE).getPath();
+      paths.add(base);
+
+      mBooManager = new BooManager(paths);
+
+      // FIXME
+      Log.d(LTAG, "Found Boos: " + mBooManager.getBoos());
+    }
+
+    return mBooManager;
   }
 }
