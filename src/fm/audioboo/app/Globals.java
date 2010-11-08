@@ -513,9 +513,6 @@ public class Globals
       paths.add(base);
 
       mBooManager = new BooManager(paths);
-
-      // FIXME
-      Log.d(LTAG, "Found Boos: " + mBooManager.getBoos());
     }
 
     return mBooManager;
