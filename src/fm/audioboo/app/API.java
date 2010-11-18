@@ -634,6 +634,10 @@ public class API
           String.format("%f", boo.mLocation.mAccuracy));
     }
 
+    if (null != boo.mUUID) {
+      signedParams.put("audio_clip[uuid]", boo.mUUID);
+    }
+
     // Prepare files.
     HashMap<String, String> fileParams = new HashMap<String, String>();
     fileParams.put("audio_clip[uploaded_data]", boo.mHighMP3Url.getPath());

@@ -14,6 +14,7 @@ import android.net.Uri;
 import java.util.Date;
 import java.util.List;
 import java.util.LinkedList;
+import java.util.UUID;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -91,6 +92,9 @@ public class Boo implements Serializable
   public int                    mId;
   public String                 mTitle;
 
+  // UUID. We generate this when creating new Boos.
+  public UUID                   mUUID;
+
   public double                 mDuration; // XXX Deprecated; use getDuration()
 
   public List<Tag>              mTags;
@@ -123,6 +127,12 @@ public class Boo implements Serializable
   /***************************************************************************
    * Implementation
    **/
+  public Boo()
+  {
+    mUUID = UUID.randomUUID();
+  }
+
+
 
   /**
    * Tries to construct a Boo from a file with the given filename.
