@@ -56,6 +56,7 @@ import java.io.ByteArrayOutputStream;
 import java.util.StringTokenizer;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.Locale;
 
 import java.util.Map;
 import java.util.HashMap;
@@ -614,6 +615,7 @@ public class API
     HashMap<String, Object> signedParams = new HashMap<String, Object>();
     signedParams.put("audio_clip[title]", boo.mTitle);
     signedParams.put("audio_clip[local_recorded_at]", boo.mRecordedAt.toString());
+    signedParams.put("audio_clip[author_locale]", Locale.getDefault().toString());
 
     // Tags
     if (null != boo.mTags) {
