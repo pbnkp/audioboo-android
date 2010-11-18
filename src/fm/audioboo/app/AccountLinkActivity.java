@@ -65,6 +65,7 @@ public class AccountLinkActivity extends Activity
 
     // Load link URL.
     WebView webview = (WebView) findViewById(R.id.account_webview);
+    webview.getSettings().setJavaScriptEnabled(true);
     webview.setWebViewClient(new WebViewClient() {
       @Override
       public boolean shouldOverrideUrlLoading(WebView view, String url)
