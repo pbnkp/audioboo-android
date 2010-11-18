@@ -1,6 +1,6 @@
 /**
  * This file is part of AudioBoo, an android program for audio blogging.
- * Copyright (C) 2009 BestBefore Media Ltd. All rights reserved.
+ * Copyright (C) 2009,2010 BestBefore Media Ltd. All rights reserved.
  *
  * Author: Jens Finkhaeuser <jens@finkhaeuser.de>
  *
@@ -51,6 +51,9 @@ import java.util.Date;
 
 import java.io.File;
 
+import java.util.List;
+import java.util.LinkedList;
+
 import android.util.Log;
 
 /**
@@ -68,12 +71,6 @@ public class RecordActivity extends Activity
   // Limit for the recording time we allow, in seconds.
   private static final int    RECORDING_TIME_LIMIT        = 1200;
 
-  // Base file name for the current recording.
-  private static final String RECORDING_BASE_NAME         = "current";
-
-  // Extension for recordings.
-  private static final String RECORDING_EXTENSION         = ".flac";
-
   // Options menu IDs
   private static final int  MENU_RESTART                  = 0;
   private static final int  MENU_PUBLISH                  = 1;
@@ -89,7 +86,7 @@ public class RecordActivity extends Activity
    * Data members
    **/
   // Recorder instance
-  private FLACRecorder  mFlacRecorder;
+  private BooRecorder   mBooRecorder;
 
   // The record activity essentially represents a Boo, even though it's not
   // filled with all possible bits of information yet. We (re-)create this
@@ -117,6 +114,7 @@ public class RecordActivity extends Activity
   private WakeLock      mWakeLock;
 
 
+
   /***************************************************************************
    * Implementation
    **/
@@ -138,15 +136,15 @@ public class RecordActivity extends Activity
 
     // Check whether the recorder file already exists. If it does, we'll not
     // initialize the recorder, but only the player.
-    String filename = getRecorderFilename();
-    filename += Boo.EXTENSION;
-    Boo boo = Boo.constructFromFile(filename);
-    if (null != boo && 0.0 != boo.mDuration) {
+    Boo boo = Globals.get().getBooManager().getLatestBoo();
+    if (null != boo && 0.0 != boo.getDuration()) {
+      Log.d(LTAG, "Latest: " + boo);
+
       mBoo = boo;
       mBooIsNew = false;
     }
-    else if (null == mFlacRecorder) {
-      resetFLACRecorder();
+    else if (null == mBooRecorder) {
+      resetBooRecorder();
     }
 
     initUI();
@@ -156,20 +154,20 @@ public class RecordActivity extends Activity
 
   private void startRecording()
   {
-    if (null == mFlacRecorder) {
-      resetFLACRecorder();
+    if (null == mBooRecorder) {
+      resetBooRecorder();
     }
 
     // Force screen to stay on.
     mWakeLock.acquire();
 
-    // Log.d(LTAG, "Resume recording!");
-    mFlacRecorder.resumeRecording();
-    mSpectralView.startAnimation();
-
     // Stop playback, regardless where it's been started from.
     Globals.get().mPlayer.stopPlaying();
     stopPlayer();
+
+    Log.d(LTAG, "Resume recording!");
+    mBooRecorder.start();
+    mSpectralView.startAnimation();
   }
 
 
@@ -187,14 +185,9 @@ public class RecordActivity extends Activity
       mSpectralView.stopAnimation();
     }
 
-    if (null != mFlacRecorder) {
+    if (null != mBooRecorder) {
       Log.d(LTAG, "Pause recording.");
-      mFlacRecorder.pauseRecording();
-      mFlacRecorder.interrupt();
-
-      // Every time we stop recording, we really want the current recording
-      // duration to be remembered in the Boo we're holding.
-      mBoo.mDuration = mFlacRecorder.getDuration();
+      mBooRecorder.stop();
     }
 
     // Show player.
@@ -212,9 +205,7 @@ public class RecordActivity extends Activity
     stopPlayer();
 
     // Write Boo
-    String filename = getRecorderFilename();
-    filename += Boo.EXTENSION;
-    mBoo.writeToFile(filename);
+    mBoo.writeToFile();
   }
 
 
@@ -225,6 +216,9 @@ public class RecordActivity extends Activity
     super.onResume();
 
     hideOrShowPlayer();
+
+    Globals.get().getBooManager().rebuildIndex();
+    // FIXME move much of onStart here?
   }
 
 
@@ -236,7 +230,7 @@ public class RecordActivity extends Activity
       // Only show the player if the Boo has a duration. Otherwise there's
       // nothing to play back.
       // Log.d(LTAG, "Boo: " + mBoo);
-      if (0.0 != mBoo.mDuration) {
+      if (0.0 != mBoo.getDuration()) {
         showPlayer();
       }
 
@@ -260,6 +254,11 @@ public class RecordActivity extends Activity
 
   private void startCountdown()
   {
+    // Stop playback, regardless where it's been started from.
+    Globals.get().mPlayer.stopPlaying();
+    stopPlayer();
+
+    // Start countdown.
     View v = findViewById(R.id.record_overlay);
     v.setVisibility(View.VISIBLE);
 
@@ -362,15 +361,15 @@ public class RecordActivity extends Activity
 
     // If we've been recording, set the button/spectral view to the appropriate
     // state.
-    if (null != mFlacRecorder) {
+    if (null != mBooRecorder) {
       // If we're recording, we'll update everything regularly. If not, we'll
       // want to set the button's progress properly nevertheless.
-      if (mFlacRecorder.isRecording()) {
+      if (mBooRecorder.isRecording()) {
         mSpectralView.startAnimation();
         mRecordButton.setChecked(true);
       }
       else {
-        FLACRecorder.Amplitudes amp = mFlacRecorder.getAmplitudes();
+        FLACRecorder.Amplitudes amp = mBooRecorder.getAmplitudes();
         if (null != amp) {
           mRecordButton.setProgress((int) (amp.mPosition / 1000));
         }
@@ -434,18 +433,19 @@ public class RecordActivity extends Activity
 
 
 
-  private void resetFLACRecorder()
+  private void resetBooRecorder()
   {
-    if (null != mFlacRecorder) {
-      mFlacRecorder.mShouldRun = false;
-      mFlacRecorder.interrupt();
-      mFlacRecorder = null;
+    if (null != mBooRecorder) {
+      mBooRecorder.stop();
+      mBooRecorder = null;
     }
 
-    // Instanciate recorder.
-    String filename = getRecorderFilename();
+    // Create new empty Boo.
+    mBoo = Globals.get().getBooManager().createBoo();
+    mBooIsNew = true;
 
-    mFlacRecorder = new FLACRecorder(this, filename,
+    // Instanciate recorder.
+    mBooRecorder = new BooRecorder(this, mBoo,
       new Handler(new Handler.Callback()
       {
         public boolean handleMessage(Message m)
@@ -460,7 +460,15 @@ public class RecordActivity extends Activity
               // Ignore.
               break;
 
+            case BooRecorder.MSG_END_OF_RECORDING:
+              // Alright, let's write that Boo to disk!
+              mBoo.writeToFile();
+              Log.d(LTAG, "Written Boo to: " + mBoo.mFilename);
+              Log.d(LTAG, "Written Boo is: " + mBoo);
+              break;
+
             default:
+              mBooRecorder.stop();
               mErrorCode = m.what;
               showDialog(DIALOG_RECORDING_ERROR);
               break;
@@ -470,22 +478,6 @@ public class RecordActivity extends Activity
         }
       }
     ));
-    mFlacRecorder.start();
-
-
-    // Also recrete the Boo we're remembering. We can at least set the "recorded
-    // at" date, and hijack the mHighMP3Url to point to our flac file.
-    mBoo = new Boo();
-    mBoo.mHighMP3Url = Uri.parse(String.format("file://%s", filename));
-
-    // Ensure that no Boo is written here.
-    filename += Boo.EXTENSION;
-    File f = new File(filename);
-    if (f.exists()) {
-      f.delete();
-    }
-
-    mBooIsNew = true;
   }
 
 
@@ -510,7 +502,7 @@ public class RecordActivity extends Activity
   public boolean onPrepareOptionsMenu(Menu menu)
   {
     MenuItem publish = menu.getItem(MENU_PUBLISH);
-    publish.setEnabled(0.0 != mBoo.mDuration);
+    publish.setEnabled(0.0 != mBoo.getDuration());
     return true;
   }
 
@@ -521,14 +513,15 @@ public class RecordActivity extends Activity
   {
     switch (item.getItemId()) {
       case MENU_RESTART:
-        resetFLACRecorder();
+        // FIXME probably need to create a new Boo here and/or delete the old one
+        resetBooRecorder();
         initUI();
         break;
 
       case MENU_PUBLISH:
         Intent i = new Intent(this, PublishActivity.class);
-        String filename = getRecorderFilename() + Boo.EXTENSION;
-        i.putExtra(PublishActivity.EXTRA_BOO_FILENAME, filename);
+        mBoo.writeToFile();
+        i.putExtra(PublishActivity.EXTRA_BOO_FILENAME, mBoo.mFilename);
         startActivityForResult(i, ++mRequestCode);
         break;
 
@@ -564,23 +557,12 @@ public class RecordActivity extends Activity
 
     // If the activity sent OK, then we'll reset everything. No need to keep old
     // Boos around.
-    resetFLACRecorder();
+    resetBooRecorder();
     initUI();
     hideOrShowPlayer();
 
     // Toast that we're done.
     Toast.makeText(this, R.string.record_publish_success_toast, Toast.LENGTH_LONG).show();
-  }
-
-
-
-  private String getRecorderFilename()
-  {
-    String filename = Globals.get().getBasePath() + File.separator + RECORDING_BASE_NAME + RECORDING_EXTENSION;
-    File f = new File(filename);
-    f.getParentFile().mkdirs();
-
-    return filename;
   }
 
 

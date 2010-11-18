@@ -293,6 +293,9 @@ public class BooManager
     }
 
     mBooList = boos;
+
+    // FIXME
+    Log.d(LTAG, "Found Boos: " + mBooList);
   }
 
 }
