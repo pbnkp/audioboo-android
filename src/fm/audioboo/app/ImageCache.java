@@ -35,6 +35,8 @@ import java.io.ByteArrayOutputStream;
 
 import java.util.LinkedList;
 
+import java.lang.ref.WeakReference;
+
 import android.util.Log;
 
 /**
@@ -160,7 +162,7 @@ public class ImageCache extends SQLiteOpenHelper
    * Data members
    **/
   // Context in which the cache is run
-  private Context     mContext;
+  private WeakReference<Context>  mContext;
 
   // Number of items.
   private int         mCacheMax;
@@ -176,7 +178,7 @@ public class ImageCache extends SQLiteOpenHelper
   {
     super(context, DATABASE_NAME, null, DATABASE_VERSION);
 
-    mContext = context;
+    mContext = new WeakReference<Context>(context);
     mCacheMax = cacheMax;
   }
 

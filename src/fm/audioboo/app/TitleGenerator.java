@@ -18,6 +18,8 @@ import java.util.LinkedList;
 
 import android.content.Context;
 
+import java.lang.ref.WeakReference;
+
 import android.util.Log;
 
 /**
@@ -37,7 +39,7 @@ public class TitleGenerator
    * Data
    **/
   // Context to load resources with.
-  private Context   mContext;
+  private WeakReference<Context>  mContext;
 
   // RNG
   private Random    mRNG = new Random();
@@ -80,7 +82,7 @@ public class TitleGenerator
    **/
   public TitleGenerator(Context ctx)
   {
-    mContext = ctx;
+    mContext = new WeakReference<Context>(ctx);
   }
 
 
@@ -111,13 +113,18 @@ public class TitleGenerator
   private void addSeasonBoo(LinkedList<String> selection)
   {
     if (null == mSpringboo) {
-      mSpringboo = mContext.getResources().getString(R.string.boo_title_spring);
-      mSummerboo = mContext.getResources().getString(R.string.boo_title_summer);
-      mHotboo = mContext.getResources().getString(R.string.boo_title_hot);
-      mFallboo = mContext.getResources().getString(R.string.boo_title_fall);
-      mAutumnboo = mContext.getResources().getString(R.string.boo_title_autumn);
-      mWinterboo = mContext.getResources().getString(R.string.boo_title_winter);
-      mChillyboo = mContext.getResources().getString(R.string.boo_title_chilly);
+      Context ctx = mContext.get();
+      if (null == ctx) {
+        return;
+      }
+
+      mSpringboo = ctx.getResources().getString(R.string.boo_title_spring);
+      mSummerboo = ctx.getResources().getString(R.string.boo_title_summer);
+      mHotboo = ctx.getResources().getString(R.string.boo_title_hot);
+      mFallboo = ctx.getResources().getString(R.string.boo_title_fall);
+      mAutumnboo = ctx.getResources().getString(R.string.boo_title_autumn);
+      mWinterboo = ctx.getResources().getString(R.string.boo_title_winter);
+      mChillyboo = ctx.getResources().getString(R.string.boo_title_chilly);
     }
 
     GregorianCalendar calendar = new GregorianCalendar();
@@ -156,16 +163,21 @@ public class TitleGenerator
   private void addTimedBoo(LinkedList<String> selection)
   {
     if (null == mBreakfastboo) {
-      mBreakfastboo = mContext.getResources().getString(R.string.boo_title_breakfast);
-      mMorningboo = mContext.getResources().getString(R.string.boo_title_morning);
-      mLunchboo = mContext.getResources().getString(R.string.boo_title_lunch);
-      mAfternoonboo = mContext.getResources().getString(R.string.boo_title_afternoon);
-      mSunnyboo = mContext.getResources().getString(R.string.boo_title_sunny);
-      mTeaboo = mContext.getResources().getString(R.string.boo_title_tea);
-      mEODboo = mContext.getResources().getString(R.string.boo_title_eod);
-      mEveningboo = mContext.getResources().getString(R.string.boo_title_evening);
-      mDarkboo = mContext.getResources().getString(R.string.boo_title_dark);
-      mSleepyboo = mContext.getResources().getString(R.string.boo_title_sleepy);
+      Context ctx = mContext.get();
+      if (null == ctx) {
+        return;
+      }
+
+      mBreakfastboo = ctx.getResources().getString(R.string.boo_title_breakfast);
+      mMorningboo = ctx.getResources().getString(R.string.boo_title_morning);
+      mLunchboo = ctx.getResources().getString(R.string.boo_title_lunch);
+      mAfternoonboo = ctx.getResources().getString(R.string.boo_title_afternoon);
+      mSunnyboo = ctx.getResources().getString(R.string.boo_title_sunny);
+      mTeaboo = ctx.getResources().getString(R.string.boo_title_tea);
+      mEODboo = ctx.getResources().getString(R.string.boo_title_eod);
+      mEveningboo = ctx.getResources().getString(R.string.boo_title_evening);
+      mDarkboo = ctx.getResources().getString(R.string.boo_title_dark);
+      mSleepyboo = ctx.getResources().getString(R.string.boo_title_sleepy);
     }
 
     GregorianCalendar calendar = new GregorianCalendar();
@@ -214,13 +226,18 @@ public class TitleGenerator
   private void addSpecialBoo(LinkedList<String> selection)
   {
     if (null == mMeetingsboo) {
-      mMeetingsboo = mContext.getResources().getString(R.string.boo_title_meetings);
-      mPackedLunchboo = mContext.getResources().getString(R.string.boo_title_packed_lunch);
-      mWayHomeboo = mContext.getResources().getString(R.string.boo_title_way_home);
-      mHomeboo = mContext.getResources().getString(R.string.boo_title_home);
-      mPartyboo = mContext.getResources().getString(R.string.boo_title_party);
-      mDrunkboo = mContext.getResources().getString(R.string.boo_title_drunk);
-      mHungOverboo = mContext.getResources().getString(R.string.boo_title_hung_over);
+      Context ctx = mContext.get();
+      if (null == ctx) {
+        return;
+      }
+
+      mMeetingsboo = ctx.getResources().getString(R.string.boo_title_meetings);
+      mPackedLunchboo = ctx.getResources().getString(R.string.boo_title_packed_lunch);
+      mWayHomeboo = ctx.getResources().getString(R.string.boo_title_way_home);
+      mHomeboo = ctx.getResources().getString(R.string.boo_title_home);
+      mPartyboo = ctx.getResources().getString(R.string.boo_title_party);
+      mDrunkboo = ctx.getResources().getString(R.string.boo_title_drunk);
+      mHungOverboo = ctx.getResources().getString(R.string.boo_title_hung_over);
     }
 
 
@@ -285,7 +302,12 @@ public class TitleGenerator
   private String genericBoo()
   {
     if (null == mGeneric) {
-      mGeneric = mContext.getResources().getStringArray(R.array.boo_title_generic);
+      Context ctx = mContext.get();
+      if (null == ctx) {
+        return "generic";
+      }
+
+      mGeneric = ctx.getResources().getStringArray(R.array.boo_title_generic);
     }
     return mGeneric[Math.abs(mRNG.nextInt()) % mGeneric.length];
   }

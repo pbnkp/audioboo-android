@@ -16,6 +16,8 @@ import android.media.MediaPlayer;
 import java.util.TimerTask;
 import java.util.Timer;
 
+import java.lang.ref.WeakReference;
+
 import android.util.Log;
 
 /**
@@ -143,8 +145,14 @@ public class BooPlayer extends Thread
 
     public boolean prepare(Boo boo)
     {
+      Context ctx = mContext.get();
+      if (null == ctx) {
+        Log.e(LTAG, "Context is dead, won't play.");
+        return false;
+      }
+
       // Prepare player
-      mMediaPlayer = MediaPlayer.create(mContext, boo.mHighMP3Url);
+      mMediaPlayer = MediaPlayer.create(ctx, boo.mHighMP3Url);
       if (null == mMediaPlayer) {
         Log.e(LTAG, "Could not start playback of URI: " + boo.mHighMP3Url);
         return false;
@@ -244,13 +252,19 @@ public class BooPlayer extends Thread
 
     public boolean prepare(Boo boo)
     {
+      Context ctx = mContext.get();
+      if (null == ctx) {
+        Log.e(LTAG, "Context is dead, won't play.");
+        return false;
+      }
+
       // Immediately send playback state - that's technically a violation of the
       // API, but there's just no buffering for local files, and it avoids a
       // briefly flashing buffer indicator.
       startPlaybackState();
 
       String filename = boo.mHighMP3Url.getPath();
-      mFlacPlayer = new FLACPlayer(mContext, filename);
+      mFlacPlayer = new FLACPlayer(ctx, filename);
 
       mFlacPlayer.setListener(new FLACPlayer.PlayerListener() {
         public void onError()
@@ -304,7 +318,7 @@ public class BooPlayer extends Thread
    * Private data
    **/
   // Context in which this object was created
-  private Context               mContext;
+  private WeakReference<Context>  mContext;
 
   // Lock.
   private Object                mLock = new Object();
@@ -339,7 +353,7 @@ public class BooPlayer extends Thread
    **/
   public BooPlayer(Context context)
   {
-    mContext = context;
+    mContext = new WeakReference<Context>(context);
   }
 
 
