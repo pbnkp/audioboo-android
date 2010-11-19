@@ -45,6 +45,8 @@ import android.content.res.Resources;
 
 import android.provider.Settings;
 
+import java.lang.ref.WeakReference;
+
 import android.util.Log;
 
 /**
@@ -68,16 +70,27 @@ public class Globals
 
   // Time interval to expect location updates in, in milliseconds. This is only
   // a guideline, and location updates may occur more or less often than that.
-  // The 10 second interval is more or less picked at random; there's the
+  // The 30 second interval is more or less picked at random; there's the
   // assumption that people won't move fast enough for a higher update frequency
   // to become important.
-  private static final int        LOCATION_UPDATE_PERIOD      = 10 * 1000;
+  private static final int        FREQUENT_LOCATION_UPDATE_PERIOD   = 15 * 1000;
+  private static final int        INFREQUENT_LOCATION_UPDATE_PERIOD = 10 * 60 * 1000;
+
+  // Thresholds for location update frequency changes, in meters. If the accuracy
+  // goes below the maximum threshold we switch to updating infrequently. Yes,
+  // that's a bit confusing, but due to the unit of measurement it's correct. If
+  // the accuarcy goes above the minimum threshold, we switch to updating
+  // frequently.
+  private static final float      MAX_LOCATION_ACCURACY             = 30.0f;
+  private static final float      MIN_LOCATION_ACCURACY             = 75.0f;
 
   // Resolution for location updates, in meters. Again the number is picked
   // based on the assumption that a higher resolution is not useful. What this
   // value means in practice is that we won't receive location updates if the
   // location changed by less than this amount.
-  private static final float      LOCATION_UPDATE_RESOLUTION  = 10;
+  // XXX To make sense in conjunction with the MAX_LOCATION_ACCURACY above, this
+  //     value must be smaller than MAX_LOCATION_ACCURACY.
+  private static final float      LOCATION_UPDATE_RESOLUTION  = 20;
 
   // Directory prefix for the data directory.
   private static final String     DATA_DIR_PREFIX             = "boo_data";
@@ -119,6 +132,9 @@ public class Globals
   // Location listener. Used to continuously update location information.
   private LocationListener          mLocationListener;
 
+  // Current location update frequency
+  private int                       mLocationUpdatePeriod;
+
   // Base path, prepended before mRelativeFilePath. It's on the external
   // storage and includes the file bundle. FIXME remove
   private String                    mBasePath;
@@ -133,15 +149,15 @@ public class Globals
   /***************************************************************************
    * Public instance data
    **/
-  public Context            mContext;
-  public API                mAPI;
-  public ImageCache         mImageCache;
-  public BooPlayer          mPlayer;
-  public TitleGenerator     mTitleGenerator;
+  public WeakReference<Context> mContext;
+  public API                    mAPI;
+  public ImageCache             mImageCache;
+  public BooPlayer              mPlayer;
+  public TitleGenerator         mTitleGenerator;
 
   // Location information, updated regularly if the appropriate settings are
   // switched on.
-  public Location           mLocation;
+  public Location               mLocation;
 
 
   /***************************************************************************
@@ -161,7 +177,7 @@ public class Globals
     if (null == sInstance) {
       return;
     }
-    if (context != sInstance.mContext) {
+    if (context != sInstance.mContext.get()) {
       return;
     }
 
@@ -183,15 +199,15 @@ public class Globals
    **/
   private Globals(Context context)
   {
-    mContext = context;
+    mContext = new WeakReference<Context>(context);
 
     mAPI = new API();
-    mImageCache = new ImageCache(mContext, IMAGE_CACHE_MAX);
+    mImageCache = new ImageCache(context, IMAGE_CACHE_MAX);
 
-    mPlayer = new BooPlayer(mContext);
+    mPlayer = new BooPlayer(context);
     mPlayer.start();
 
-    mTitleGenerator = new TitleGenerator(mContext);
+    mTitleGenerator = new TitleGenerator(context);
   }
 
 
@@ -219,7 +235,12 @@ public class Globals
       return mClientID;
     }
 
-    TelephonyManager tman = (TelephonyManager) mContext.getSystemService(
+    Context ctx = mContext.get();
+    if (null == ctx) {
+      return null;
+    }
+
+    TelephonyManager tman = (TelephonyManager) ctx.getSystemService(
         Context.TELEPHONY_SERVICE);
     String deviceId = tman.getDeviceId();
 
@@ -265,8 +286,13 @@ public class Globals
    **/
   public SharedPreferences getPrefs()
   {
-    return mContext.getSharedPreferences(PREFERENCES_NAME,
-        mContext.MODE_PRIVATE);
+    Context ctx = mContext.get();
+    if (null == ctx) {
+      return null;
+    }
+
+    return ctx.getSharedPreferences(PREFERENCES_NAME,
+        Context.MODE_PRIVATE);
   }
 
 
@@ -289,8 +315,13 @@ public class Globals
       return true;
     }
 
+    Context ctx = mContext.get();
+    if (null == ctx) {
+      return false;
+    }
+
     // Determine location provider, if that hasn't happened yet.
-    LocationManager lm = (LocationManager) mContext.getSystemService(
+    LocationManager lm = (LocationManager) ctx.getSystemService(
         Context.LOCATION_SERVICE);
 
     // Determine the location provider to use. We prefer GPS, but NETWORK
@@ -317,6 +348,35 @@ public class Globals
       public void onLocationChanged(Location location)
       {
         mLocation = location;
+        //Log.d(LTAG, "Location accuracy is: " + mLocation.getAccuracy());
+
+        // Determine desired location update period.
+        int period = -1;
+        if (MAX_LOCATION_ACCURACY > mLocation.getAccuracy()) {
+          //Log.d(LTAG, "Location accuracy is sufficient for infrequent updates.");
+          period = INFREQUENT_LOCATION_UPDATE_PERIOD;
+        }
+        else if (MIN_LOCATION_ACCURACY < mLocation.getAccuracy()) {
+          //Log.d(LTAG, "Location accuracy is insufficient, switching to frequent attempts.");
+          period = FREQUENT_LOCATION_UPDATE_PERIOD;
+        }
+
+        // If the period differs from the current period, we'll need to restart
+        // listening for updates.
+        if (-1 != period && period != mLocationUpdatePeriod) {
+          mLocationUpdatePeriod = period;
+
+          Context ctx = mContext.get();
+          if (null != ctx) {
+            LocationManager locman = (LocationManager) ctx.getSystemService(
+                Context.LOCATION_SERVICE);
+            locman.removeUpdates(this);
+
+            Log.i(LTAG, "Changing location update period to " + mLocationUpdatePeriod);
+            locman.requestLocationUpdates(mLocationProvider, mLocationUpdatePeriod,
+                LOCATION_UPDATE_RESOLUTION, mLocationListener);
+          }
+        }
       }
 
 
@@ -340,7 +400,9 @@ public class Globals
       }
     };
 
-    lm.requestLocationUpdates(mLocationProvider, LOCATION_UPDATE_PERIOD,
+    mLocationUpdatePeriod = FREQUENT_LOCATION_UPDATE_PERIOD;
+    Log.i(LTAG, "Starting location updates with period " + mLocationUpdatePeriod);
+    lm.requestLocationUpdates(mLocationProvider, mLocationUpdatePeriod,
         LOCATION_UPDATE_RESOLUTION, mLocationListener);
 
     return true;
@@ -357,7 +419,12 @@ public class Globals
       return;
     }
 
-    LocationManager lm = (LocationManager) mContext.getSystemService(
+    Context ctx = mContext.get();
+    if (null == ctx) {
+      return;
+    }
+
+    LocationManager lm = (LocationManager) ctx.getSystemService(
         Context.LOCATION_SERVICE);
     lm.removeUpdates(mLocationListener);
 
@@ -374,8 +441,13 @@ public class Globals
   public String getErrorMessage(int code)
   {
     if (null == mErrorMessages) {
-      int[] codes = mContext.getResources().getIntArray(R.array.error_codes);
-      String[] messages = mContext.getResources().getStringArray(R.array.error_messages);
+      Context ctx = mContext.get();
+      if (null == ctx) {
+        return null;
+      }
+
+      int[] codes = ctx.getResources().getIntArray(R.array.error_codes);
+      String[] messages = ctx.getResources().getStringArray(R.array.error_messages);
 
       if (codes.length != messages.length || 0 == codes.length) {
         Log.e(LTAG, "Programmer error: the error code and error messages arrays"
@@ -484,7 +556,7 @@ public class Globals
   {
     // FIXME remove
     if (null == mBasePath) {
-      mBasePath = mContext.getDir(DATA_DIR_PREFIX, Context.MODE_PRIVATE).getPath();
+//       mBasePath = mContext.getDir(DATA_DIR_PREFIX, Context.MODE_PRIVATE).getPath();
       // TODO Maybe use external storage?
       // String base = Environment.getExternalStorageDirectory().getPath();
       // base += File.separator + "data" + File.separator + getPackageName();
@@ -501,15 +573,20 @@ public class Globals
   public BooManager getBooManager()
   {
     if (null == mBooManager) {
+      Context ctx = mContext.get();
+      if (null == ctx) {
+        return null;
+      }
+
       List<String> paths = new LinkedList<String>();
 
       // Data on SD card; first preferred path.
       String base = Environment.getExternalStorageDirectory().getPath();
-      base += File.separator + "data" + File.separator + mContext.getPackageName() + File.separator + "boos";
+      base += File.separator + "data" + File.separator + ctx.getPackageName() + File.separator + "boos";
       paths.add(base);
 
       // Private data, for compatibility with old versions and fallbacks.
-      base = mContext.getDir(DATA_DIR_PREFIX, Context.MODE_PRIVATE).getPath();
+      base = ctx.getDir(DATA_DIR_PREFIX, Context.MODE_PRIVATE).getPath();
       paths.add(base);
 
       mBooManager = new BooManager(paths);

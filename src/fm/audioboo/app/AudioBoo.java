@@ -119,6 +119,7 @@ public class AudioBoo extends TabActivity
     super.onStop();
 
     Globals.get().mPlayer.stopPlaying();
+    Globals.get().stopLocationUpdates();
   }
 
 
