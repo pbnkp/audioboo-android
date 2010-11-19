@@ -70,6 +70,15 @@
 
   <string name="publish_submit_text">Upload</string>
 
+  <string name="publish_image_option_title">Picture Options</string>
+
+  <!-- The order of these items is depended upon in the code -->
+  <string-array name="publish_image_options">
+    <item>Choose from gallery</item>
+    <item>Create new</item>
+    <item>Remove</item>
+  </string-array>
+
   <!--
     Account view
   -->
