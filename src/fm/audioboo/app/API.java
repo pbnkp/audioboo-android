@@ -91,6 +91,7 @@ public class API
   public static final int ERR_VERSION_MISMATCH      = 10004;
   public static final int ERR_PARSE_ERROR           = 10005;
   public static final int ERR_INVALID_STATE         = 10006;
+  public static final int ERR_UNKNOWN               = 10007;
 
   // API version we're requesting
   public static final int API_VERSION               = 200;
@@ -800,8 +801,16 @@ public class API
       if (null != handler) {
         handler.obtainMessage(ERR_TRANSMISSION).sendToTarget();
       }
-      return null;
+    } catch (Exception ex) {
+      Log.e(LTAG, "An exception occurred when reading the API response: "
+          + ex.getMessage());
+      if (null != handler) {
+        handler.obtainMessage(ERR_UNKNOWN).sendToTarget();
+      }
     }
+
+    return null;
+
   }
 
 

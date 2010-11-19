@@ -25,6 +25,7 @@
     <item>10004</item> <!-- ERR_VERSION_MISMATCH -->
     <item>10005</item> <!-- ERR_PARSE_ERROR -->
     <item>10006</item> <!-- ERR_INVALID_STATE -->
+    <item>10007</item> <!-- ERR_UNKNOWN -->
   </array>
 
 </resources>

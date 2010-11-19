@@ -106,6 +106,7 @@
     <item>The server did not send the expected response version.</item>
     <item>An error occurred when trying to parse the server response.</item>
     <item>An invalid program state was reached.</item>
+    <item>An unknown error occurred.</item>
   </string-array>
 
   <string name="error_message_extra">Please try again. If the problem persist,
