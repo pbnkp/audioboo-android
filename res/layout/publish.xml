@@ -55,7 +55,7 @@
             android:cropToPadding="true"
             android:scaleType="fitXY"
             android:src="@drawable/anonymous_boo"
-            android:background="@drawable/thumbnail_background"
+            android:background="@android:drawable/gallery_thumb"
           />
       </LinearLayout>
 
