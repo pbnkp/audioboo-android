@@ -203,56 +203,37 @@ public class BooManager
 
   public String getImageFilename(Boo boo)
   {
-    if (null == boo) {
+    String data_dir = ensureDataDir(boo);
+    if (null == data_dir) {
       return null;
     }
-
-    // Get data dir filename.
-    String data_dir = boo.mFilename;
-    if (data_dir.endsWith(Boo.EXTENSION)) {
-      data_dir = data_dir.substring(0, data_dir.lastIndexOf(Boo.EXTENSION));
-    }
-    else {
-      Log.w(LTAG, "Invalid Boo file extension: " + data_dir);
-    }
-    data_dir += Boo.DATA_EXTENSION;
-
-    // Make sure data dir exists.
-    File d = new File(data_dir);
-    if (!d.exists()) {
-      d.mkdirs();
-    }
-
     return data_dir + File.separator + Boo.IMAGE_FILE;
   }
 
 
 
-  public String getNewRecordingFilename(Boo boo)
+  public String getTempImageFilename(Boo boo)
   {
-    if (null == boo) {
+    String data_dir = ensureDataDir(boo);
+    if (null == data_dir) {
       return null;
     }
+    return data_dir + File.separator + Boo.TEMP_IMAGE_FILE;
+  }
 
-    // Get data dir filename.
-    String data_dir = boo.mFilename;
-    if (data_dir.endsWith(Boo.EXTENSION)) {
-      data_dir = data_dir.substring(0, data_dir.lastIndexOf(Boo.EXTENSION));
-    }
-    else {
-      Log.w(LTAG, "Invalid Boo file extension: " + data_dir);
-    }
-    data_dir += Boo.DATA_EXTENSION;
-    // Log.d(LTAG, "Boo data dir: " + data_dir);
 
-    // Make sure data dir exists.
-    File d = new File(data_dir);
-    if (!d.exists()) {
-      d.mkdirs();
+
+
+  public String getNewRecordingFilename(Boo boo)
+  {
+    String data_dir = ensureDataDir(boo);
+    if (null == data_dir) {
+      return null;
     }
 
     // Now search the data dir for recording files. We'll create a new recording
     // file with a higher sequence number.
+    File d = new File(data_dir);
     int seq = 0;
     for (File f : d.listFiles()) {
       String name = f.getName();
@@ -325,4 +306,31 @@ public class BooManager
     Log.d(LTAG, "Found Boos: " + mBooList);
   }
 
+
+
+
+  private String ensureDataDir(Boo boo)
+  {
+    if (null == boo) {
+      return null;
+    }
+
+    // Get data dir filename.
+    String data_dir = boo.mFilename;
+    if (data_dir.endsWith(Boo.EXTENSION)) {
+      data_dir = data_dir.substring(0, data_dir.lastIndexOf(Boo.EXTENSION));
+    }
+    else {
+      Log.w(LTAG, "Invalid Boo file extension: " + data_dir);
+    }
+    data_dir += Boo.DATA_EXTENSION;
+
+    // Make sure data dir exists.
+    File d = new File(data_dir);
+    if (!d.exists()) {
+      d.mkdirs();
+    }
+
+    return data_dir;
+  }
 }

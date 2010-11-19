@@ -81,6 +81,7 @@ public class Boo implements Serializable
   public static final String RECORDING_EXTENSION = ".rec";
   // Image file name
   public static final String IMAGE_FILE = "image.png";
+  public static final String TEMP_IMAGE_FILE = "image.png";
 
   // Serialization UID
   public static final long serialVersionUID = 5505418760954089521L;
@@ -274,6 +275,13 @@ public class Boo implements Serializable
   public String getImageFilename()
   {
     return Globals.get().getBooManager().getImageFilename(this);
+  }
+
+
+
+  public String getTempImageFilename()
+  {
+    return Globals.get().getBooManager().getTempImageFilename(this);
   }
 
 
