@@ -201,6 +201,33 @@ public class BooManager
 
 
 
+  public String getImageFilename(Boo boo)
+  {
+    if (null == boo) {
+      return null;
+    }
+
+    // Get data dir filename.
+    String data_dir = boo.mFilename;
+    if (data_dir.endsWith(Boo.EXTENSION)) {
+      data_dir = data_dir.substring(0, data_dir.lastIndexOf(Boo.EXTENSION));
+    }
+    else {
+      Log.w(LTAG, "Invalid Boo file extension: " + data_dir);
+    }
+    data_dir += Boo.DATA_EXTENSION;
+
+    // Make sure data dir exists.
+    File d = new File(data_dir);
+    if (!d.exists()) {
+      d.mkdirs();
+    }
+
+    return data_dir + File.separator + Boo.IMAGE_FILE;
+  }
+
+
+
   public String getNewRecordingFilename(Boo boo)
   {
     if (null == boo) {
