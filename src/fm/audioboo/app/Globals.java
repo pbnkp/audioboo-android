@@ -135,10 +135,6 @@ public class Globals
   // Current location update frequency
   private int                       mLocationUpdatePeriod;
 
-  // Base path, prepended before mRelativeFilePath. It's on the external
-  // storage and includes the file bundle. FIXME remove
-  private String                    mBasePath;
-
   // Boo manager instance.
   private BooManager                mBooManager;
 
@@ -545,24 +541,6 @@ public class Globals
     }
 
     return dialog;
-  }
-
-
-
-  /**
-   * Returns the base path for the app's data.
-   **/
-  public String getBasePath()
-  {
-    // FIXME remove
-    if (null == mBasePath) {
-//       mBasePath = mContext.getDir(DATA_DIR_PREFIX, Context.MODE_PRIVATE).getPath();
-      // TODO Maybe use external storage?
-      // String base = Environment.getExternalStorageDirectory().getPath();
-      // base += File.separator + "data" + File.separator + getPackageName();
-      // mBasePath = base;
-    }
-    return mBasePath;
   }
 
 
