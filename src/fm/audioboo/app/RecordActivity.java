@@ -138,8 +138,6 @@ public class RecordActivity extends Activity
     // initialize the recorder, but only the player.
     Boo boo = Globals.get().getBooManager().getLatestBoo();
     if (null != boo && 0.0 != boo.getDuration()) {
-      Log.d(LTAG, "Latest: " + boo);
-
       mBoo = boo;
       mBooIsNew = false;
     }
@@ -165,7 +163,7 @@ public class RecordActivity extends Activity
     Globals.get().mPlayer.stopPlaying();
     stopPlayer();
 
-    Log.d(LTAG, "Resume recording!");
+    // Log.d(LTAG, "Resume recording!");
     mBooRecorder.start();
     mSpectralView.startAnimation();
   }
@@ -176,17 +174,17 @@ public class RecordActivity extends Activity
   {
     // Release the lock if we're holding it.
     if (mWakeLock.isHeld()) {
-      Log.d(LTAG, "Release wakelock.");
+      // Log.d(LTAG, "Release wakelock.");
       mWakeLock.release();
     }
 
     if (null != mSpectralView) {
-      Log.d(LTAG, "Stop animating.");
+      // Log.d(LTAG, "Stop animating.");
       mSpectralView.stopAnimation();
     }
 
     if (null != mBooRecorder) {
-      Log.d(LTAG, "Pause recording.");
+      // Log.d(LTAG, "Pause recording.");
       mBooRecorder.stop();
     }
 
@@ -218,7 +216,6 @@ public class RecordActivity extends Activity
     hideOrShowPlayer();
 
     Globals.get().getBooManager().rebuildIndex();
-    // FIXME move much of onStart here?
   }
 
 
@@ -440,6 +437,9 @@ public class RecordActivity extends Activity
       mBooRecorder = null;
     }
 
+    // Remove current boo.
+    mBoo.delete();
+
     // Create new empty Boo.
     mBoo = Globals.get().getBooManager().createBoo();
     mBooIsNew = true;
@@ -463,8 +463,6 @@ public class RecordActivity extends Activity
             case BooRecorder.MSG_END_OF_RECORDING:
               // Alright, let's write that Boo to disk!
               mBoo.writeToFile();
-              Log.d(LTAG, "Written Boo to: " + mBoo.mFilename);
-              Log.d(LTAG, "Written Boo is: " + mBoo);
               break;
 
             default:
@@ -513,7 +511,6 @@ public class RecordActivity extends Activity
   {
     switch (item.getItemId()) {
       case MENU_RESTART:
-        // FIXME probably need to create a new Boo here and/or delete the old one
         resetBooRecorder();
         initUI();
         break;
