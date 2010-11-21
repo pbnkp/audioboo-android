@@ -330,4 +330,21 @@ public class BooManager
 
     return data_dir;
   }
+
+
+
+  public void deleteBoo(Boo boo)
+  {
+    String data_dir = ensureDataDir(boo);
+    if (null != data_dir) {
+      File d = new File(data_dir);
+      for (File f : d.listFiles()) {
+        f.delete();
+      }
+      d.delete();
+    }
+
+    File f = new File(boo.mFilename);
+    f.delete();
+  }
 }

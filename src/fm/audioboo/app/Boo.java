@@ -218,6 +218,16 @@ public class Boo implements Serializable
 
 
   /**
+   * Deletes the Boo file and it's data files.
+   **/
+  public void delete()
+  {
+    Globals.get().getBooManager().deleteBoo(this);
+  }
+
+
+
+  /**
    * Returns the Boo's duration. If the Boo is downloaded, this function returns
    * mDuration. If it's locally recorded, it returns the accumulated duration of
    * all individual recordings.
