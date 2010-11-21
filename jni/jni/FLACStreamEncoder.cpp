@@ -247,6 +247,7 @@ public:
    **/
   int flush()
   {
+    //aj::log(ANDROID_LOG_DEBUG, LTAG, "flush() called.");
     flush_to_fifo();
 
     // Signal writer to wake up.
@@ -327,46 +328,51 @@ public:
 
       // Grab ownership over the current FIFO, and release the lock again.
       write_fifo_t * fifo = (write_fifo_t *) m_fifo;
-      m_fifo = NULL;
-      pthread_mutex_unlock(&m_fifo_mutex);
+      while (fifo) {
+        m_fifo = NULL;
+        pthread_mutex_unlock(&m_fifo_mutex);
 
-      // Now we can take all the time we want to iterate over the FIFO's
-      // contents. We just need to make sure to grab the lock again before
-      // going into the next iteration of this loop.
-      int retry = 0;
+        // Now we can take all the time we want to iterate over the FIFO's
+        // contents. We just need to make sure to grab the lock again before
+        // going into the next iteration of this loop.
+        int retry = 0;
 
-      write_fifo_t * current = fifo;
-      while (current) {
-        //aj::log(ANDROID_LOG_DEBUG, LTAG, "Encoding current entry %p, buffer %p, size %d",
-        //    current, current->m_buffer, current->m_buffer_fill_size);
+        write_fifo_t * current = fifo;
+        while (current) {
+          //aj::log(ANDROID_LOG_DEBUG, LTAG, "Encoding current entry %p, buffer %p, size %d",
+          //    current, current->m_buffer, current->m_buffer_fill_size);
 
-        // Encode!
-        FLAC__bool ok = FLAC__stream_encoder_process_interleaved(m_encoder,
-            current->m_buffer, current->m_buffer_fill_size);
-        if (ok) {
-          retry = 0;
-        }
-        else {
-          // We don't really know how much was written, we have to assume it was
-          // nothing.
-          if (++retry > 3) {
-            aj::log(ANDROID_LOG_ERROR, LTAG, "Giving up on writing current FIFO!");
-            break;
+          // Encode!
+          FLAC__bool ok = FLAC__stream_encoder_process_interleaved(m_encoder,
+              current->m_buffer, current->m_buffer_fill_size);
+          if (ok) {
+            retry = 0;
           }
           else {
-            // Sleep a little before retrying.
-            aj::log(ANDROID_LOG_ERROR, LTAG, "Writing FIFO entry %p failed; retrying...");
-            usleep(5000); // 5msec
+            // We don't really know how much was written, we have to assume it was
+            // nothing.
+            if (++retry > 3) {
+              aj::log(ANDROID_LOG_ERROR, LTAG, "Giving up on writing current FIFO!");
+              break;
+            }
+            else {
+              // Sleep a little before retrying.
+              aj::log(ANDROID_LOG_ERROR, LTAG, "Writing FIFO entry %p failed; retrying...");
+              usleep(5000); // 5msec
+            }
+            continue;
           }
-          continue;
+
+          current = current->m_next;
         }
 
-        current = current->m_next;
+        // Once we've written everything, delete the fifo and grab the lock again.
+        delete fifo;
+        pthread_mutex_lock(&m_fifo_mutex);
+        fifo = (write_fifo_t *) m_fifo;
       }
 
-      // Once we've written everything, delete the fifo and grab the lock again.
-      delete fifo;
-      pthread_mutex_lock(&m_fifo_mutex);
+      //aj::log(ANDROID_LOG_DEBUG, LTAG, "End of wakeup, or should I die? %s", (m_kill_writer ? "yes" : "no"));
     } while (!m_kill_writer);
     pthread_mutex_unlock(&m_fifo_mutex);
 
