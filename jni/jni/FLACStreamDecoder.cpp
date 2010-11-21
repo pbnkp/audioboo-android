@@ -653,7 +653,7 @@ Java_fm_audioboo_jni_FLACStreamDecoder_deinit(JNIEnv * env, jobject obj)
 
 jint
 Java_fm_audioboo_jni_FLACStreamDecoder_read(JNIEnv * env, jobject obj,
-    jbyteArray buffer, jint bufsize)
+    jobject buffer, jint bufsize)
 {
   FLACStreamDecoder * decoder = get_decoder(env, obj);
 
@@ -663,14 +663,13 @@ Java_fm_audioboo_jni_FLACStreamDecoder_read(JNIEnv * env, jobject obj,
     return 0;
   }
 
-  jboolean copy = JNI_FALSE;
-  char * buf = reinterpret_cast<char *>(env->GetByteArrayElements(buffer,
-        &copy));
+  if (bufsize > env->GetDirectBufferCapacity(buffer)) {
+    aj::throwByName(env, IllegalArgumentException_classname,
+        "Asked to write more to a buffer than the buffer's capacity!");
+  }
 
-  jint ret = decoder->read(buf, bufsize);
-
-  env->ReleaseByteArrayElements(buffer, reinterpret_cast<jbyte *>(buf), 0);
-  return ret;
+  char * buf = static_cast<char *>(env->GetDirectBufferAddress(buffer));
+  return decoder->read(buf, bufsize);
 }
 
 

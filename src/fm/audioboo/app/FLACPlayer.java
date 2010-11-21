@@ -21,6 +21,8 @@ import java.io.File;
 
 import fm.audioboo.jni.FLACStreamDecoder;
 
+import java.nio.ByteBuffer;
+
 import android.util.Log;
 
 /**
@@ -137,7 +139,8 @@ public class FLACPlayer extends Thread
           channelConfig, format, bufsize, AudioTrack.MODE_STREAM);
       mAudioTrack.play();
 
-      byte[] buffer = new byte[bufsize];
+      ByteBuffer buffer = ByteBuffer.allocateDirect(bufsize);
+      byte[] tmpbuf = new byte[bufsize];
       while (mShouldRun) {
         try {
           // If we're paused, just sleep the thread
@@ -152,7 +155,10 @@ public class FLACPlayer extends Thread
             // We're done with playing back!
             break;
           }
-          mAudioTrack.write(buffer, 0, read);
+
+          buffer.rewind();
+          buffer.get(tmpbuf, 0, read);
+          mAudioTrack.write(tmpbuf, 0, read);
         } catch (InterruptedException ex) {
           // We'll pass through to the next iteration. If mShouldRun has
           // been set to false, the thread will terminate. If mPause has

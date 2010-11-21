@@ -9,6 +9,7 @@
 
 package fm.audioboo.jni;
 
+import java.nio.ByteBuffer;
 
 /**
  * This is *not* a full JNI wrapper for the FLAC codec, but merely exports
@@ -103,7 +104,7 @@ public class FLACStreamDecoder
    * buffer must be at least minBufferSize() in size.
    * Returns the number of bytes actually read, or -1 on fatal errors.
    **/
-  native public int read(byte[] buffer, int bufsize);
+  native public int read(ByteBuffer buffer, int bufsize);
 
   // Load native library
   static {
