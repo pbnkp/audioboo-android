@@ -258,11 +258,11 @@ public class BooPlayer extends Thread
         return false;
       }
 
-      // Immediately send playback state - that's technically a violation of the
-      // API, but there's just no buffering for local files, and it avoids a
-      // briefly flashing buffer indicator.
-      startPlaybackState();
+      // Flatten audio file before we can start playback. This call will return
+      // quickly if the file is already flattend, and will block while flattening.
+      boo.flattenAudio();
 
+      // Start playback
       String filename = boo.mHighMP3Url.getPath();
       mFlacPlayer = new FLACPlayer(ctx, filename);
 
@@ -637,18 +637,24 @@ public class BooPlayer extends Thread
 
     sendStateBuffering();
 
-    // Examine the Boo's Uri. From that we determine what player to instanciate.
-    String path = boo.mHighMP3Url.getPath();
-    int ext_sep = path.lastIndexOf(".");
-    String ext = path.substring(ext_sep).toLowerCase();
-
-    if (ext.equals(".flac")) {
-      // Start FLAC player.
+    // Local Boos are treated via the FLACPlayerWrapper.
+    if (boo.isLocal()) {
       mPlayer = new FLACPlayerWrapper();
     }
     else {
-      // Handle everything else via the APIPlayer
-      mPlayer = new APIPlayer();
+      // Examine the Boo's Uri. From that we determine what player to instanciate.
+      String path = boo.mHighMP3Url.getPath();
+      int ext_sep = path.lastIndexOf(".");
+      String ext = path.substring(ext_sep).toLowerCase();
+
+      if (ext.equals(".flac")) {
+        // Start FLAC player.
+        mPlayer = new FLACPlayerWrapper();
+      }
+      else {
+        // Handle everything else via the APIPlayer
+        mPlayer = new APIPlayer();
+      }
     }
 
     // Now we can use the base API to start playback.

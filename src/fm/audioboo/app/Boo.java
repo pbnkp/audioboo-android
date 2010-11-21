@@ -27,6 +27,11 @@ import java.io.ObjectOutputStream;
 import java.io.IOException;
 import java.io.FileNotFoundException;
 
+import fm.audioboo.jni.FLACStreamEncoder;
+import fm.audioboo.jni.FLACStreamDecoder;
+
+import java.nio.ByteBuffer;
+
 import android.util.Log;
 
 /**
@@ -282,6 +287,85 @@ public class Boo implements Serializable
   public String getTempImageFilename()
   {
     return Globals.get().getBooManager().getTempImageFilename(this);
+  }
+
+
+
+  public boolean isLocal()
+  {
+    return (mRecordings != null);
+  }
+
+
+
+  // Flattens the list of audio files as returned by BooManager.getAudioFiles()
+  // into a single flac file. XXX Warning, this function blocks.
+  public void flattenAudio()
+  {
+    // First, check if audio is already flattened. If that's the case, we don't
+    // want to flatten everything again.
+    if (null != mHighMP3Url) {
+      long latest = 0;
+      for (Recording rec : mRecordings) {
+        File f = new File(rec.mFilename);
+        long d = f.lastModified();
+        if (d > latest) {
+          latest = d;
+        }
+      }
+
+      String filename = mHighMP3Url.getPath();
+      File f = new File(filename);
+      if (f.lastModified() > latest) {
+        // This boo seems to be flattened already.
+        return;
+      }
+      else {
+        // This boo was flattened, but new recordings were made
+        // afterwards. Delete the previously flattened file.
+        f.delete();
+        mHighMP3Url = null;
+      }
+    }
+
+    // If we reached here, then we need to flatten the Boo again.
+    String target = Globals.get().getBooManager().getNewRecordingFilename(this);
+
+    // Flatten the audio files.
+    int format = FLACRecorder.mapFormat(FLACRecorder.FORMAT);
+    int channels = FLACRecorder.mapChannelConfig(FLACRecorder.CHANNEL_CONFIG);
+    FLACStreamEncoder encoder = new FLACStreamEncoder(target,
+        FLACRecorder.SAMPLE_RATE, channels, format);
+
+    for (Recording rec : mRecordings) {
+      FLACStreamDecoder decoder = new FLACStreamDecoder(rec.mFilename);
+
+      int bufsize = decoder.minBufferSize();
+      ByteBuffer buffer = ByteBuffer.allocateDirect(bufsize);
+
+      while (true) {
+        int read = decoder.read(buffer, bufsize);
+        if (read <= 0) {
+          break;
+        }
+
+        encoder.write(buffer, read);
+      }
+
+      encoder.flush();
+      decoder.release();
+      decoder = null;
+    }
+
+    encoder.flush();
+    encoder.release();
+    encoder = null;
+
+    // Next, set the high mp3 Uri for the Boo to be the target path.
+    mHighMP3Url = Uri.parse(String.format("file://%s", target));
+
+    // Right, persist this flattened URL
+    writeToFile();
   }
 
 

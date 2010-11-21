@@ -43,6 +43,11 @@ public class FLACRecorder extends Thread
   public static final int MSG_WRITE_ERROR           = 5;
   public static final int MSG_AMPLITUDES            = 6;
 
+  // Sample rate, channel config, format
+  public static final int SAMPLE_RATE    = 22050;
+  public static final int CHANNEL_CONFIG = AudioFormat.CHANNEL_CONFIGURATION_MONO;
+  public static final int FORMAT         = AudioFormat.ENCODING_PCM_16BIT;
+
 
   /***************************************************************************
    * Private constants
@@ -50,10 +55,6 @@ public class FLACRecorder extends Thread
   // Log ID
   private static final String LTAG  = "FLACRecorder";
 
-  // Sample rate, channel config, format
-  private static final int SAMPLE_RATE    = 22050;
-  private static final int CHANNEL_CONFIG = AudioFormat.CHANNEL_CONFIGURATION_MONO;
-  private static final int FORMAT         = AudioFormat.ENCODING_PCM_16BIT;
 
   /***************************************************************************
    * Simple class for reporting measured Amplitudes to user of FLACRecorder
@@ -188,7 +189,7 @@ public class FLACRecorder extends Thread
 
 
 
-  private int mapChannelConfig(int channelConfig)
+  public static int mapChannelConfig(int channelConfig)
   {
     switch (channelConfig) {
       case AudioFormat.CHANNEL_CONFIGURATION_MONO:
@@ -203,7 +204,7 @@ public class FLACRecorder extends Thread
   }
 
 
-  private int mapFormat(int format)
+  public static int mapFormat(int format)
   {
     switch (format) {
       case AudioFormat.ENCODING_PCM_8BIT:
