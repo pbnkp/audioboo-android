@@ -305,26 +305,31 @@ public class Boo implements Serializable
     // First, check if audio is already flattened. If that's the case, we don't
     // want to flatten everything again.
     if (null != mHighMP3Url) {
-      long latest = 0;
-      for (Recording rec : mRecordings) {
-        File f = new File(rec.mFilename);
-        long d = f.lastModified();
-        if (d > latest) {
-          latest = d;
-        }
-      }
-
       String filename = mHighMP3Url.getPath();
-      File f = new File(filename);
-      if (f.lastModified() > latest) {
-        // This boo seems to be flattened already.
-        return;
+      File high_f = new File(filename);
+      if (!high_f.exists()) {
+        mHighMP3Url = null;
       }
       else {
-        // This boo was flattened, but new recordings were made
-        // afterwards. Delete the previously flattened file.
-        f.delete();
-        mHighMP3Url = null;
+        long latest = 0;
+        for (Recording rec : mRecordings) {
+          File f = new File(rec.mFilename);
+          long d = f.lastModified();
+          if (d > latest) {
+            latest = d;
+          }
+        }
+
+        if (high_f.lastModified() > latest) {
+          // This boo seems to be flattened already.
+          return;
+        }
+        else {
+          // This boo was flattened, but new recordings were made
+          // afterwards. Delete the previously flattened file.
+          high_f.delete();
+          mHighMP3Url = null;
+        }
       }
     }
 
@@ -338,9 +343,11 @@ public class Boo implements Serializable
         FLACRecorder.SAMPLE_RATE, channels, format);
 
     for (Recording rec : mRecordings) {
+      //Log.d(LTAG, "Using recording: " + rec);
       FLACStreamDecoder decoder = new FLACStreamDecoder(rec.mFilename);
 
       int bufsize = decoder.minBufferSize();
+      //Log.d(LTAG, "bufsize is: " + bufsize);
       ByteBuffer buffer = ByteBuffer.allocateDirect(bufsize);
 
       while (true) {
@@ -348,6 +355,7 @@ public class Boo implements Serializable
         if (read <= 0) {
           break;
         }
+        //Log.d(LTAG, "read: " + read);
 
         encoder.write(buffer, read);
       }
@@ -357,12 +365,12 @@ public class Boo implements Serializable
       decoder = null;
     }
 
-    encoder.flush();
     encoder.release();
     encoder = null;
 
     // Next, set the high mp3 Uri for the Boo to be the target path.
     mHighMP3Url = Uri.parse(String.format("file://%s", target));
+    //Log.d(LTAG, "Flattened to: " + mHighMP3Url);
 
     // Right, persist this flattened URL
     writeToFile();
