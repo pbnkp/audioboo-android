@@ -15,6 +15,7 @@ import android.os.Bundle;
 
 import android.os.Handler;
 import android.os.Message;
+import android.os.AsyncTask;
 
 import android.content.Intent;
 
@@ -77,11 +78,44 @@ public class PublishActivity extends Activity
   private static final int IMAGE_OPT_REMOVE     = 2;
 
 
+  // Message IDs.
+  private static final int START_UPLOAD         = 42;
+
   /***************************************************************************
    * Public constants
    **/
   // Extra names
   public static final String EXTRA_BOO_FILENAME = "fm.audioboo.extras.boo-filename";
+
+
+  /***************************************************************************
+   * PublishCallback
+   **/
+  private class PublishCallback implements Handler.Callback
+  {
+    public Handler mHandler = null;
+
+    public boolean handleMessage(Message msg)
+    {
+      switch (msg.what) {
+        case START_UPLOAD:
+          Globals.get().mAPI.uploadBoo(mBoo, mHandler);
+          break;
+
+        case API.ERR_SUCCESS:
+          onUploadSucceeded((Integer) msg.obj);
+          break;
+
+        default:
+          mErrorCode = msg.what;
+          mException = (API.APIException) msg.obj;
+          showDialog(DIALOG_ERROR);
+          break;
+      }
+      return true;
+    }
+  }
+
 
 
   /***************************************************************************
@@ -258,20 +292,20 @@ public class PublishActivity extends Activity
     // Update mBoo's information
     updateBoo(true);
 
-    Globals.get().mAPI.uploadBoo(mBoo, new Handler(new Handler.Callback() {
-      public boolean handleMessage(Message msg)
+    // Handler/Callback for flattening/uploading.
+    final PublishCallback callback = new PublishCallback();
+    final Handler handler = new Handler(callback);
+    callback.mHandler = handler;
+
+    // Flatten Boo in background, then upload.
+    Thread th = new Thread() {
+      public void run()
       {
-        if (API.ERR_SUCCESS == msg.what) {
-          onUploadSucceeded((Integer) msg.obj);
-        }
-        else {
-          mErrorCode = msg.what;
-          mException = (API.APIException) msg.obj;
-          showDialog(DIALOG_ERROR);
-        }
-        return true;
+        mBoo.flattenAudio();
+        handler.obtainMessage(START_UPLOAD).sendToTarget();
       }
-    }));
+    };
+    th.start();
   }
 
 
