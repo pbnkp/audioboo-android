@@ -215,13 +215,14 @@ public class Boo implements Serializable
   /**
    * Reloads a Boo from mFilename.
    **/
-  public void reload()
+  public boolean reload()
   {
     Boo b = constructFromFile(mFilename);
     if (null == b) {
-      return;
+      return false;
     }
     copyFrom(b);
+    return true;
   }
 
 
