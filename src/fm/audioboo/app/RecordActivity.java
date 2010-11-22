@@ -202,6 +202,9 @@ public class RecordActivity extends Activity
   {
     super.onResume();
 
+    // Reload Boo, changes might've been written.
+    mBoo.reload();
+
     hideOrShowPlayer();
 
     Globals.get().getBooManager().rebuildIndex();

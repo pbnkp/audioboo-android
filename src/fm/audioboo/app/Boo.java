@@ -143,6 +143,32 @@ public class Boo implements Serializable
 
 
   /**
+   * Copies members from other to this Boo
+   **/
+  public void copyFrom(Boo other)
+  {
+    mId = other.mId;
+    mTitle = other.mTitle;
+    mUUID = other.mUUID;
+    mDuration = other.mDuration;
+    mTags = other.mTags;
+    mUser = other.mUser;
+    mRecordedAt = other.mRecordedAt;
+    mUpdatedAt = other.mUpdatedAt;
+    mUploadedAt = other.mUploadedAt;
+    mLocation = other.mLocation;
+    mHighMP3Url = other.mHighMP3Url;
+    mImageUrl = other.mImageUrl;
+    mDetailUrl = other.mDetailUrl;
+    mFilename = other.mFilename;
+    mRecordings = other.mRecordings;
+    mPlays = other.mPlays;
+    mComments = other.mComments;
+  }
+
+
+
+  /**
    * Tries to construct a Boo from a file with the given filename.
    **/
   public static Boo constructFromFile(String filename)
@@ -182,6 +208,20 @@ public class Boo implements Serializable
     }
 
     return null;
+  }
+
+
+
+  /**
+   * Reloads a Boo from mFilename.
+   **/
+  public void reload()
+  {
+    Boo b = constructFromFile(mFilename);
+    if (null == b) {
+      return;
+    }
+    copyFrom(b);
   }
 
 
