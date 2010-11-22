@@ -20,6 +20,7 @@ import android.os.AsyncTask;
 import android.content.Intent;
 
 import android.view.View;
+import android.view.inputmethod.InputMethodManager;
 
 import android.widget.Button;
 import android.widget.ImageButton;
@@ -28,6 +29,7 @@ import android.widget.TextView;
 import android.widget.ListView;
 import android.widget.ArrayAdapter;
 
+import android.content.Context;
 import android.content.ContentResolver;
 import android.content.res.Configuration;
 import android.content.res.Resources;
@@ -230,8 +232,10 @@ public class PublishActivity extends Activity
 
     // Save our current progress. The nice part is that this lets us resume
     // editing, and the title might even be reflected in the recorder view.
-    updateBoo(false);
-    mBoo.writeToFile(mBooFilename);
+    if (null != mBoo) {
+      updateBoo(false);
+      mBoo.writeToFile(mBooFilename);
+    }
   }
 
 
@@ -284,7 +288,9 @@ public class PublishActivity extends Activity
   private void onSubmit()
   {
     // Hide form, and show progress view.
+    InputMethodManager imm = (InputMethodManager)getSystemService(Context.INPUT_METHOD_SERVICE);
     View view = findViewById(R.id.publish_form);
+    imm.hideSoftInputFromWindow(view.getWindowToken(), 0);
     view.setVisibility(View.GONE);
     view = findViewById(R.id.publish_progress);
     view.setVisibility(View.VISIBLE);
@@ -382,10 +388,6 @@ public class PublishActivity extends Activity
     Uri uri = null == data ? null : data.getData();
     String filename = mBoo.getImageFilename();
     Bitmap bm = null;
-
-    Log.d(LTAG, "Returned: " + requestCode);
-    Log.d(LTAG, "Returned: " + resultCode);
-    Log.d(LTAG, "Returned: " + uri);
 
     switch (requestCode) {
       case IMAGE_OPT_CHOOSE:
@@ -494,11 +496,9 @@ public class PublishActivity extends Activity
   {
     // Log.d(LTAG, "Boo uploaded to: " + booId);
 
-    // Clean up after ourselves... delete image file.
-    File f = new File(mBoo.getImageFilename());
-    if (f.exists()) {
-      f.delete();
-    }
+    // Clean up after ourselves...
+    mBoo.delete();
+    mBoo = null;
 
     // Signal to caller that we successfully uploaded the Boo.
     setResult(Activity.RESULT_OK);

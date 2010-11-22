@@ -203,11 +203,13 @@ public class RecordActivity extends Activity
     super.onResume();
 
     // Reload Boo, changes might've been written.
-    mBoo.reload();
+    if (!mBoo.reload()) {
+      Globals.get().getBooManager().rebuildIndex();
+      mBoo = Globals.get().getBooManager().getLatestBoo();
+    }
 
+    initUI();
     hideOrShowPlayer();
-
-    Globals.get().getBooManager().rebuildIndex();
   }
 
 
@@ -432,10 +434,12 @@ public class RecordActivity extends Activity
     // Remove current boo.
     if (null != mBoo) {
       mBoo.delete();
+      mBoo = null;
     }
 
     // Create new empty Boo.
     mBoo = Globals.get().getBooManager().createBoo();
+    mBoo.writeToFile();
     mBooIsNew = true;
 
     // Instanciate recorder.
@@ -529,7 +533,6 @@ public class RecordActivity extends Activity
   protected void onActivityResult(int requestCode, int resultCode, Intent data)
   {
     if (mRequestCode != requestCode) {
-      //Log.d(LTAG, "Ignoring result for requestCode: " + requestCode);
       return;
     }
 
