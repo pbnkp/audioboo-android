@@ -427,7 +427,9 @@ public class RecordActivity extends Activity
     }
 
     // Remove current boo.
-    mBoo.delete();
+    if (null != mBoo) {
+      mBoo.delete();
+    }
 
     // Create new empty Boo.
     mBoo = Globals.get().getBooManager().createBoo();
