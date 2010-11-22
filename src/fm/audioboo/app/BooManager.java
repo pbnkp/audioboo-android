@@ -279,6 +279,16 @@ public class BooManager
         continue;
       }
 
+      // Make sure that a .nomedia file exists in each search directory.
+      File nomedia = new File(path + File.separator + ".nomedia");
+      if (!nomedia.exists()) {
+        try {
+          nomedia.createNewFile();
+        } catch (java.io.IOException ex) {
+          Log.w(LTAG, "Could not create .nomedia file in '" + path + "'.");
+        }
+      }
+
       File[] localBoos = d.listFiles(filter);
       if (null == localBoos) {
         Log.w(LTAG, "Error reading Boos from path '" + path + "'.");
