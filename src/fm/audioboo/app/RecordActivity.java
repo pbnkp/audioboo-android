@@ -89,17 +89,12 @@ public class RecordActivity extends Activity
   // filled with all possible bits of information yet. We (re-)create this
   // Boo whenever we reset the recorder.
   private Boo           mBoo;
-  private boolean       mBooIsNew;
-
 
   // Reference to the record button
   private RecordButton  mRecordButton;
 
   // Reference to the spectral view
   private SpectralView  mSpectralView;
-
-  // Reference to overlay view
-  private View          mOverlay;
 
   // Last error. Used and cleared in onCreateDialog
   private int           mErrorCode = -1;
@@ -120,31 +115,10 @@ public class RecordActivity extends Activity
 
 
 
-  @Override
-  public void onStart()
-  {
-    super.onStart();
-
-    // Check whether the recorder file already exists. If it does, we'll not
-    // initialize the recorder, but only the player.
-    Boo boo = Globals.get().getBooManager().getLatestBoo();
-    if (null != boo && 0.0 != boo.getDuration()) {
-      mBoo = boo;
-      mBooIsNew = false;
-    }
-    else if (null == mBooRecorder) {
-      resetBooRecorder();
-    }
-
-    initUI();
-  }
-
-
-
   private void startRecording()
   {
     if (null == mBooRecorder) {
-      resetBooRecorder();
+      initBooRecorder();
     }
 
     // Force screen to stay on.
@@ -202,12 +176,32 @@ public class RecordActivity extends Activity
   {
     super.onResume();
 
-    // Reload Boo, changes might've been written.
-    if (!mBoo.reload()) {
-      Globals.get().getBooManager().rebuildIndex();
+    Globals.get().getBooManager().rebuildIndex();
+
+    // If no Boo exists, this might be the first start of the Activity. We're
+    // best served if we just grab the latest Boo, if any.
+    if (null == mBoo) {
       mBoo = Globals.get().getBooManager().getLatestBoo();
     }
+    else {
+      // If on the other hand we have a boo, we'll try to reload it. If that fails,
+      // we still need to reset the boo.
+      if (!mBoo.reload()) {
+        mBoo = Globals.get().getBooManager().getLatestBoo();
+      }
+    }
 
+    // We might still end up having no Boo here if there's none on disk, so
+    // let's create a new one if that's the case.
+    if (null == mBoo) {
+      mBoo = Globals.get().getBooManager().createBoo();
+      mBoo.writeToFile();
+    }
+
+    // The next thing to do is to initialize the BooRecorder.
+    initBooRecorder();
+
+    // Last, update the UI accordingly
     initUI();
     hideOrShowPlayer();
   }
@@ -223,10 +217,6 @@ public class RecordActivity extends Activity
       // Log.d(LTAG, "Boo: " + mBoo);
       if (0.0 != mBoo.getDuration()) {
         showPlayer();
-      }
-
-      if (!mBooIsNew) {
-        mOverlay.setVisibility(View.VISIBLE);
       }
     }
   }
@@ -324,6 +314,12 @@ public class RecordActivity extends Activity
       return;
     }
     mRecordButton.setMax(RECORDING_TIME_LIMIT);
+    double duration = mBoo.getDuration();
+    if (duration > 0.0) {
+      mRecordButton.setProgress((int) duration);
+      mRecordButton.setChecked(true);
+      mRecordButton.setChecked(false);
+    }
     mRecordButton.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
       public void onCheckedChanged(CompoundButton buttonView, boolean isChecked)
       {
@@ -343,12 +339,6 @@ public class RecordActivity extends Activity
       return;
     }
 
-
-    mOverlay = findViewById(R.id.record_overlay);
-    if (null == mOverlay) {
-      Log.e(LTAG, "No overlay view found!");
-      return;
-    }
 
     // If we've been recording, set the button/spectral view to the appropriate
     // state.
@@ -424,23 +414,17 @@ public class RecordActivity extends Activity
 
 
 
-  private void resetBooRecorder()
+  private void initBooRecorder()
   {
     if (null != mBooRecorder) {
       mBooRecorder.stop();
       mBooRecorder = null;
     }
 
-    // Remove current boo.
-    if (null != mBoo) {
-      mBoo.delete();
-      mBoo = null;
+    if (null == mBoo) {
+      Log.e(LTAG, "Cannot instanciate BooRecorder, Boo does not exist.");
+      return;
     }
-
-    // Create new empty Boo.
-    mBoo = Globals.get().getBooManager().createBoo();
-    mBoo.writeToFile();
-    mBooIsNew = true;
 
     // Instanciate recorder.
     mBooRecorder = new BooRecorder(this, mBoo,
@@ -509,8 +493,13 @@ public class RecordActivity extends Activity
   {
     switch (item.getItemId()) {
       case MENU_RESTART:
-        resetBooRecorder();
+        mBoo.delete();
+        mBoo = Globals.get().getBooManager().createBoo();
+        mBoo.writeToFile();
+
+        initBooRecorder();
         initUI();
+        hideOrShowPlayer();
         break;
 
       case MENU_PUBLISH:
@@ -549,12 +538,6 @@ public class RecordActivity extends Activity
       return;
     }
 
-    // If the activity sent OK, then we'll reset everything. No need to keep old
-    // Boos around.
-    resetBooRecorder();
-    initUI();
-    hideOrShowPlayer();
-
     // Toast that we're done.
     Toast.makeText(this, R.string.record_publish_success_toast, Toast.LENGTH_LONG).show();
   }
@@ -583,6 +566,4 @@ public class RecordActivity extends Activity
 
     return dialog;
   }
-
-
 }
