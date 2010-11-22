@@ -36,6 +36,8 @@ static char const * const FLACStreamDecoder_mObject     = "mObject";
 
 static char const * const IllegalArgumentException_classname  = "java.lang.IllegalArgumentException";
 
+static char const * const LTAG                          = "FLACStreamDecoder/native";
+
 
 /*****************************************************************************
  * FLAC callbacks forward declarations
@@ -181,8 +183,10 @@ public:
    **/
   int read(char * buffer, int bufsize)
   {
+    //aj::log(ANDROID_LOG_DEBUG, LTAG, "read(%d)", bufsize);
     // If the decoder is at the end of the stream, exit immediately.
     int ret = checkState();
+    //aj::log(ANDROID_LOG_DEBUG, LTAG, "state: %d", ret);
     if (0 != ret) {
       return ret;
     }
@@ -195,8 +199,11 @@ public:
     FLAC__bool result = 0;
     do {
       result = FLAC__stream_decoder_process_single(m_decoder);
-    } while (result && m_buf_used < m_buf_size);
-    ret = checkState();
+      ret = checkState();
+      // aj::log(ANDROID_LOG_DEBUG, LTAG, "result: %d, used: %d, size: %d, ret: %d", result, m_buf_used, m_buf_size, ret);
+    } while ((0 == ret) && (result && m_buf_used < m_buf_size));
+
+    //aj::log(ANDROID_LOG_DEBUG, LTAG, "finished read()");
 
     // Clear m_buffer, just to be extra-paranoid that it won't accidentally
     // be freed.
