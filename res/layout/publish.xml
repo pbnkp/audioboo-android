@@ -79,7 +79,7 @@
           android:scrollHorizontally="true"
           android:selectAllOnFocus="true"
           android:singleLine="true"
-          android:inputType="textAutoComplete"
+          android:inputType="textAutoCorrect"
         />
 
       <!-- Tags -->
@@ -98,7 +98,7 @@
           android:scrollHorizontally="true"
           android:selectAllOnFocus="true"
           android:lines="3"
-          android:inputType="textAutoComplete"
+          android:inputType="textAutoCorrect"
         />
 
       <!-- Submit button -->
