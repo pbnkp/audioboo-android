@@ -237,6 +237,8 @@ public class BooPlayerView extends LinearLayout implements Handler.Callback
 
   public void play(Boo boo, boolean playImmediately)
   {
+    setActive(true);
+
     // Log.d(LTAG, "view play: " + playImmediately);
     mBoo = boo;
 
@@ -321,9 +323,25 @@ public class BooPlayerView extends LinearLayout implements Handler.Callback
 
 
 
+  /**
+   * Makes child elements clickable or not.
+   **/
+  public void setActive(boolean flag)
+  {
+    if (null != mButton) {
+      mButton.setClickable(flag);
+    }
+    if (null != mSeekBar) {
+      mButton.setClickable(flag);
+    }
+  }
+
+
+
   public void stop()
   {
     // Log.d(LTAG, "view stop");
+    setActive(false);
 
     // Stops playback.
     if (null != mBoo) {
