@@ -364,9 +364,18 @@ public class ImageCache extends SQLiteOpenHelper
 
       int new_width = (int) (bitmap.getWidth() * factor);
       int new_height = (int) (bitmap.getHeight() * factor);
-      scaled_bitmap = Bitmap.createScaledBitmap(bitmap, new_width, new_height, true);
-      if (null == scaled_bitmap) {
-        Log.e(LTAG, "Unable to scale bitmap: " + item.mImageUri);
+      try {
+        scaled_bitmap = Bitmap.createScaledBitmap(bitmap, new_width, new_height, true);
+        bitmap.recycle();
+
+        if (null == scaled_bitmap) {
+          Log.e(LTAG, "Unable to scale bitmap: " + item.mImageUri);
+          resultHandler.obtainMessage(MSG_ERROR, item).sendToTarget();
+          return;
+        }
+      } catch (OutOfMemoryError ex) {
+        bitmap.recycle();
+        Log.e(LTAG, "Out of memory, can't scale bitmap: " + item.mImageUri);
         resultHandler.obtainMessage(MSG_ERROR, item).sendToTarget();
         return;
       }
