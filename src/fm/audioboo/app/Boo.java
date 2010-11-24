@@ -190,12 +190,11 @@ public class Boo implements Serializable
       if (null == boo.mFilename) {
         boo.mFilename = filename;
       }
-      if (null == boo.mRecordings) {
-        boo.mRecordings = new LinkedList<Recording>();
-        if (null != boo.mHighMP3Url && boo.mHighMP3Url.getScheme().equals("file")) {
-          boo.mRecordings.add(new Recording(boo.mHighMP3Url.getPath(),
-                boo.mDuration));
-        }
+      if (null == boo.mRecordings && null != boo.mHighMP3Url && boo.mHighMP3Url.getScheme().equals("file")) {
+        Log.d(LTAG, "Purging old recording.");
+        new File(boo.mHighMP3Url.getPath()).delete();
+        boo.delete();
+        return null;
       }
 
       return boo;

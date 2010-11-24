@@ -348,10 +348,12 @@ public class BooManager
     String data_dir = ensureDataDir(boo);
     if (null != data_dir) {
       File d = new File(data_dir);
-      for (File f : d.listFiles()) {
-        f.delete();
+      if (d.exists() && d.isDirectory()) {
+        for (File f : d.listFiles()) {
+          f.delete();
+        }
+        d.delete();
       }
-      d.delete();
     }
 
     File f = new File(boo.mFilename);
