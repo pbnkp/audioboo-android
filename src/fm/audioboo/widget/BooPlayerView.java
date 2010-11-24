@@ -13,6 +13,8 @@ import android.content.Context;
 import android.util.AttributeSet;
 
 import android.view.View;
+import android.view.View.OnTouchListener;
+import android.view.MotionEvent;
 
 import android.widget.LinearLayout;
 import android.widget.CompoundButton;
@@ -29,6 +31,8 @@ import fm.audioboo.app.BooPlayer;
 import fm.audioboo.app.Globals;
 
 import fm.audioboo.app.R;
+
+import java.lang.ref.WeakReference;
 
 import android.util.Log;
 
@@ -92,7 +96,7 @@ public class BooPlayerView extends LinearLayout implements Handler.Callback
    * Data members
    **/
   // Context
-  private Context             mContext;
+  private WeakReference<Context>  mContext;
 
   // Seekbar instance
   private SeekBar             mSeekBar;
@@ -193,7 +197,7 @@ public class BooPlayerView extends LinearLayout implements Handler.Callback
   public BooPlayerView(Context context)
   {
     super(context);
-    mContext = context;
+    setup(context);
   }
 
 
@@ -201,7 +205,7 @@ public class BooPlayerView extends LinearLayout implements Handler.Callback
   public BooPlayerView(Context context, AttributeSet attrs)
   {
     super(context, attrs);
-    mContext = context;
+    setup(context);
   }
 
 
@@ -209,7 +213,7 @@ public class BooPlayerView extends LinearLayout implements Handler.Callback
   public BooPlayerView(Context context, AttributeSet attrs, int defStyle)
   {
     super(context, attrs);
-    mContext = context;
+    setup(context);
   }
 
 
@@ -237,6 +241,11 @@ public class BooPlayerView extends LinearLayout implements Handler.Callback
 
   public void play(Boo boo, boolean playImmediately)
   {
+    Context ctx = mContext.get();
+    if (null == ctx) {
+      return;
+    }
+
     setActive(true);
 
     // Log.d(LTAG, "view play: " + playImmediately);
@@ -244,7 +253,7 @@ public class BooPlayerView extends LinearLayout implements Handler.Callback
 
     // Set title
     if (null == mBoo.mTitle) {
-      setTitle(mContext.getResources().getString(R.string.boo_player_new_title));
+      setTitle(ctx.getResources().getString(R.string.boo_player_new_title));
     }
     else {
       setTitle(mBoo.mTitle);
@@ -388,10 +397,15 @@ public class BooPlayerView extends LinearLayout implements Handler.Callback
   {
     super.onFinishInflate();
 
-    // Grab and remember the audio manager
-    mAudioManager = (AudioManager) mContext.getSystemService(Context.AUDIO_SERVICE);
+    Context ctx = mContext.get();
+    if (null == ctx) {
+      return;
+    }
 
-    LinearLayout content = (LinearLayout) inflate(mContext, R.layout.boo_player, this);
+    // Grab and remember the audio manager
+    mAudioManager = (AudioManager) ctx.getSystemService(Context.AUDIO_SERVICE);
+
+    LinearLayout content = (LinearLayout) inflate(ctx, R.layout.boo_player, this);
 
     // Set up seekbar
     mSeekBar = (SeekBar) content.findViewById(R.id.boo_player_volume);
@@ -477,5 +491,22 @@ public class BooPlayerView extends LinearLayout implements Handler.Callback
       mEndedSent = true;
       mListener.onPlaybackEnded(this, state);
     }
+  }
+
+
+
+  private void setup(Context context)
+  {
+    mContext = new WeakReference<Context>(context);
+
+    setClickable(true);
+
+    setOnTouchListener(new OnTouchListener() {
+        public boolean onTouch(View v, MotionEvent event)
+        {
+          // Log.d(LTAG, "Captured touch.");
+          return true;
+        }
+    });
   }
 }
