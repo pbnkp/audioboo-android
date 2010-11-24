@@ -108,19 +108,20 @@
   <!--
     Error codes and their messages. See res/values/errors.xml for details
   -->
+  <string name="error_title">Communication error.</string>
+  <string name="error_prefix">Error details:</string>
+
   <string-array name="error_messages">
     <item>The server returned an empty response.</item>
-    <item>An error occurred when retrieving a response from the server. Are you
-      certain your phone has an internet connection?</item>
+    <item>An error occurred when retrieving a response from the server.</item>
     <item>The server did not send the expected response version.</item>
     <item>An error occurred when trying to parse the server response.</item>
     <item>An invalid program state was reached.</item>
     <item>An unknown error occurred.</item>
   </string-array>
 
-  <string name="error_message_extra">Please try again. If the problem persist,
-    please report the error with a description of what you were doing when it
-    occurred.</string>
+  <string name="error_message_extra">Repeat your action when you are sure you
+    have an internet connection.</string>
 
   <!--
     Global dialogs

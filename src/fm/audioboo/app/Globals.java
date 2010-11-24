@@ -526,8 +526,11 @@ public class Globals
           }
 
           // Format full text for the dialog.
-          String content = String.format("%s\n\n%s", message,
-              res.getString(R.string.error_message_extra));
+          String content = String.format("%s\n\n%s\n\n%s %s",
+              res.getString(R.string.error_title),
+              res.getString(R.string.error_message_extra),
+              res.getString(R.string.error_prefix),
+              message);
 
           // Create dialog
           AlertDialog.Builder builder = new AlertDialog.Builder(activity);
