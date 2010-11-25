@@ -68,7 +68,7 @@ public class PublishActivity extends Activity
   private static final String LTAG  = "PublishActivity";
 
   // Maximum image size, in pixels. Images are assumed to be square.
-  private static final int IMAGE_MAX_SIZE       = 300;
+  private static final int IMAGE_MAX_SIZE       = 800;
 
   // Dialog IDs.
   private static final int DIALOG_IMAGE_OPTIONS = 1;
