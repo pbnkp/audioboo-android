@@ -415,9 +415,15 @@ public class ImageCache extends SQLiteOpenHelper
   {
     // First, we have to convert the Bitmap into a byte representation, for
     // which it'll need to be compressed.
-    ByteArrayOutputStream os = new ByteArrayOutputStream(COMPRESS_CHUNK_SIZE);
-    bitmap.compress(Bitmap.CompressFormat.PNG, 100, os);
-    byte[] data = os.toByteArray();
+    byte[] data = null;
+    try {
+      ByteArrayOutputStream os = new ByteArrayOutputStream(COMPRESS_CHUNK_SIZE);
+      bitmap.compress(Bitmap.CompressFormat.PNG, 100, os);
+      data = os.toByteArray();
+    } catch (OutOfMemoryError ex) {
+      Log.e(LTAG, "Out of memory, cannot store bitmap: " + uri);
+      return;
+    }
 
     // Now store it in the database.
     ContentValues values = new ContentValues();
