@@ -187,22 +187,28 @@ public class BooListAdapter extends BaseAdapter
     }
 
     // Fill view with data.
-    if (null != boo.mUser) {
-      TextView text_view = (TextView) view.findViewById(R.id.recent_boos_item_author);
-      if (null != text_view) {
+    TextView text_view = (TextView) view.findViewById(R.id.recent_boos_item_author);
+    if (null != text_view) {
+      if (null != boo.mUser && null != boo.mUser.mUsername) {
         text_view.setText(boo.mUser.mUsername);
+      }
+      else {
+        text_view.setText("");
       }
     }
 
-    TextView text_view = (TextView) view.findViewById(R.id.recent_boos_item_title);
+    text_view = (TextView) view.findViewById(R.id.recent_boos_item_title);
     if (null != text_view) {
-      text_view.setText(boo.mTitle);
+      text_view.setText(null != boo.mTitle ? boo.mTitle : "");
     }
 
-    if (null != boo.mLocation && null != boo.mLocation.mDescription) {
-      text_view = (TextView) view.findViewById(R.id.recent_boos_item_location);
-      if (null != text_view) {
+    text_view = (TextView) view.findViewById(R.id.recent_boos_item_location);
+    if (null != text_view) {
+      if (null != boo.mLocation && null != boo.mLocation.mDescription) {
         text_view.setText(boo.mLocation.mDescription);
+      }
+      else {
+        text_view.setText("");
       }
     }
 
