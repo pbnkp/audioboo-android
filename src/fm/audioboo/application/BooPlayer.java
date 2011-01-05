@@ -219,6 +219,9 @@ public class BooPlayer extends Thread
 
     public void pause()
     {
+      if (null == mMediaPlayer) {
+        return;
+      }
       mMediaPlayer.pause();
     }
 
@@ -226,6 +229,9 @@ public class BooPlayer extends Thread
 
     public void resume()
     {
+      if (null == mMediaPlayer) {
+        return;
+      }
       mMediaPlayer.start();
     }
 
@@ -233,6 +239,9 @@ public class BooPlayer extends Thread
 
     public void stop()
     {
+      if (null == mMediaPlayer) {
+        return;
+      }
       mMediaPlayer.stop();
       mMediaPlayer.release();
       mMediaPlayer = null;
@@ -327,7 +336,7 @@ public class BooPlayer extends Thread
   private PlayerBase            mPlayer;
 
   // Player for MP3 Boos streamed from the Web.
-  private MediaPlayer           mMediaPlayer;
+  private volatile MediaPlayer  mMediaPlayer;
 
   // Listener for state changes
   private ProgressListener      mListener;
