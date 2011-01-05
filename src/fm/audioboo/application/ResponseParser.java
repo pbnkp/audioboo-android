@@ -7,7 +7,7 @@
  * $Id$
  **/
 
-package fm.audioboo.app;
+package fm.audioboo.application;
 
 import android.os.Handler;
 

@@ -26,11 +26,11 @@ import android.media.AudioManager;
 import android.os.Handler;
 import android.os.Message;
 
-import fm.audioboo.app.Boo;
-import fm.audioboo.app.BooPlayer;
-import fm.audioboo.app.Globals;
+import fm.audioboo.application.Boo;
+import fm.audioboo.application.BooPlayer;
+import fm.audioboo.application.Globals;
 
-import fm.audioboo.app.R;
+import fm.audioboo.application.R;
 
 import java.lang.ref.WeakReference;
 

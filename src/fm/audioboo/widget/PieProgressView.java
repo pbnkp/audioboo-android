@@ -22,7 +22,7 @@ import android.graphics.RectF;
 import android.graphics.Paint.Style;
 import android.graphics.Color;
 
-import fm.audioboo.app.R;
+import fm.audioboo.application.R;
 
 import android.util.Log;
 

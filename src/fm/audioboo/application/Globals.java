@@ -7,7 +7,7 @@
  * $Id$
  **/
 
-package fm.audioboo.app;
+package fm.audioboo.application;
 
 import android.content.Context;
 import android.content.Intent;
@@ -100,7 +100,7 @@ public class Globals
    * Public constants
    **/
   // Preferences
-  public static final String      PREFERENCES_NAME    = "fm.audioboo.app";
+  public static final String      PREFERENCES_NAME    = "fm.audioboo.application";
 
   public static final String      PREF_API_KEY        = "api.key";
   public static final String      PREF_API_SECRET     = "api.secret";

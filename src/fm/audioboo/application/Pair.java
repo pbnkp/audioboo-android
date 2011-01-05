@@ -7,7 +7,7 @@
  * $Id$
  **/
 
-package fm.audioboo.app;
+package fm.audioboo.application;
 
 /**
  * Funny, the things you take for granted from C++.

@@ -17,10 +17,10 @@ import android.widget.EditText;
 import android.text.Editable;
 import android.text.TextWatcher;
 
-import fm.audioboo.app.Pair;
-import fm.audioboo.app.Tag;
+import fm.audioboo.application.Pair;
+import fm.audioboo.application.Tag;
 
-import fm.audioboo.app.R;
+import fm.audioboo.application.R;
 
 import java.util.List;
 import java.util.LinkedList;

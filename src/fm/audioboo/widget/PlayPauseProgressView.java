@@ -29,7 +29,7 @@ import android.graphics.Paint;
 import android.graphics.PorterDuff;
 import android.graphics.PorterDuffXfermode;
 
-import fm.audioboo.app.R;
+import fm.audioboo.application.R;
 
 import android.util.Log;
 

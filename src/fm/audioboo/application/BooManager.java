@@ -7,7 +7,7 @@
  * $Id$
  **/
 
-package fm.audioboo.app;
+package fm.audioboo.application;
 
 import java.util.List;
 import java.util.LinkedList;

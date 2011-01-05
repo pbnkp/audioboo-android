@@ -26,7 +26,7 @@ import android.util.AttributeSet;
 import android.content.res.TypedArray;
 import android.content.res.ColorStateList;
 
-import fm.audioboo.app.R;
+import fm.audioboo.application.R;
 
 import android.util.Log;
 
