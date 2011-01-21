@@ -107,8 +107,10 @@ public class BooRecorder
               mAmplitudes.accumulate(mLastAmplitudes);
             }
 
-            mRecording.mDuration = mLastAmplitudes.mPosition / 1000.0;
-            mRecording = null;
+            if (null != mRecording && null != mLastAmplitudes) {
+              mRecording.mDuration = mLastAmplitudes.mPosition / 1000.0;
+              mRecording = null;
+            }
 
             mUpchainHandler.obtainMessage(MSG_END_OF_RECORDING).sendToTarget();
             return true;
