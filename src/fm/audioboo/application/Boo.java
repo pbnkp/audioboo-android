@@ -387,10 +387,7 @@ public class Boo implements Serializable
     String target = Globals.get().getBooManager().getNewRecordingFilename(this);
 
     // Flatten the audio files.
-    int format = FLACRecorder.mapFormat(FLACRecorder.FORMAT);
-    int channels = FLACRecorder.mapChannelConfig(FLACRecorder.CHANNEL_CONFIG);
-    FLACStreamEncoder encoder = new FLACStreamEncoder(target,
-        FLACRecorder.SAMPLE_RATE, channels, format);
+    FLACStreamEncoder encoder = null;
 
     for (Recording rec : mRecordings) {
       //Log.d(LTAG, "Using recording: " + rec);
@@ -407,6 +404,13 @@ public class Boo implements Serializable
         }
         //Log.d(LTAG, "read: " + read);
 
+
+        if (null == encoder) {
+          // Assume that all recordings share the format of the first recording.
+          encoder = new FLACStreamEncoder(target, decoder.sampleRate(),
+              decoder.channels(), decoder.bitsPerSample());
+        }
+
         encoder.write(buffer, read);
       }
 
@@ -415,7 +419,9 @@ public class Boo implements Serializable
       decoder = null;
     }
 
-    encoder.release();
+    if (null != encoder) {
+      encoder.release();
+    }
     encoder = null;
 
     // Next, set the high mp3 Uri for the Boo to be the target path.

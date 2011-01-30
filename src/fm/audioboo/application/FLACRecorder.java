@@ -43,11 +43,6 @@ public class FLACRecorder extends Thread
   public static final int MSG_WRITE_ERROR           = 5;
   public static final int MSG_AMPLITUDES            = 6;
 
-  // Sample rate, channel config, format
-  public static final int SAMPLE_RATE    = 22050;
-  public static final int CHANNEL_CONFIG = AudioFormat.CHANNEL_CONFIGURATION_MONO;
-  public static final int FORMAT         = AudioFormat.ENCODING_PCM_16BIT;
-
 
   /***************************************************************************
    * Private constants
@@ -222,34 +217,72 @@ public class FLACRecorder extends Thread
 
   public void run()
   {
+    // Determine audio config to use.
+    final int sample_rates[] = { 44100, 22050, 11025 };
+    final int configs[] = { AudioFormat.CHANNEL_CONFIGURATION_MONO, AudioFormat.CHANNEL_CONFIGURATION_STEREO };
+    final int formats[] = { AudioFormat.ENCODING_PCM_16BIT, AudioFormat.ENCODING_PCM_8BIT };
+
+    int sample_rate = -1;
+    int channel_config = -1;
+    int format = -1;
+
+    int bufsize = AudioRecord.ERROR_BAD_VALUE;
+
+    boolean found = false;
+    for (int x = 0 ; !found && x < formats.length ; ++x) {
+      format = formats[x];
+
+      for (int y = 0 ; !found && y < sample_rates.length ; ++y) {
+        sample_rate = sample_rates[y];
+
+        for (int z = 0 ; !found && z < configs.length ; ++z) {
+          channel_config = configs[z];
+
+          // Log.d(LTAG, "Trying: " + format + "/" + channel_config + "/" + sample_rate);
+          bufsize = AudioRecord.getMinBufferSize(sample_rate, channel_config, format);
+          // Log.d(LTAG, "Bufsize: " + bufsize);
+
+          // Handle invalid configs
+          if (AudioRecord.ERROR_BAD_VALUE == bufsize) {
+            continue;
+          }
+          if (AudioRecord.ERROR == bufsize) {
+            Log.e(LTAG, "Unable to query hardware!");
+            mHandler.obtainMessage(MSG_HARDWARE_UNAVAILABLE).sendToTarget();
+            return;
+          }
+
+          // Got a valid config.
+          found = true;
+          break;
+        }
+      }
+    }
+
+    if (!found) {
+      Log.e(LTAG, "Sample rate, channel config or format not supported!");
+      mHandler.obtainMessage(MSG_INVALID_FORMAT).sendToTarget();
+      return;
+    }
+    Log.d(LTAG, "Using: " + format + "/" + channel_config + "/" + sample_rate);
+
     mShouldRun = true;
     boolean oldShouldRecord = false;
 
+
+
     try {
       // Set up recorder
-      int bufsize = AudioRecord.getMinBufferSize(SAMPLE_RATE, CHANNEL_CONFIG,
-          FORMAT);
-      if (AudioRecord.ERROR_BAD_VALUE == bufsize) {
-        Log.e(LTAG, "Sample rate, channel config or format not supported!");
-        mHandler.obtainMessage(MSG_INVALID_FORMAT).sendToTarget();
-        return;
-      }
-      if (AudioRecord.ERROR == bufsize) {
-        Log.e(LTAG, "Unable to query hardware!");
-        mHandler.obtainMessage(MSG_HARDWARE_UNAVAILABLE).sendToTarget();
-        return;
-      }
-
       AudioRecord recorder = new AudioRecord(MediaRecorder.AudioSource.MIC,
-        SAMPLE_RATE, CHANNEL_CONFIG, FORMAT, bufsize);
+        sample_rate, channel_config, format, bufsize);
 
       // Initialize variables for calculating the recording duration.
-      int format = mapFormat(FORMAT);
-      int channels = mapChannelConfig(CHANNEL_CONFIG);
-      int bytesPerSecond = SAMPLE_RATE * (format / 8) * channels;
+      int mapped_format = mapFormat(format);
+      int mapped_channels = mapChannelConfig(channel_config);
+      int bytesPerSecond = sample_rate * (mapped_format / 8) * mapped_channels;
 
       // Set up encoder. Create path for the file if it doesn't yet exist.
-      mEncoder = new FLACStreamEncoder(mPath, SAMPLE_RATE, channels, format);
+      mEncoder = new FLACStreamEncoder(mPath, sample_rate, mapped_channels, mapped_format);
 
       // Start recording loop
       mDuration = 0.0;
@@ -286,6 +319,16 @@ public class FLACRecorder extends Thread
 
             default:
               if (result > 0) {
+                //Log.d(LTAG, "*** CHIPMUNK got: " + result);
+                //java.nio.ShortBuffer s = buffer.asShortBuffer();
+                //s.rewind();
+                //for (int i = 0 ; i < (result / (format / 8)) ; ++i) {
+                //  short v = s.get(i);
+                //  if (Math.abs(v) <= 255) {
+                //    Log.d(LTAG, "*** CHIPMUNK sample " + i + ": " + v);
+                //  }
+                //}
+
                 // Compute time recorded
                 double read_ms = (1000.0 * result) / bytesPerSecond;
                 mDuration += read_ms;
