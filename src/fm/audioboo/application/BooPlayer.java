@@ -333,7 +333,7 @@ public class BooPlayer extends Thread
   private Object                mLock = new Object();
 
   // Player instance.
-  private PlayerBase            mPlayer;
+  private volatile PlayerBase   mPlayer;
 
   // Player for MP3 Boos streamed from the Web.
   private volatile MediaPlayer  mMediaPlayer;
@@ -342,16 +342,16 @@ public class BooPlayer extends Thread
   private ProgressListener      mListener;
 
   // Tick timer, for tracking progress
-  private Timer                 mTimer;
+  private volatile Timer        mTimer;
   private TimerTask             mTimerTask;
 
   // Internal player state
-  private int                   mState = STATE_NONE;
-  private int                   mPendingState = STATE_NONE;
-  private boolean               mResetState;
+  private volatile int          mState = STATE_NONE;
+  private volatile int          mPendingState = STATE_NONE;
+  private volatile boolean      mResetState;
 
   // Boo that's currently being played
-  private Boo                   mBoo;
+  private volatile Boo          mBoo;
 
   // Used for progress tracking
   private double                mPlaybackProgress;
@@ -647,29 +647,28 @@ public class BooPlayer extends Thread
     sendStateBuffering();
 
     // Local Boos are treated via the FLACPlayerWrapper.
-    if (boo.isLocal()) {
-      mPlayer = new FLACPlayerWrapper();
-    }
-    else {
-      // Examine the Boo's Uri. From that we determine what player to instanciate.
-      String path = boo.mHighMP3Url.getPath();
-      int ext_sep = path.lastIndexOf(".");
-      String ext = path.substring(ext_sep).toLowerCase();
-
-      if (ext.equals(".flac")) {
-        // Start FLAC player.
+    synchronized (mLock) {
+      if (boo.isLocal()) {
         mPlayer = new FLACPlayerWrapper();
       }
       else {
-        // Handle everything else via the APIPlayer
-        mPlayer = new APIPlayer();
-      }
-    }
+        // Examine the Boo's Uri. From that we determine what player to instanciate.
+        String path = boo.mHighMP3Url.getPath();
+        int ext_sep = path.lastIndexOf(".");
+        String ext = path.substring(ext_sep).toLowerCase();
 
-    // Now we can use the base API to start playback.
-    boolean result = mPlayer.prepare(boo);
-    synchronized (mLock)
-    {
+        if (ext.equals(".flac")) {
+          // Start FLAC player.
+          mPlayer = new FLACPlayerWrapper();
+        }
+        else {
+          // Handle everything else via the APIPlayer
+          mPlayer = new APIPlayer();
+        }
+      }
+
+      // Now we can use the base API to start playback.
+      boolean result = mPlayer.prepare(boo);
       if (result) {
         // Once that returns, we set the current state to PAUSED. While we were in
         // PREPARING state, no other state changes could be effected, so that's safe.
@@ -688,7 +687,10 @@ public class BooPlayer extends Thread
 
   private void pauseInternal()
   {
-    mPlayer.pause();
+    synchronized (mLock) {
+      mPlayer.pause();
+    }
+
     sendStateBuffering();
   }
 
@@ -696,7 +698,9 @@ public class BooPlayer extends Thread
 
   private void resumeInternal()
   {
-    mPlayer.resume();
+    synchronized (mLock) {
+      mPlayer.resume();
+    }
 
     if (null == mTimer) {
       startPlaybackState();
@@ -710,19 +714,18 @@ public class BooPlayer extends Thread
 
   private void stopInternal(boolean sendState)
   {
-    if (null != mPlayer) {
-      mPlayer.stop();
-      mPlayer = null;
-    }
+    synchronized (mLock) {
+      if (null != mPlayer) {
+        mPlayer.stop();
+        mPlayer = null;
+      }
 
-    if (null != mTimer) {
-      mTimer.cancel();
-      mTimer = null;
-      mTimerTask = null;
-    }
+      if (null != mTimer) {
+        mTimer.cancel();
+        mTimer = null;
+        mTimerTask = null;
+      }
 
-    synchronized (mLock)
-    {
       mBoo = null;
     }
 
