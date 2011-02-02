@@ -218,7 +218,7 @@ public class FLACRecorder extends Thread
   public void run()
   {
     // Determine audio config to use.
-    final int sample_rates[] = { 44100, 22050, 11025 };
+    final int sample_rates[] = { 96000, 48000, 44100, 22050, 11025 };
     final int configs[] = { AudioFormat.CHANNEL_CONFIGURATION_MONO, AudioFormat.CHANNEL_CONFIGURATION_STEREO };
     final int formats[] = { AudioFormat.ENCODING_PCM_16BIT, AudioFormat.ENCODING_PCM_8BIT };
 
