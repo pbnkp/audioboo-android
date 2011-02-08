@@ -227,6 +227,7 @@ public class FLACRecorder extends Thread
     int format = -1;
 
     int bufsize = AudioRecord.ERROR_BAD_VALUE;
+    AudioRecord recorder = null;
 
     boolean found = false;
     for (int x = 0 ; !found && x < formats.length ; ++x) {
@@ -252,6 +253,15 @@ public class FLACRecorder extends Thread
             return;
           }
 
+          try {
+            // Set up recorder
+            recorder = new AudioRecord(MediaRecorder.AudioSource.MIC, sample_rate,
+                channel_config, format, bufsize);
+          } catch (IllegalArgumentException ex) {
+            recorder = null;
+            continue;
+          }
+
           // Got a valid config.
           found = true;
           break;
@@ -272,10 +282,6 @@ public class FLACRecorder extends Thread
 
 
     try {
-      // Set up recorder
-      AudioRecord recorder = new AudioRecord(MediaRecorder.AudioSource.MIC,
-        sample_rate, channel_config, format, bufsize);
-
       // Initialize variables for calculating the recording duration.
       int mapped_format = mapFormat(format);
       int mapped_channels = mapChannelConfig(channel_config);
