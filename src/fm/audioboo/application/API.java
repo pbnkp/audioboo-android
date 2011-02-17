@@ -687,7 +687,9 @@ public class API
               Uri.encode(param.getKey()), Uri.encode((String) obj));
         }
         else if (obj instanceof LinkedList<?>) {
-          for (String s : (LinkedList<String>) obj) {
+          @SuppressWarnings("unchecked")
+          LinkedList<String> cast_obj = (LinkedList<String>) obj;
+          for (String s : cast_obj) {
             query_string += String.format("%s=%s[]&",
                 Uri.encode(param.getKey()), Uri.encode(s));
           }
@@ -724,7 +726,9 @@ public class API
           result += String.format("%s=%s&", param.getKey(), (String) obj);
         }
         else if (obj instanceof LinkedList<?>) {
-          for (String s : (LinkedList<String>) obj) {
+          @SuppressWarnings("unchecked")
+          LinkedList<String> cast_obj = (LinkedList<String>) obj;
+          for (String s : cast_obj) {
             result += String.format("%s[]=%s&", param.getKey(), s);
           }
         }
@@ -908,7 +912,9 @@ public class API
               }
               else if (obj instanceof LinkedList<?>) {
                 String key = param.getKey() + "[]";
-                for (String s : (LinkedList<String>) obj) {
+                @SuppressWarnings("unchecked")
+                LinkedList<String> cast_obj = (LinkedList<String>) obj;
+                for (String s : cast_obj) {
                   content.addPart(key, new StringBody(s));
                 }
               }
@@ -945,7 +951,9 @@ public class API
             }
             else if (obj instanceof LinkedList<?>) {
               String key = param.getKey() + "[]";
-              for (String s : (LinkedList<String>) obj) {
+              @SuppressWarnings("unchecked")
+              LinkedList<String> cast_obj = (LinkedList<String>) obj;
+              for (String s : cast_obj) {
                 p.add(new BasicNameValuePair(key, s));
               }
             }
