@@ -56,6 +56,8 @@ import android.util.Log;
 
 import fm.audioboo.widget.EditTags;
 
+import fm.audioboo.data.BooLocation;
+
 /**
  * Contains code necessary for uploading Boos.
  **/

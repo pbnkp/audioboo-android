@@ -34,6 +34,8 @@ import fm.audioboo.widget.RecordButton;
 import fm.audioboo.widget.SpectralView;
 import fm.audioboo.widget.BooPlayerView;
 
+import fm.audioboo.data.BooLocation;
+
 import android.view.animation.Animation;
 import android.view.animation.AnimationUtils;
 

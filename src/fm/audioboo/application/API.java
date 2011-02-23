@@ -69,6 +69,8 @@ import java.security.MessageDigest;
 
 import android.content.SharedPreferences;
 
+import fm.audioboo.data.Tag;
+
 import android.util.Log;
 
 /**

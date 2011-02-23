@@ -22,6 +22,10 @@ import java.text.SimpleDateFormat;
 import java.text.ParseException;
 import java.util.LinkedList;
 
+import fm.audioboo.data.Tag;
+import fm.audioboo.data.User;
+import fm.audioboo.data.BooLocation;
+
 import android.util.Log;
 
 /**

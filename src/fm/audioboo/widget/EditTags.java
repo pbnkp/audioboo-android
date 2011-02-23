@@ -18,7 +18,7 @@ import android.text.Editable;
 import android.text.TextWatcher;
 
 import fm.audioboo.application.Pair;
-import fm.audioboo.application.Tag;
+import fm.audioboo.data.Tag;
 
 import fm.audioboo.application.R;
 
