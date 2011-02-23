@@ -1,13 +1,18 @@
 /**
  * This file is part of AudioBoo, an android program for audio blogging.
- * Copyright (C) 2009 BestBefore Media Ltd. All rights reserved.
+ * Copyright (C) 2009 BestBefore Media Ltd.
+ * Copyright (C) 2010,2011 AudioBoo Ltd.
+ * All rights reserved.
  *
  * Author: Jens Finkhaeuser <jens@finkhaeuser.de>
  *
  * $Id$
  **/
 
-package fm.audioboo.application;
+package fm.audioboo.data;
+
+import android.os.Parcelable;
+import android.os.Parcel;
 
 import android.content.Context;
 
@@ -17,14 +22,12 @@ import android.location.Address;
 
 import java.util.List;
 
-import java.io.Serializable;
-
 import android.util.Log;
 
 /**
  * Representation of a Boo's or user's location
  **/
-public class BooLocation implements Serializable
+public class BooLocation implements Parcelable
 {
   /***************************************************************************
    * Private constants
@@ -92,5 +95,52 @@ public class BooLocation implements Serializable
     } catch (java.io.IOException ex) {
       Log.e(LTAG, "Could not determine location description: " + ex.getMessage());
     }
+  }
+
+
+
+  /***************************************************************************
+   * Parcelable implementation
+   **/
+  public int describeContents()
+  {
+    return 0;
+  }
+
+
+
+  public void writeToParcel(Parcel out, int flags)
+  {
+    out.writeDouble(mLatitude);
+    out.writeDouble(mLongitude);
+    out.writeDouble(mAccuracy);
+
+    out.writeString(mDescription);
+  }
+
+
+
+  public static final Parcelable.Creator<BooLocation> CREATOR = new Parcelable.Creator<BooLocation>()
+  {
+    public BooLocation createFromParcel(Parcel in)
+    {
+      return new BooLocation(in);
+    }
+
+    public BooLocation[] newArray(int size)
+    {
+      return new BooLocation[size];
+    }
+  };
+
+
+
+  private BooLocation(Parcel in)
+  {
+    mLatitude     = in.readDouble();
+    mLongitude    = in.readDouble();
+    mAccuracy     = in.readDouble();
+
+    mDescription  = in.readString();
   }
 }
