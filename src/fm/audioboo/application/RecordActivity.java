@@ -1,6 +1,8 @@
 /**
  * This file is part of AudioBoo, an android program for audio blogging.
- * Copyright (C) 2009,2010 BestBefore Media Ltd. All rights reserved.
+ * Copyright (C) 2009 BestBefore Media Ltd.
+ * Copyright (C) 2010,2011 AudioBoo Ltd.
+ * All rights reserved.
  *
  * Author: Jens Finkhaeuser <jens@finkhaeuser.de>
  *
@@ -364,8 +366,8 @@ public class RecordActivity extends Activity
 
   private void updateRecordingState(FLACRecorder.Amplitudes amp)
   {
-    if (null == mBoo.mRecordedAt) {
-      mBoo.mRecordedAt = new Date();
+    if (null == mBoo.mData.mRecordedAt) {
+      mBoo.mData.mRecordedAt = new Date();
     }
 
     mSpectralView.setAmplitudes(amp.mAverage, amp.mPeak);
@@ -376,10 +378,10 @@ public class RecordActivity extends Activity
     // process as possible. That should provide the most "accurate" location
     // in terms of the point in time that best represents where the recording
     // was made.
-    if (null == mBoo.mLocation) {
+    if (null == mBoo.mData.mLocation) {
       Location loc = Globals.get().mLocation;
       if (null != loc) {
-        mBoo.mLocation = new BooLocation(this, Globals.get().mLocation);
+        mBoo.mData.mLocation = new BooLocation(this, Globals.get().mLocation);
       }
     }
   }
@@ -507,7 +509,7 @@ public class RecordActivity extends Activity
       case MENU_PUBLISH:
         Intent i = new Intent(this, PublishActivity.class);
         mBoo.writeToFile();
-        i.putExtra(PublishActivity.EXTRA_BOO_FILENAME, mBoo.mFilename);
+        i.putExtra(PublishActivity.EXTRA_BOO_FILENAME, mBoo.mData.mFilename);
         startActivityForResult(i, ++mRequestCode);
         break;
 

@@ -1,6 +1,7 @@
 /**
  * This file is part of AudioBoo, an android program for audio blogging.
- * Copyright (C) 2010 BestBefore Media Ltd. All rights reserved.
+ * Copyright (C) 2010,2011 AudioBoo Ltd.
+ * All rights reserved.
  *
  * Author: Jens Finkhaeuser <jens@finkhaeuser.de>
  *
@@ -128,7 +129,7 @@ public class BooManager
         continue;
       }
 
-      if (b.mUpdatedAt.after(latest.mUpdatedAt)) {
+      if (b.mData.mUpdatedAt.after(latest.mData.mUpdatedAt)) {
         latest = b;
       }
     }
@@ -195,7 +196,7 @@ public class BooManager
 
     // Alright, we have a filename. Now create a Boo with that name!
     Boo boo = new Boo();
-    boo.mFilename = path + File.separator + filename;
+    boo.mData.mFilename = path + File.separator + filename;
     return boo;
   }
 
@@ -323,7 +324,7 @@ public class BooManager
     }
 
     // Get data dir filename.
-    String data_dir = boo.mFilename;
+    String data_dir = boo.mData.mFilename;
     if (data_dir.endsWith(Boo.EXTENSION)) {
       data_dir = data_dir.substring(0, data_dir.lastIndexOf(Boo.EXTENSION));
     }
@@ -356,7 +357,7 @@ public class BooManager
       }
     }
 
-    File f = new File(boo.mFilename);
+    File f = new File(boo.mData.mFilename);
     f.delete();
   }
 }

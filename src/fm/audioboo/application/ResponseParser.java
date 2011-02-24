@@ -1,6 +1,8 @@
 /**
  * This file is part of AudioBoo, an android program for audio blogging.
- * Copyright (C) 2009 BestBefore Media Ltd. All rights reserved.
+ * Copyright (C) 2009 BestBefore Media Ltd.
+ * Copyright (C) 2010,2011 AudioBoo Ltd.
+ * All rights reserved.
  *
  * Author: Jens Finkhaeuser <jens@finkhaeuser.de>
  *
@@ -25,6 +27,7 @@ import java.util.LinkedList;
 import fm.audioboo.data.Tag;
 import fm.audioboo.data.User;
 import fm.audioboo.data.BooLocation;
+import fm.audioboo.data.BooData;
 
 import android.util.Log;
 
@@ -315,7 +318,7 @@ class ResponseParser
 
   private static Boo parseBoo(JSONObject boo) throws JSONException
   {
-    Boo result = new Boo();
+    BooData result = new BooData();
 
     // Parse user data
     result.mUser = parseUser(boo.getJSONObject(USER));
@@ -353,7 +356,7 @@ class ResponseParser
 
     // Log.d(LTAG, "result: " + result);
 
-    return result;
+    return new Boo(result);
   }
 
 

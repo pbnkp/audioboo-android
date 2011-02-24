@@ -1,6 +1,8 @@
 /**
  * This file is part of AudioBoo, an android program for audio blogging.
- * Copyright (C) 2009 BestBefore Media Ltd. All rights reserved.
+ * Copyright (C) 2009 BestBefore Media Ltd.
+ * Copyright (C) 2010,2011 AudioBoo Ltd.
+ * All rights reserved.
  *
  * Author: Jens Finkhaeuser <jens@finkhaeuser.de>
  *
@@ -202,24 +204,24 @@ public class PublishActivity extends Activity
     // - Image
 
     // Try to set the image, if it exists.
-    if (null != mBoo.mImageUrl) {
-      setImageFile(mBoo.mImageUrl.getPath());
+    if (null != mBoo.mData.mImageUrl) {
+      setImageFile(mBoo.mData.mImageUrl.getPath());
     }
 
     // Try to set the title, if it exists.
     EditText edit_text = (EditText) findViewById(R.id.publish_title);
     if (null != edit_text) {
-      if (null != mBoo.mTitle) {
-        edit_text.setText(mBoo.mTitle);
+      if (null != mBoo.mData.mTitle) {
+        edit_text.setText(mBoo.mData.mTitle);
       }
       edit_text.setHint(Globals.get().mTitleGenerator.getTitle());
     }
 
     // Try to set tags, if they're defined.
-    if (null != mBoo.mTags) {
+    if (null != mBoo.mData.mTags) {
       EditTags tags_view = (EditTags) findViewById(R.id.publish_tags);
       if (null != tags_view) {
-        tags_view.setTags(mBoo.mTags);
+        tags_view.setTags(mBoo.mData.mTags);
       }
     }
 
@@ -264,24 +266,24 @@ public class PublishActivity extends Activity
     if (null != edit_text) {
       String title = edit_text.getText().toString();
       if (null != title && 0 != title.length()) {
-        mBoo.mTitle = title;
+        mBoo.mData.mTitle = title;
       }
-      if (null == mBoo.mTitle && useHint) {
-        mBoo.mTitle = edit_text.getHint().toString();
+      if (null == mBoo.mData.mTitle && useHint) {
+        mBoo.mData.mTitle = edit_text.getHint().toString();
       }
     }
 
     // Grab tags
     EditTags tags_view = (EditTags) findViewById(R.id.publish_tags);
     if (null != tags_view) {
-      mBoo.mTags = tags_view.getTags();
+      mBoo.mData.mTags = tags_view.getTags();
     }
 
     // Make a last ditch attempt to get a Location for the Boo, if necessary.
-    if (null == mBoo.mLocation) {
+    if (null == mBoo.mData.mLocation) {
       Location loc = Globals.get().mLocation;
       if (null != loc) {
-        mBoo.mLocation = new BooLocation(this, Globals.get().mLocation);
+        mBoo.mData.mLocation = new BooLocation(this, Globals.get().mLocation);
       }
     }
   }
@@ -351,7 +353,7 @@ public class PublishActivity extends Activity
     f.delete();
 
     // Remove reference to image file.
-    mBoo.mImageUrl = null;
+    mBoo.mData.mImageUrl = null;
 
     // Reset image button.
     ImageButton image = (ImageButton) findViewById(R.id.publish_image);
@@ -484,7 +486,7 @@ public class PublishActivity extends Activity
 
   private void setImageFile(String filename)
   {
-    mBoo.mImageUrl = Uri.parse(String.format("file://%s", filename));
+    mBoo.mData.mImageUrl = Uri.parse(String.format("file://%s", filename));
 
     ImageButton image = (ImageButton) findViewById(R.id.publish_image);
     if (null != image) {
@@ -579,7 +581,7 @@ public class PublishActivity extends Activity
 
         // Hide "remove" option if no image is set yet.
         String[] opts = raw_opts;
-        if (null == mBoo.mImageUrl) {
+        if (null == mBoo.mData.mImageUrl) {
           opts = new String[2];
           opts[0] = raw_opts[0];
           opts[1] = raw_opts[1];

@@ -1,6 +1,7 @@
 /**
  * This file is part of AudioBoo, an android program for audio blogging.
- * Copyright (C) 2010 BestBefore Media Ltd. All rights reserved.
+ * Copyright (C) 2010,2011 AudioBoo Ltd.
+ * All rights reserved.
  *
  * Author: Jens Finkhaeuser <jens@finkhaeuser.de>
  *
@@ -15,6 +16,8 @@ import android.os.Handler;
 import android.os.Message;
 
 import java.lang.ref.WeakReference;
+
+import fm.audioboo.data.BooData;
 
 import android.util.Log;
 
@@ -53,7 +56,7 @@ public class BooRecorder
 
   // Boo to record into. And current Recording
   private Boo                     mBoo;
-  private Boo.Recording           mRecording;
+  private BooData.Recording       mRecording;
 
   // Handler for messages sent by BooRecorder
   private Handler                 mUpchainHandler;

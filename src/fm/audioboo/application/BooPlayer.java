@@ -1,6 +1,8 @@
 /**
  * This file is part of AudioBoo, an android program for audio blogging.
- * Copyright (C) 2009 BestBefore Media Ltd. All rights reserved.
+ * Copyright (C) 2009 BestBefore Media Ltd.
+ * Copyright (C) 2010,2011 AudioBoo Ltd.
+ * All rights reserved.
  *
  * Author: Jens Finkhaeuser <jens@finkhaeuser.de>
  *
@@ -152,9 +154,9 @@ public class BooPlayer extends Thread
       }
 
       // Prepare player
-      mMediaPlayer = MediaPlayer.create(ctx, boo.mHighMP3Url);
+      mMediaPlayer = MediaPlayer.create(ctx, boo.mData.mHighMP3Url);
       if (null == mMediaPlayer) {
-        Log.e(LTAG, "Could not start playback of URI: " + boo.mHighMP3Url);
+        Log.e(LTAG, "Could not start playback of URI: " + boo.mData.mHighMP3Url);
         return false;
       }
 
@@ -272,7 +274,7 @@ public class BooPlayer extends Thread
       boo.flattenAudio();
 
       // Start playback
-      String filename = boo.mHighMP3Url.getPath();
+      String filename = boo.mData.mHighMP3Url.getPath();
       mFlacPlayer = new FLACPlayer(ctx, filename);
 
       mFlacPlayer.setListener(new FLACPlayer.PlayerListener() {
@@ -653,7 +655,7 @@ public class BooPlayer extends Thread
       }
       else {
         // Examine the Boo's Uri. From that we determine what player to instanciate.
-        String path = boo.mHighMP3Url.getPath();
+        String path = boo.mData.mHighMP3Url.getPath();
         int ext_sep = path.lastIndexOf(".");
         String ext = path.substring(ext_sep).toLowerCase();
 

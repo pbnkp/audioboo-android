@@ -1,6 +1,8 @@
 /**
  * This file is part of AudioBoo, an android program for audio blogging.
- * Copyright (C) 2009 BestBefore Media Ltd. All rights reserved.
+ * Copyright (C) 2009 BestBefore Media Ltd.
+ * Copyright (C) 2010,2011 AudioBoo Ltd.
+ * All rights reserved.
  *
  * Author: Jens Finkhaeuser <jens@finkhaeuser.de>
  *
@@ -189,8 +191,8 @@ public class BooListAdapter extends BaseAdapter
     // Fill view with data.
     TextView text_view = (TextView) view.findViewById(R.id.recent_boos_item_author);
     if (null != text_view) {
-      if (null != boo.mUser && null != boo.mUser.mUsername) {
-        text_view.setText(boo.mUser.mUsername);
+      if (null != boo.mData.mUser && null != boo.mData.mUser.mUsername) {
+        text_view.setText(boo.mData.mUser.mUsername);
       }
       else {
         text_view.setText("");
@@ -199,13 +201,13 @@ public class BooListAdapter extends BaseAdapter
 
     text_view = (TextView) view.findViewById(R.id.recent_boos_item_title);
     if (null != text_view) {
-      text_view.setText(null != boo.mTitle ? boo.mTitle : "");
+      text_view.setText(null != boo.mData.mTitle ? boo.mData.mTitle : "");
     }
 
     text_view = (TextView) view.findViewById(R.id.recent_boos_item_location);
     if (null != text_view) {
-      if (null != boo.mLocation && null != boo.mLocation.mDescription) {
-        text_view.setText(boo.mLocation.mDescription);
+      if (null != boo.mData.mLocation && null != boo.mData.mLocation.mDescription) {
+        text_view.setText(boo.mData.mLocation.mDescription);
       }
       else {
         text_view.setText("");
@@ -427,7 +429,7 @@ public class BooListAdapter extends BaseAdapter
     // view's tag for in getView().
     Boo expected_boo = mBoos.mClips.get(item.mItemIndex);
     Boo current_boo = (Boo) item_view.getTag();
-    if (expected_boo.mId != current_boo.mId) {
+    if (expected_boo.mData.mId != current_boo.mData.mId) {
       // There's been a race between cancelling downloads and sending the
       // message with the resulting bitmap.
       return;
@@ -450,9 +452,9 @@ public class BooListAdapter extends BaseAdapter
       return null;
     }
 
-    Uri result = boo.mImageUrl;
-    if (null == result && null != boo.mUser) {
-      result = boo.mUser.mImageUrl;
+    Uri result = boo.mData.mImageUrl;
+    if (null == result && null != boo.mData.mUser) {
+      result = boo.mData.mUser.mImageUrl;
     }
 
     return result;

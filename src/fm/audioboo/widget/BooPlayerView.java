@@ -1,6 +1,8 @@
 /**
  * This file is part of AudioBoo, an android program for audio blogging.
- * Copyright (C) 2009 BestBefore Media Ltd. All rights reserved.
+ * Copyright (C) 2009 BestBefore Media Ltd.
+ * Copyright (C) 2010,2011 AudioBoo Ltd.
+ * All rights reserved.
  *
  * Author: Jens Finkhaeuser <jens@finkhaeuser.de>
  *
@@ -252,11 +254,11 @@ public class BooPlayerView extends LinearLayout implements Handler.Callback
     mBoo = boo;
 
     // Set title
-    if (null == mBoo.mTitle) {
+    if (null == mBoo.mData.mTitle) {
       setTitle(ctx.getResources().getString(R.string.boo_player_new_title));
     }
     else {
-      setTitle(mBoo.mTitle);
+      setTitle(mBoo.mData.mTitle);
     }
 
     // Set the button to a neutral state. startPlaying() will set it to a

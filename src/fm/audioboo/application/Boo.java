@@ -1,6 +1,8 @@
 /**
  * This file is part of AudioBoo, an android program for audio blogging.
- * Copyright (C) 2009,2010 BestBefore Media Ltd. All rights reserved.
+ * Copyright (C) 2009 BestBefore Media Ltd.
+ * Copyright (C) 2010,2011 AudioBoo Ltd.
+ * All rights reserved.
  *
  * Author: Jens Finkhaeuser <jens@finkhaeuser.de>
  *
@@ -11,68 +13,39 @@ package fm.audioboo.application;
 
 import android.net.Uri;
 
-import java.util.Date;
-import java.util.List;
-import java.util.LinkedList;
-import java.util.UUID;
-
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileOutputStream;
-
-import java.io.Serializable;
 import java.io.ObjectInputStream;
+import java.io.FileOutputStream;
 import java.io.ObjectOutputStream;
-
-import java.io.IOException;
 import java.io.FileNotFoundException;
+import java.io.IOException;
+
+import java.nio.ByteBuffer;
+
+import java.util.Date;
+import java.util.LinkedList;
 
 import fm.audioboo.jni.FLACStreamEncoder;
 import fm.audioboo.jni.FLACStreamDecoder;
 
-import java.nio.ByteBuffer;
+import fm.audioboo.data.BooData;
+import fm.audioboo.data.BooLocation;
+import fm.audioboo.data.Tag;
+import fm.audioboo.data.User;
 
 import android.util.Log;
 
 /**
  * Representation of a Boo's data.
  **/
-public class Boo implements Serializable
+public class Boo
 {
   /***************************************************************************
    * Private constants
    **/
   // Log ID
   private static final String LTAG = "Boo";
-
-
-  /***************************************************************************
-   * Recording metadata.
-   **/
-  public static class Recording implements Serializable
-  {
-    String  mFilename;
-    double  mDuration;
-
-    public Recording(String filename, double duration)
-    {
-      mFilename = filename;
-      mDuration = duration;
-    }
-
-
-    public Recording(String filename)
-    {
-      mFilename = filename;
-    }
-
-
-    public String toString()
-    {
-      return String.format("<%f:%s>", mDuration, mFilename);
-    }
-  }
-
 
 
   /***************************************************************************
@@ -96,40 +69,7 @@ public class Boo implements Serializable
   /***************************************************************************
    * Public data
    **/
-  // Basic information
-  public int                    mId;
-  public String                 mTitle;
-
-  // UUID. We generate this when creating new Boos.
-  public UUID                   mUUID;
-
-  public double                 mDuration; // XXX Deprecated; use getDuration()
-
-  public List<Tag>              mTags;
-
-  public User                   mUser;
-
-  // Timestamps
-  public Date                   mRecordedAt;
-  public Date                   mUpdatedAt;
-  public Date                   mUploadedAt;
-
-  // Boo location
-  public BooLocation            mLocation;
-
-  // URLs associated with the Boo.
-  public transient Uri          mHighMP3Url;
-  public transient Uri          mImageUrl;
-  public transient Uri          mDetailUrl;
-
-  // Local information
-  public String                 mFilename;
-  //   Paths pointing to this Boo's recordings, in order.
-  public List<Recording>        mRecordings;
-
-  // Usage statistics.
-  public int                    mPlays;
-  public int                    mComments;
+  public BooData                mData = null;
 
 
   /***************************************************************************
@@ -137,7 +77,14 @@ public class Boo implements Serializable
    **/
   public Boo()
   {
-    mUUID = UUID.randomUUID();
+    mData = new BooData();
+  }
+
+
+
+  public Boo(BooData data)
+  {
+    mData = data;
   }
 
 
@@ -147,23 +94,23 @@ public class Boo implements Serializable
    **/
   public void copyFrom(Boo other)
   {
-    mId = other.mId;
-    mTitle = other.mTitle;
-    mUUID = other.mUUID;
-    mDuration = other.mDuration;
-    mTags = other.mTags;
-    mUser = other.mUser;
-    mRecordedAt = other.mRecordedAt;
-    mUpdatedAt = other.mUpdatedAt;
-    mUploadedAt = other.mUploadedAt;
-    mLocation = other.mLocation;
-    mHighMP3Url = other.mHighMP3Url;
-    mImageUrl = other.mImageUrl;
-    mDetailUrl = other.mDetailUrl;
-    mFilename = other.mFilename;
-    mRecordings = other.mRecordings;
-    mPlays = other.mPlays;
-    mComments = other.mComments;
+    mData.mId = other.mData.mId;
+    mData.mTitle = other.mData.mTitle;
+    mData.mUUID = other.mData.mUUID;
+    mData.mDuration = other.mData.mDuration;
+    mData.mTags = other.mData.mTags;
+    mData.mUser = other.mData.mUser;
+    mData.mRecordedAt = other.mData.mRecordedAt;
+    mData.mUpdatedAt = other.mData.mUpdatedAt;
+    mData.mUploadedAt = other.mData.mUploadedAt;
+    mData.mLocation = other.mData.mLocation;
+    mData.mHighMP3Url = other.mData.mHighMP3Url;
+    mData.mImageUrl = other.mData.mImageUrl;
+    mData.mDetailUrl = other.mData.mDetailUrl;
+    mData.mFilename = other.mData.mFilename;
+    mData.mRecordings = other.mData.mRecordings;
+    mData.mPlays = other.mData.mPlays;
+    mData.mComments = other.mData.mComments;
   }
 
 
@@ -181,7 +128,7 @@ public class Boo implements Serializable
 
     try {
       ObjectInputStream is = new ObjectInputStream(new FileInputStream(f));
-      Boo boo = (Boo) is.readObject();
+      BooData boo = (BooData) is.readObject();
       is.close();
 
       if (null == boo.mUpdatedAt) {
@@ -193,11 +140,10 @@ public class Boo implements Serializable
       if (null == boo.mRecordings && null != boo.mHighMP3Url && boo.mHighMP3Url.getScheme().equals("file")) {
         Log.d(LTAG, "Purging old recording.");
         new File(boo.mHighMP3Url.getPath()).delete();
-        boo.delete();
         return null;
       }
 
-      return boo;
+      return new Boo(boo);
     } catch (FileNotFoundException ex) {
       Log.e(LTAG, "File not found: " + filename);
     } catch (ClassNotFoundException ex) {
@@ -216,7 +162,7 @@ public class Boo implements Serializable
    **/
   public boolean reload()
   {
-    Boo b = constructFromFile(mFilename);
+    Boo b = constructFromFile(mData.mFilename);
     if (null == b) {
       return false;
     }
@@ -231,21 +177,21 @@ public class Boo implements Serializable
    **/
   public void writeToFile()
   {
-    if (null == mFilename) {
+    if (null == mData.mFilename) {
       throw new IllegalStateException("No filename set when attempting to save Boo.");
     }
-    writeToFile(mFilename);
+    writeToFile(mData.mFilename);
   }
 
 
 
   public void writeToFile(String filename)
   {
-    mUpdatedAt = new Date();
+    mData.mUpdatedAt = new Date();
 
     try {
       ObjectOutputStream os = new ObjectOutputStream(new FileOutputStream(new File(filename)));
-      os.writeObject(this);
+      os.writeObject(mData);
       os.flush();
       os = null;
     } catch (FileNotFoundException ex) {
@@ -268,22 +214,14 @@ public class Boo implements Serializable
 
 
   /**
-   * Returns the Boo's duration. If the Boo is downloaded, this function returns
-   * mDuration. If it's locally recorded, it returns the accumulated duration of
-   * all individual recordings.
+   * @see BooData.getDuration
    **/
   public double getDuration()
   {
-    if (null != mRecordings && mRecordings.size() > 0) {
-      double duration = 0;
-      for (Recording rec : mRecordings) {
-        duration += rec.mDuration;
-      }
-      return duration;
+    if (null == mData) {
+      return 0;
     }
-
-    // Still valid for downloaded Boos.
-    return mDuration;
+    return mData.getDuration();
   }
 
 
@@ -293,24 +231,24 @@ public class Boo implements Serializable
    * latest known Recording is empty (does not have a duration), that is
    * returned, otherwise a new Recording is created and registered.
    **/
-  public Recording getLastEmptyRecording()
+  public BooData.Recording getLastEmptyRecording()
   {
-    if (null == mRecordings) {
-      mRecordings = new LinkedList<Recording>();
+    if (null == mData.mRecordings) {
+      mData.mRecordings = new LinkedList<BooData.Recording>();
     }
 
-    Recording rec = null;
-    if (0 != mRecordings.size()) {
-      Recording r = mRecordings.get(mRecordings.size() - 1);
+    BooData.Recording rec = null;
+    if (0 != mData.mRecordings.size()) {
+      BooData.Recording r = mData.mRecordings.get(mData.mRecordings.size() - 1);
       if (0 == r.mDuration) {
         rec = r;
       }
     }
 
     if (null == rec) {
-      rec = new Recording(
+      rec = new BooData.Recording(
           Globals.get().getBooManager().getNewRecordingFilename(this));
-      mRecordings.add(rec);
+      mData.mRecordings.add(rec);
     }
 
     return rec;
@@ -321,8 +259,10 @@ public class Boo implements Serializable
 
   public String toString()
   {
-    return String.format("<%d:%s:%f:[%s]:%d>", mId, mTitle, getDuration(), mUser,
-        (null == mRecordings ? 0 : mRecordings.size()));
+    if (null == mData) {
+      return null;
+    }
+    return mData.toString();
   }
 
 
@@ -343,7 +283,7 @@ public class Boo implements Serializable
 
   public boolean isLocal()
   {
-    return (mRecordings != null);
+    return (mData != null && mData.mRecordings != null);
   }
 
 
@@ -354,15 +294,15 @@ public class Boo implements Serializable
   {
     // First, check if audio is already flattened. If that's the case, we don't
     // want to flatten everything again.
-    if (null != mHighMP3Url) {
-      String filename = mHighMP3Url.getPath();
+    if (null != mData.mHighMP3Url) {
+      String filename = mData.mHighMP3Url.getPath();
       File high_f = new File(filename);
       if (!high_f.exists()) {
-        mHighMP3Url = null;
+        mData.mHighMP3Url = null;
       }
       else {
         long latest = 0;
-        for (Recording rec : mRecordings) {
+        for (BooData.Recording rec : mData.mRecordings) {
           File f = new File(rec.mFilename);
           long d = f.lastModified();
           if (d > latest) {
@@ -378,7 +318,7 @@ public class Boo implements Serializable
           // This boo was flattened, but new recordings were made
           // afterwards. Delete the previously flattened file.
           high_f.delete();
-          mHighMP3Url = null;
+          mData.mHighMP3Url = null;
         }
       }
     }
@@ -389,7 +329,7 @@ public class Boo implements Serializable
     // Flatten the audio files.
     FLACStreamEncoder encoder = null;
 
-    for (Recording rec : mRecordings) {
+    for (BooData.Recording rec : mData.mRecordings) {
       //Log.d(LTAG, "Using recording: " + rec);
       FLACStreamDecoder decoder = new FLACStreamDecoder(rec.mFilename);
 
@@ -425,46 +365,10 @@ public class Boo implements Serializable
     encoder = null;
 
     // Next, set the high mp3 Uri for the Boo to be the target path.
-    mHighMP3Url = Uri.parse(String.format("file://%s", target));
+    mData.mHighMP3Url = Uri.parse(String.format("file://%s", target));
     //Log.d(LTAG, "Flattened to: " + mHighMP3Url);
 
     // Right, persist this flattened URL
     writeToFile();
-  }
-
-
-
-  /***************************************************************************
-   * Serializable implementation
-   **/
-  private void writeObject(java.io.ObjectOutputStream out) throws IOException
-  {
-    out.defaultWriteObject();
-
-    out.writeObject(null != mHighMP3Url ? mHighMP3Url.toString() : null);
-    out.writeObject(null != mImageUrl ? mImageUrl.toString() : null);
-    out.writeObject(null != mDetailUrl ? mDetailUrl.toString() : null);
-  }
-
-
-
-  private void readObject(java.io.ObjectInputStream in) throws IOException, ClassNotFoundException
-  {
-    in.defaultReadObject();
-
-    String s = (String) in.readObject();
-    if (null != s) {
-      mHighMP3Url = Uri.parse(s);
-    }
-
-    s = (String) in.readObject();
-    if (null != s) {
-      mImageUrl = Uri.parse(s);
-    }
-
-    s = (String) in.readObject();
-    if (null != s) {
-      mDetailUrl = Uri.parse(s);
-    }
   }
 }

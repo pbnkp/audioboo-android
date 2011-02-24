@@ -1,6 +1,8 @@
 /**
  * This file is part of AudioBoo, an android program for audio blogging.
- * Copyright (C) 2009 BestBefore Media Ltd. All rights reserved.
+ * Copyright (C) 2009 BestBefore Media Ltd.
+ * Copyright (C) 2010,2011 AudioBoo Ltd.
+ * All rights reserved.
  *
  * Author: Jens Finkhaeuser <jens@finkhaeuser.de>
  *
@@ -616,38 +618,38 @@ public class API
 
     // Prepare signed parameters
     HashMap<String, Object> signedParams = new HashMap<String, Object>();
-    signedParams.put("audio_clip[title]", boo.mTitle);
-    signedParams.put("audio_clip[local_recorded_at]", boo.mRecordedAt.toString());
+    signedParams.put("audio_clip[title]", boo.mData.mTitle);
+    signedParams.put("audio_clip[local_recorded_at]", boo.mData.mRecordedAt.toString());
     signedParams.put("audio_clip[author_locale]", Locale.getDefault().toString());
 
     // Tags
-    if (null != boo.mTags) {
+    if (null != boo.mData.mTags) {
       LinkedList<String> tags = new LinkedList<String>();
-      for (Tag t : boo.mTags) {
+      for (Tag t : boo.mData.mTags) {
         tags.add(t.mNormalised);
       }
       signedParams.put("audio_clip[tags]", tags);
     }
 
-    if (null != boo.mLocation) {
+    if (null != boo.mData.mLocation) {
       signedParams.put("audio_clip[public_location]", "1");
       signedParams.put("audio_clip[location_latitude]",
-          String.format("%f", boo.mLocation.mLatitude));
+          String.format("%f", boo.mData.mLocation.mLatitude));
       signedParams.put("audio_clip[location_longitude]",
-          String.format("%f", boo.mLocation.mLongitude));
+          String.format("%f", boo.mData.mLocation.mLongitude));
       signedParams.put("audio_clip[location_accuracy]",
-          String.format("%f", boo.mLocation.mAccuracy));
+          String.format("%f", boo.mData.mLocation.mAccuracy));
     }
 
-    if (null != boo.mUUID) {
-      signedParams.put("audio_clip[uuid]", boo.mUUID);
+    if (null != boo.mData.mUUID) {
+      signedParams.put("audio_clip[uuid]", boo.mData.mUUID);
     }
 
     // Prepare files.
     HashMap<String, String> fileParams = new HashMap<String, String>();
-    fileParams.put("audio_clip[uploaded_data]", boo.mHighMP3Url.getPath());
-    if (null != boo.mImageUrl) {
-      fileParams.put("audio_clip[uploaded_image]", boo.mImageUrl.getPath());
+    fileParams.put("audio_clip[uploaded_data]", boo.mData.mHighMP3Url.getPath());
+    if (null != boo.mData.mImageUrl) {
+      fileParams.put("audio_clip[uploaded_image]", boo.mData.mImageUrl.getPath());
     }
 
     mRequester = new Requester(API_UPLOAD, params, signedParams, fileParams,
