@@ -16,11 +16,16 @@ import android.net.Uri;
 import android.os.Parcelable;
 import android.os.Parcel;
 
+import java.io.Serializable;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.io.IOException;
+
 
 /**
  * Representation of an AudioBoo user's data.
  **/
-public class User implements Parcelable
+public class User implements Parcelable, Serializable
 {
   /***************************************************************************
    * Public data
@@ -30,8 +35,8 @@ public class User implements Parcelable
   public String         mUsername;    // Username
 
   // URLs associated with the user.
-  public Uri            mProfileUrl;  // Profile url
-  public Uri            mImageUrl;    // Avatar/image url
+  public transient Uri  mProfileUrl;  // Profile url
+  public transient Uri  mImageUrl;    // Avatar/image url
 
   // Usage statistics.
   public int            mFollowers;   // # users following this one
@@ -104,5 +109,35 @@ public class User implements Parcelable
     mFollowers  = in.readInt();
     mFollowings = in.readInt();
     mAudioClips = in.readInt();
+  }
+
+
+
+  /***************************************************************************
+   * Serializable implementation
+   **/
+  private void writeObject(java.io.ObjectOutputStream out) throws IOException
+  {
+    out.defaultWriteObject();
+
+    out.writeObject(null != mProfileUrl ? mProfileUrl.toString() : null);
+    out.writeObject(null != mImageUrl ? mImageUrl.toString() : null);
+  }
+
+
+
+  private void readObject(java.io.ObjectInputStream in) throws IOException, ClassNotFoundException
+  {
+    in.defaultReadObject();
+
+    String s = (String) in.readObject();
+    if (null != s) {
+      mProfileUrl = Uri.parse(s);
+    }
+
+    s = (String) in.readObject();
+    if (null != s) {
+      mImageUrl = Uri.parse(s);
+    }
   }
 }

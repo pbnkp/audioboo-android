@@ -16,11 +16,16 @@ import android.net.Uri;
 import android.os.Parcelable;
 import android.os.Parcel;
 
+import java.io.Serializable;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.io.IOException;
+
 
 /**
  * Representation of a Tag for a Boo.
  **/
-public class Tag implements Parcelable
+public class Tag implements Parcelable, Serializable
 {
   /***************************************************************************
    * Public data

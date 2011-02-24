@@ -22,12 +22,14 @@ import android.location.Address;
 
 import java.util.List;
 
+import java.io.Serializable;
+
 import android.util.Log;
 
 /**
  * Representation of a Boo's or user's location
  **/
-public class BooLocation implements Parcelable
+public class BooLocation implements Parcelable, Serializable
 {
   /***************************************************************************
    * Private constants

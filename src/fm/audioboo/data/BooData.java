@@ -21,19 +21,24 @@ import java.util.List;
 import java.util.LinkedList;
 import java.util.UUID;
 
+import java.io.Serializable;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.io.IOException;
+
 
 /**
  * Representation of a Boo's data.
  **/
-public class BooData implements Parcelable
+public class BooData implements Parcelable, Serializable
 {
   /***************************************************************************
    * Recording metadata.
    **/
   public static class Recording implements Parcelable
   {
-    String  mFilename;
-    double  mDuration;
+    public String  mFilename;
+    public double  mDuration;
 
     public Recording(String filename, double duration)
     {
@@ -236,5 +241,41 @@ public class BooData implements Parcelable
   private BooData(Parcel in)
   {
     // FIXME
+  }
+
+
+
+  /***************************************************************************
+   * Serializable implementation
+   **/
+  private void writeObject(java.io.ObjectOutputStream out) throws IOException
+  {
+    out.defaultWriteObject();
+
+    out.writeObject(null != mHighMP3Url ? mHighMP3Url.toString() : null);
+    out.writeObject(null != mImageUrl ? mImageUrl.toString() : null);
+    out.writeObject(null != mDetailUrl ? mDetailUrl.toString() : null);
+  }
+
+
+
+  private void readObject(java.io.ObjectInputStream in) throws IOException, ClassNotFoundException
+  {
+    in.defaultReadObject();
+
+    String s = (String) in.readObject();
+    if (null != s) {
+      mHighMP3Url = Uri.parse(s);
+    }
+
+    s = (String) in.readObject();
+    if (null != s) {
+      mImageUrl = Uri.parse(s);
+    }
+
+    s = (String) in.readObject();
+    if (null != s) {
+      mDetailUrl = Uri.parse(s);
+    }
   }
 }
