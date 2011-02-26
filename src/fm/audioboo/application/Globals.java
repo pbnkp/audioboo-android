@@ -45,6 +45,8 @@ import android.content.res.Resources;
 
 import android.provider.Settings;
 
+import fm.audioboo.service.BooPlayerClient;
+
 import java.lang.ref.WeakReference;
 
 import android.util.Log;
@@ -53,7 +55,7 @@ import android.util.Log;
  * Globals; uses singleton pattern to ensure that all members exist only
  * once. Created and destroyed when the app is started/stopped.
  **/
-public class Globals
+public class Globals implements BooPlayerClient.BindListener
 {
   /***************************************************************************
    * Private constants
@@ -148,7 +150,7 @@ public class Globals
   public WeakReference<Context> mContext;
   public API                    mAPI;
   public ImageCache             mImageCache;
-  public BooPlayer              mPlayer;
+  public BooPlayerClient        mPlayer;
   public TitleGenerator         mTitleGenerator;
 
   // Location information, updated regularly if the appropriate settings are
@@ -191,6 +193,16 @@ public class Globals
 
 
   /***************************************************************************
+   * BindListener implementation
+   **/
+  public void onBound(BooPlayerClient client)
+  {
+    mPlayer = client;
+  }
+
+
+
+  /***************************************************************************
    * Implementation
    **/
   private Globals(Context context)
@@ -200,8 +212,8 @@ public class Globals
     mAPI = new API();
     mImageCache = new ImageCache(context, IMAGE_CACHE_MAX);
 
-    mPlayer = new BooPlayer(context);
-    mPlayer.start();
+    boolean bindResult = BooPlayerClient.bindService(context, this);
+    Log.e(LTAG, "Bind result: " + bindResult);
 
     mTitleGenerator = new TitleGenerator(context);
   }
@@ -212,10 +224,6 @@ public class Globals
   {
     mAPI = null;
     mImageCache = null;
-
-    mPlayer.mShouldRun = false;
-    mPlayer.interrupt();
-    mPlayer = null;
 
     mTitleGenerator = null;
   }
