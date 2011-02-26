@@ -1,15 +1,13 @@
 /**
  * This file is part of AudioBoo, an android program for audio blogging.
- * Copyright (C) 2009 BestBefore Media Ltd.
- * Copyright (C) 2010,2011 AudioBoo Ltd.
- * All rights reserved.
+ * Copyright (C) 2011 BestBefore Media Ltd. All rights reserved.
  *
  * Author: Jens Finkhaeuser <jens@finkhaeuser.de>
  *
  * $Id$
  **/
 
-package fm.audioboo.application;
+package fm.audioboo.service;
 
 import android.content.Context;
 
@@ -20,6 +18,8 @@ import java.util.Timer;
 
 import java.lang.ref.WeakReference;
 
+import fm.audioboo.application.Boo;
+
 import android.util.Log;
 
 /**
@@ -28,38 +28,6 @@ import android.util.Log;
  **/
 public class BooPlayer extends Thread
 {
-  /***************************************************************************
-   * Public constants
-   **/
-  // The player state machine is complicated by the way the Android API's
-  // MediaPlayer changes states. Suffice to say that while the player is
-  // preparing, no other action can be taken immediately.
-  // We solve that problem not by blocking until the player has finished
-  // preparing, but by introducing a pending state. BooPlayer's functions
-  // only set the pending state; once the player has finished preparing,
-  // that pending state is entered.
-  //
-  // Some of these states are pseudo-states in that they do not affect
-  // state transitions. In particular, STATE_ERROR and STATE_NONE are both
-  // states from which the same transitions can be made. The same applies to
-  // STATE_PLAYING and STATE_BUFFERING.
-  //
-  // Those states exist because they are of interest to the ProgressListener.
-  // The ProgressListener will be sent the following states as they are entered
-  // - STATE_PLAYING
-  // - STATE_BUFFERING
-  // - STATE_FINISHED aka STATE_NONE
-  // - STATE_ERROR
-  public static final int STATE_NONE            = 0;
-  public static final int STATE_PREPARING       = 1;
-  public static final int STATE_PAUSED          = 2;
-  public static final int STATE_PLAYING         = 3;
-
-  public static final int STATE_FINISHED        = STATE_NONE;
-  public static final int STATE_BUFFERING       = 6;
-  public static final int STATE_ERROR           = 7;
-
-
   /***************************************************************************
    * Private constants
    **/
@@ -95,6 +63,7 @@ public class BooPlayer extends Thread
     { T_STOP,   T_RESET,    T_PAUSE,    T_NONE,   },
   };
 
+
   /***************************************************************************
    * Listener to state changes
    **/
@@ -112,218 +81,6 @@ public class BooPlayer extends Thread
   public boolean mShouldRun;
 
 
-  /***************************************************************************
-   * Base class for a tiny class hierarchy that lets us abstract some of the
-   * logic differences between playing back MP3s (remote) and FLACs (local)
-   * into subclasses. XXX Note that for simplicity, we always assume FLAC
-   * files to be local; MP3s on the other hand are streamed from any URI the
-   * underlying API can handle.
-   **/
-  private abstract class PlayerBase
-  {
-    // Sets up the player.
-    abstract boolean prepare(Boo boo);
-
-    // Pauses/resumes playback. Can only be called after start() has been
-    // called.
-    abstract void pause();
-    abstract void resume();
-
-    // Stops playback and also releases player resources; after this call
-    // pause()/resume() won't work any longer.
-    abstract void stop();
-  }
-
-
-  /***************************************************************************
-   * Player for MP3 files; since it can play more than MP3s through the
-   * underlying Android API, we'll call it API player.
-   **/
-  private class APIPlayer extends PlayerBase
-  {
-    // Player API
-    private MediaPlayer mMediaPlayer;
-
-
-    public boolean prepare(Boo boo)
-    {
-      Context ctx = mContext.get();
-      if (null == ctx) {
-        Log.e(LTAG, "Context is dead, won't play.");
-        return false;
-      }
-
-      // Prepare player
-      mMediaPlayer = MediaPlayer.create(ctx, boo.mData.mHighMP3Url);
-      if (null == mMediaPlayer) {
-        Log.e(LTAG, "Could not start playback of URI: " + boo.mData.mHighMP3Url);
-        return false;
-      }
-
-      // Attach listeners to the player, for propagating state up to the users of this
-      // class.
-      mMediaPlayer.setOnBufferingUpdateListener(new MediaPlayer.OnBufferingUpdateListener() {
-        public void onBufferingUpdate(MediaPlayer mp, int percent)
-        {
-          // If the player is playing/buffering, and that changed, we want to
-          // switch to the opposite state. If the player is not playing, we don't.
-          int state = STATE_NONE;
-          if (mp.isPlaying()) {
-            state = STATE_PLAYING;
-          }
-          else {
-            state = STATE_BUFFERING;
-          }
-
-          boolean doInterrupt = false;
-          synchronized (mLock)
-          {
-            // Strictly speaking, the mState != state check happens in the run()
-            // function, but why interrupt more than we really need?
-            if (mState != state
-              && ((STATE_PLAYING == mState)
-                || (STATE_BUFFERING == mState)))
-            {
-              mPendingState = state;
-              doInterrupt = true;
-            }
-          }
-          if (doInterrupt) {
-            interrupt();
-          }
-        }
-      });
-
-      mMediaPlayer.setOnCompletionListener(new MediaPlayer.OnCompletionListener() {
-        public void onCompletion(MediaPlayer mp)
-        {
-          stopPlaying();
-        }
-      });
-
-
-      mMediaPlayer.setOnErrorListener(new MediaPlayer.OnErrorListener() {
-        public boolean onError(MediaPlayer mp, int what, int extra)
-        {
-          synchronized (mLock)
-          {
-            mPendingState = STATE_ERROR;
-          }
-          interrupt();
-          return true;
-        }
-      });
-
-      return true;
-    }
-
-
-
-    public void pause()
-    {
-      if (null == mMediaPlayer) {
-        return;
-      }
-      mMediaPlayer.pause();
-    }
-
-
-
-    public void resume()
-    {
-      if (null == mMediaPlayer) {
-        return;
-      }
-      mMediaPlayer.start();
-    }
-
-
-
-    public void stop()
-    {
-      if (null == mMediaPlayer) {
-        return;
-      }
-      mMediaPlayer.stop();
-      mMediaPlayer.release();
-      mMediaPlayer = null;
-    }
-  }
-
-
-
-  /***************************************************************************
-   * Player for FLAC files, which are assumed to be local
-   **/
-  private class FLACPlayerWrapper extends PlayerBase
-  {
-    // Player instance
-    private FLACPlayer  mFlacPlayer;
-
-
-    public boolean prepare(Boo boo)
-    {
-      Context ctx = mContext.get();
-      if (null == ctx) {
-        Log.e(LTAG, "Context is dead, won't play.");
-        return false;
-      }
-
-      // Flatten audio file before we can start playback. This call will return
-      // quickly if the file is already flattend, and will block while flattening.
-      boo.flattenAudio();
-
-      // Start playback
-      String filename = boo.mData.mHighMP3Url.getPath();
-      mFlacPlayer = new FLACPlayer(ctx, filename);
-
-      mFlacPlayer.setListener(new FLACPlayer.PlayerListener() {
-        public void onError()
-        {
-          synchronized (mLock)
-          {
-            mPendingState = STATE_ERROR;
-          }
-          interrupt();
-        }
-
-
-        public void onFinished()
-        {
-          stopPlaying();
-        }
-      });
-
-      mFlacPlayer.start();
-
-      return true;
-    }
-
-
-
-    public void pause()
-    {
-      mFlacPlayer.pausePlayback();
-    }
-
-
-
-    public void resume()
-    {
-      mFlacPlayer.resumePlayback();
-    }
-
-
-
-    public void stop()
-    {
-      mFlacPlayer.mShouldRun = false;
-      mFlacPlayer.interrupt();
-      mFlacPlayer = null;
-    }
-  }
-
-
 
   /***************************************************************************
    * Private data
@@ -332,7 +89,7 @@ public class BooPlayer extends Thread
   private WeakReference<Context>  mContext;
 
   // Lock.
-  private Object                mLock = new Object();
+  private Object                mLock         = new Object();
 
   // Player instance.
   private volatile PlayerBase   mPlayer;
@@ -348,8 +105,8 @@ public class BooPlayer extends Thread
   private TimerTask             mTimerTask;
 
   // Internal player state
-  private volatile int          mState = STATE_NONE;
-  private volatile int          mPendingState = STATE_NONE;
+  private volatile int          mState        = Constants.STATE_NONE;
+  private volatile int          mPendingState = Constants.STATE_NONE;
   private volatile boolean      mResetState;
 
   // Boo that's currently being played
@@ -359,12 +116,28 @@ public class BooPlayer extends Thread
   private double                mPlaybackProgress;
   private long                  mTimestamp;
 
+
+
   /***************************************************************************
    * Implementation
    **/
-  public BooPlayer(Context context)
+  public BooPlayer(Context ctx)
   {
-    mContext = new WeakReference<Context>(context);
+    mContext = new WeakReference<Context>(ctx);
+  }
+
+
+
+  public Context getContext()
+  {
+    return mContext.get();
+  }
+
+
+
+  public Object getLock()
+  {
+    return mLock;
   }
 
 
@@ -381,7 +154,7 @@ public class BooPlayer extends Thread
         mResetState = true;
       }
       mBoo = boo;
-      mPendingState = STATE_PLAYING;
+      mPendingState = Constants.STATE_PLAYING;
     }
     interrupt();
   }
@@ -396,7 +169,7 @@ public class BooPlayer extends Thread
     // Log.d(LTAG, "stop from outside");
     synchronized (mLock)
     {
-      mPendingState = STATE_NONE;
+      mPendingState = Constants.STATE_NONE;
     }
     interrupt();
   }
@@ -410,7 +183,7 @@ public class BooPlayer extends Thread
   {
     synchronized (mLock)
     {
-      mPendingState = STATE_PAUSED;
+      mPendingState = Constants.STATE_PAUSED;
     }
     interrupt();
   }
@@ -421,7 +194,7 @@ public class BooPlayer extends Thread
   {
     synchronized (mLock)
     {
-      mPendingState = STATE_PLAYING;
+      mPendingState = Constants.STATE_PLAYING;
     }
     interrupt();
   }
@@ -432,15 +205,32 @@ public class BooPlayer extends Thread
   {
     synchronized (mLock)
     {
-      return mState;
+      return getPlaybackStateUnlocked();
     }
   }
 
 
 
-  public void setProgressListener(ProgressListener listener)
+  public void setPendingState(int state)
   {
-    mListener = listener;
+    synchronized (mLock)
+    {
+      setPendingStateUnlocked(state);
+    }
+  }
+
+
+
+  public int getPlaybackStateUnlocked()
+  {
+    return mState;
+  }
+
+
+
+  public void setPendingStateUnlocked(int state)
+  {
+    mPendingState = state;
   }
 
 
@@ -460,8 +250,8 @@ public class BooPlayer extends Thread
         // Figure out the action to take from here. This needs to be done under lock
         // so relevant data won't change under our noses.
         Boo currentBoo = null;
-        int currentState = STATE_ERROR;
-        int pendingState = STATE_NONE;
+        int currentState = Constants.STATE_ERROR;
+        int pendingState = Constants.STATE_NONE;
         int action = T_NONE;
 
         boolean reset = false;
@@ -477,12 +267,12 @@ public class BooPlayer extends Thread
           reset = mResetState;
           if (mResetState) {
             mResetState = false;
-            currentState = STATE_NONE;
+            currentState = Constants.STATE_NONE;
           }
 
           // If the next state is to be an error state, let's not bother with
           // trying to find out what to do next - we want to stop.
-          if (STATE_ERROR == pendingState) {
+          if (Constants.STATE_ERROR == pendingState) {
             action = T_STOP;
           }
           else {
@@ -507,31 +297,31 @@ public class BooPlayer extends Thread
 
             case T_PREPARE:
             case T_RESET:
-              mState = mPendingState = STATE_PREPARING;
+              mState = mPendingState = Constants.STATE_PREPARING;
               break;
 
             case T_RESUME:
-              mState = mPendingState = STATE_PLAYING;
+              mState = mPendingState = Constants.STATE_PLAYING;
               break;
 
             case T_STOP:
-              mState = mPendingState = STATE_NONE;
+              mState = mPendingState = Constants.STATE_NONE;
               break;
 
             case T_PAUSE:
-              mState = mPendingState = STATE_PAUSED;
+              mState = mPendingState = Constants.STATE_PAUSED;
               break;
 
             case T_START:
               // For this action only, we set a new pending state. Once
               // preparing has finished, interrupt() will be invoked.
-              mState = STATE_PREPARING;
-              mPendingState = STATE_PLAYING;
+              mState = Constants.STATE_PREPARING;
+              mPendingState = Constants.STATE_PLAYING;
               break;
 
             default:
               Log.e(LTAG, "Unknown action: " + action);
-              pendingState = STATE_ERROR;
+              pendingState = Constants.STATE_ERROR;
               mShouldRun = false;
               continue;
           }
@@ -545,7 +335,7 @@ public class BooPlayer extends Thread
 
         // If the pending state is an error state, also send an error state
         // to listeners.
-        if (STATE_ERROR == pendingState) {
+        if (Constants.STATE_ERROR == pendingState) {
           sendStateError();
         }
 
@@ -563,8 +353,8 @@ public class BooPlayer extends Thread
     int action = T_NONE;
     synchronized (mLock)
     {
-      action = STATE_DECISION_MATRIX[normalizeState(mState)][STATE_NONE];
-      mState = mPendingState = STATE_NONE;
+      action = STATE_DECISION_MATRIX[normalizeState(mState)][Constants.STATE_NONE];
+      mState = mPendingState = Constants.STATE_NONE;
     }
     performAction(action, null);
   }
@@ -621,15 +411,14 @@ public class BooPlayer extends Thread
    **/
   private int normalizeState(int state)
   {
-    if (STATE_BUFFERING == state) {
-      return STATE_PLAYING;
+    if (Constants.STATE_BUFFERING == state) {
+      return Constants.STATE_PLAYING;
     }
-    if (STATE_ERROR == state) {
-      return STATE_NONE;
+    if (Constants.STATE_ERROR == state) {
+      return Constants.STATE_NONE;
     }
     return state;
   }
-
 
 
 
@@ -640,7 +429,7 @@ public class BooPlayer extends Thread
       Log.e(LTAG, "Prepare without boo!");
       synchronized (mLock)
       {
-        mPendingState = STATE_ERROR;
+        mPendingState = Constants.STATE_ERROR;
       }
       interrupt();
       return;
@@ -651,7 +440,7 @@ public class BooPlayer extends Thread
     // Local Boos are treated via the FLACPlayerWrapper.
     synchronized (mLock) {
       if (boo.isLocal()) {
-        mPlayer = new FLACPlayerWrapper();
+        mPlayer = new FLACPlayerWrapper(this);
       }
       else {
         // Examine the Boo's Uri. From that we determine what player to instanciate.
@@ -661,11 +450,11 @@ public class BooPlayer extends Thread
 
         if (ext.equals(".flac")) {
           // Start FLAC player.
-          mPlayer = new FLACPlayerWrapper();
+          mPlayer = new FLACPlayerWrapper(this);
         }
         else {
           // Handle everything else via the APIPlayer
-          mPlayer = new APIPlayer();
+          mPlayer = new APIPlayer(this);
         }
       }
 
@@ -676,10 +465,10 @@ public class BooPlayer extends Thread
         // PREPARING state, no other state changes could be effected, so that's safe.
         // We also interrupt() again, to let the thread figure out if there's a
         // pending state after this.
-        mState = STATE_PAUSED;
+        mState = Constants.STATE_PAUSED;
       }
       else {
-        mPendingState = STATE_ERROR;
+        mPendingState = Constants.STATE_ERROR;
       }
     }
     interrupt();
@@ -756,7 +545,7 @@ public class BooPlayer extends Thread
     mPlaybackProgress = 0f;
     mTimestamp = System.currentTimeMillis();
 
-    mListener.onProgress(STATE_PLAYING, mPlaybackProgress);
+    mListener.onProgress(Constants.STATE_PLAYING, mPlaybackProgress);
 
     try {
       mTimer = new Timer();
@@ -787,7 +576,7 @@ public class BooPlayer extends Thread
       return;
     }
 
-    mListener.onProgress(STATE_FINISHED, mPlaybackProgress);
+    mListener.onProgress(Constants.STATE_FINISHED, mPlaybackProgress);
   }
 
 
@@ -803,7 +592,7 @@ public class BooPlayer extends Thread
       return;
     }
 
-    mListener.onProgress(STATE_BUFFERING, 0f);
+    mListener.onProgress(Constants.STATE_BUFFERING, 0f);
   }
 
 
@@ -821,7 +610,7 @@ public class BooPlayer extends Thread
       return;
     }
 
-    mListener.onProgress(STATE_PLAYING, mPlaybackProgress);
+    mListener.onProgress(Constants.STATE_PLAYING, mPlaybackProgress);
   }
 
 
@@ -837,7 +626,7 @@ public class BooPlayer extends Thread
       return;
     }
 
-    mListener.onProgress(STATE_ERROR, 0f);
+    mListener.onProgress(Constants.STATE_ERROR, 0f);
   }
 
 
@@ -854,7 +643,7 @@ public class BooPlayer extends Thread
 
     synchronized (mLock)
     {
-      if (STATE_PLAYING != mState) {
+      if (Constants.STATE_PLAYING != mState) {
         return;
       }
     }
@@ -866,4 +655,5 @@ public class BooPlayer extends Thread
 
     sendStatePlayback();
   }
+
 }
