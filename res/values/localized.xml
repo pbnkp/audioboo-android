@@ -217,4 +217,10 @@
   <string name="boo_title_party">Partyboo</string>
   <string name="boo_title_drunk">Drunkenboo</string>
   <string name="boo_title_hung_over">Hungoverboo</string>
+
+
+  <!-- Notification related strings -->
+  <string name="notification_default_title">unnamed boo</string>
+  <string name="notification_text">by %1$s</string>
+  <string name="notification_unknown_user">unknown user</string>
 </resources>
