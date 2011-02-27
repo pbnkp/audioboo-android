@@ -38,15 +38,15 @@ import fm.audioboo.widget.BooPlayerView;
 import android.util.Log;
 
 /**
- * The RecentBoosActivity loads recent boos and displays them in a ListView.
+ * The BrowseActivity loads recent boos and displays them in a ListView.
  **/
-public class RecentBoosActivity extends ListActivity
+public class BrowseActivity extends ListActivity
 {
   /***************************************************************************
    * Private constants
    **/
   // Log ID
-  private static final String LTAG  = "RecentBoosActivity";
+  private static final String LTAG  = "BrowseActivity";
 
   // Action identifiers -- must correspond to the indices of the array
   // "recent_boos_actions" in res/values/localized.xml
@@ -91,7 +91,7 @@ public class RecentBoosActivity extends ListActivity
     public void onPlaybackEnded(BooPlayerView view, int endState)
     {
       if (BooPlayerView.END_STATE_SUCCESS != endState) {
-        Toast.makeText(RecentBoosActivity.this, R.string.recent_boos_playback_error,
+        Toast.makeText(BrowseActivity.this, R.string.recent_boos_playback_error,
             Toast.LENGTH_LONG).show();
       }
       onItemUnselected(mView, mId);
