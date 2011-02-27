@@ -1,7 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
  This file is part of AudioBoo, an android program for audio blogging.
- Copyright (C) 2009 BestBefore Media Ltd. All rights reserved.
+ Copyright (C) 2009 BestBefore Media Ltd.
+ Copyright (C) 2010,2011 AudioBoo Ltd.
+ All rights reserved.
 
  Author: Jens Finkhaeuser <jens@finkhaeuser.de>
 
@@ -10,12 +12,22 @@
 <resources>
 
   <!--
-    Main Activity's Tab drawables
+    Front page related
   -->
-  <array name="main_tab_drawables">
-    <item>@drawable/tabbar_boos</item>
-    <item>@drawable/tabbar_record</item>
-    <item>@drawable/tabbar_account</item>
+  <array name="main_menu_icons">
+    <item>@drawable/menu_settings</item>
+    <item>@drawable/menu_browse</item>
+    <item>@drawable/menu_uploads</item>
+    <item>@drawable/menu_messages</item>
+    <item>@drawable/menu_contacts</item>
   </array>
 
+
+  <string-array name="main_menu_actions">
+    <item>fm.audioboo.application.AccountActivity</item>
+    <item></item>
+    <item></item>
+    <item></item>
+    <item></item>
+  </string-array>
 </resources>

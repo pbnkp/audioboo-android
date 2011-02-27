@@ -1,6 +1,8 @@
 /**
  * This file is part of AudioBoo, an android program for audio blogging.
- * Copyright (C) 2009 BestBefore Media Ltd. All rights reserved.
+ * Copyright (C) 2009 BestBefore Media Ltd.
+ * Copyright (C) 2010,2011 AudioBoo Ltd.
+ * All rights reserved.
  *
  * Author: Jens Finkhaeuser <jens@finkhaeuser.de>
  *
@@ -9,44 +11,124 @@
 
 package fm.audioboo.application;
 
-import android.app.TabActivity;
+import android.app.Activity;
 
 import android.os.Bundle;
 
 import android.content.Intent;
 
+import android.view.View;
+import android.view.ViewGroup;
+import android.view.animation.Animation;
+import android.view.animation.AnimationUtils;
+
+import android.widget.ImageView;
+import android.widget.BaseAdapter;
+import android.widget.AdapterView;
+import android.widget.Toast;
+
+import android.graphics.drawable.Drawable;
+
+import android.content.Context;
 import android.content.res.Configuration;
 import android.content.res.TypedArray;
 
-import android.widget.TabHost;
+import fm.audioboo.widget.Flow;
+import fm.audioboo.widget.FlowCover;
 
 import android.app.Dialog;
+
+import java.lang.ref.WeakReference;
 
 import android.util.Log;
 
 /**
- * Main Activity. Does little more than set up the Tabs that contain the
- * other Activities.
+ * Main Activity. Contains a few buttons (most in a Flow) and a player view.
  **/
-public class AudioBoo extends TabActivity
+public class AudioBoo extends Activity
 {
   /***************************************************************************
    * Private constants
    **/
   // Log ID
-  private static final String LTAG  = "AudioBoo";
-
-  // Classes for the Intents used to launch Tab contents.
-  // XXX Indices need to correspond with the "main_tab_labels" array in
-  //     localized.xml and the "main_tab_drawables" array in arrays.xml
-  private static final Class TAB_CONTENT_CLASSES[] = {
-    RecentBoosActivity.class,
-    RecordActivity.class,
-    AccountActivity.class,
-  };
+  private static final String LTAG                = "AudioBoo";
 
   // Dialog IDs.
   private static final int DIALOG_GPS_SETTINGS    = Globals.DIALOG_GPS_SETTINGS;
+
+  // Initially selected Flow entry.
+  private static final int INITIAL_SELECTION      = 1;
+
+
+
+  /***************************************************************************
+   * Private data
+   **/
+  // Labels, actions for the main menu.
+  private String[]    mLabels;
+  private String[]    mActions;
+
+
+
+  /***************************************************************************
+   * ImageAdapter Implementation
+   **/
+  public class ImageAdapter extends BaseAdapter
+  {
+    private WeakReference<Context>  mContext;
+    private TypedArray              mImages;
+
+
+    public ImageAdapter(Context ctx, TypedArray images)
+    {
+      mContext = new WeakReference<Context>(ctx);
+      mImages = images;
+    }
+
+
+
+    public int getCount()
+    {
+      return mImages.length();
+    }
+
+
+
+    public Object getItem(int position)
+    {
+      return position;
+    }
+
+
+
+    public long getItemId(int position)
+    {
+      return position;
+    }
+
+
+
+    public View getView(int position, View convertView, ViewGroup parent)
+    {
+      Context ctx = mContext.get();
+      if (null == ctx) {
+        return null;
+      }
+
+      final float scale = getResources().getDisplayMetrics().density;
+
+      Drawable img = mImages.getDrawable(position);
+
+      ImageView imageView = new ImageView(ctx);
+      imageView.setImageDrawable(img);
+      imageView.setScaleType(ImageView.ScaleType.FIT_XY);
+      imageView.setLayoutParams(new Flow.LayoutParams(
+            (int) img.getIntrinsicWidth(),
+            (int) img.getIntrinsicHeight()));
+      return imageView;
+    }
+  }
+
 
 
   /***************************************************************************
@@ -58,32 +140,31 @@ public class AudioBoo extends TabActivity
     super.onCreate(savedInstanceState);
     setContentView(R.layout.main);
 
-    // Load resources describing the tabs.
-    String[] labels = getResources().getStringArray(R.array.main_tab_labels);
-    TypedArray drawables = getResources().obtainTypedArray(
-        R.array.main_tab_drawables);
+    // Load resources
+    mLabels = getResources().getStringArray(R.array.main_menu_labels);
+    mActions = getResources().getStringArray(R.array.main_menu_actions);
+    TypedArray icons = getResources().obtainTypedArray(R.array.main_menu_icons);
 
-    if (labels.length != drawables.length()
-        || labels.length != TAB_CONTENT_CLASSES.length)
-    {
-      Log.e(LTAG, "Programming error: differing numbers of tab labels, drawables "
-          + "and classes found.");
-      return;
-    }
+    // Create & populate Flow
+    Flow flow = (Flow) findViewById(R.id.main_menu_flow);
+    flow.setAdapter(new ImageAdapter(this, icons));
 
-    // Create tabs.
-    TabHost host = getTabHost();
-    for (int i = 0 ; i < labels.length ; ++i) {
-      host.addTab(host.newTabSpec("tab" + i)
-          .setIndicator(labels[i], drawables.getDrawable(i))
-          .setContent(
-            new Intent(this, TAB_CONTENT_CLASSES[i])
-          )
-        );
-    }
-    drawables.recycle();
+    // Initialize flow
+    flow.setSelection(INITIAL_SELECTION);
 
-    setDefaultTab(0);
+    flow.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+        public void onItemClick(AdapterView parent, View v, int position, long id)
+        {
+          if (null == mActions[position] || 0 == mActions[position].length()) {
+            Toast.makeText(getBaseContext(), "Action not implemented!", Toast.LENGTH_SHORT).show();
+          }
+          else {
+            Intent i = new Intent();
+            i.setClassName(AudioBoo.this, mActions[position]);
+            startActivity(i);
+          }
+        }
+    });
   }
 
 
@@ -118,7 +199,7 @@ public class AudioBoo extends TabActivity
   {
     super.onStop();
 
-    Globals.get().mPlayer.stopPlaying();
+    // FIXME Globals.get().mPlayer.stopPlaying();
     Globals.get().stopLocationUpdates();
   }
 

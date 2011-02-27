@@ -1,7 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
  This file is part of AudioBoo, an android program for audio blogging.
- Copyright (C) 2009 BestBefore Media Ltd. All rights reserved.
+ Copyright (C) 2009 BestBefore Media Ltd.
+ Copyright (C) 2010,2011 AudioBoo Ltd.
+ All rights reserved.
 
  Author: Jens Finkhaeuser <jens@finkhaeuser.de>
 
@@ -223,4 +225,18 @@
   <string name="notification_default_title">unnamed boo</string>
   <string name="notification_text">by %1$s</string>
   <string name="notification_unknown_user">unknown user</string>
+
+
+  <!--
+    Front page related
+   -->
+
+  <!-- Main menu labels. XXX Keep in sync with main_menu_icons -->
+  <string-array name="main_menu_labels">
+    <item>Settings</item>
+    <item>Browse</item>
+    <item>My Boos</item>
+    <item>Messages</item>
+    <item>Contacts</item>
+  </string-array>
 </resources>
