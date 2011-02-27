@@ -76,5 +76,16 @@
         android:configChanges="orientation|keyboardHidden"
       />
 
+
+    <!-- Audio playback service -->
+    <service android:name="fm.audioboo.service.AudiobooService"
+        android:exported="true"
+      >
+      <intent-filter>
+        <!-- These are the interfaces supported by the service, which
+             you can bind to. -->
+        <action android:name="fm.audioboo.service.IBooPlaybackService" />
+      </intent-filter>
+    </service>
   </application>
 </manifest>
