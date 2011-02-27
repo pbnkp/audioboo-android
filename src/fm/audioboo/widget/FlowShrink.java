@@ -70,7 +70,6 @@ public class FlowShrink implements Flow.ChildTransform
     mCamera.translate(0.0f, 0.0f, zoomAmount);
 
     mCamera.getMatrix(imageMatrix);
-    imageMatrix.preScale(scale, scale);
     imageMatrix.preTranslate(-(imageWidth/2), -(imageHeight/2));
     imageMatrix.postTranslate((imageWidth/2), (imageHeight/2));
     mCamera.restore();
