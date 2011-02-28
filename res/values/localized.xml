@@ -29,6 +29,15 @@
   <!-- Name for the menu action for refreshing boos. -->
   <string-array name="recent_boos_actions">
     <item>Refresh</item>
+    <item>Filter</item>
+  </string-array>
+
+  <string-array name="recent_boos_filters">
+    <item>Featured Boos</item>
+    <item>Followed Boos</item>
+    <item>Recent Boos</item>
+    <item>Popular Boos</item>
+    <item>Nearby Boos</item>
   </string-array>
 
   <!-- Error message when playback ended unsuccessfully -->

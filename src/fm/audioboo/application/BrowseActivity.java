@@ -51,6 +51,7 @@ public class BrowseActivity extends ListActivity
   // Action identifiers -- must correspond to the indices of the array
   // "recent_boos_actions" in res/values/localized.xml
   private static final int  ACTION_REFRESH  = 0;
+  private static final int  ACTION_FILTER   = 1;
 
   // Dialog IDs
   private static final int  DIALOG_ERROR    = Globals.DIALOG_ERROR;
@@ -62,6 +63,7 @@ public class BrowseActivity extends ListActivity
   private boolean           mRequesting;
 
   // Content
+  private int               mBooType  = API.BOOS_POPULAR;
   private BooList           mBoos;
 
   // Adapter
@@ -200,12 +202,12 @@ public class BrowseActivity extends ListActivity
     }
 
     mRequesting = true;
-    Globals.get().mAPI.fetchRecentBoos(new Handler(new Handler.Callback() {
+    Globals.get().mAPI.fetchBoos(mBooType, new Handler(new Handler.Callback() {
       public boolean handleMessage(Message msg)
       {
         mRequesting = false;
         if (API.ERR_SUCCESS == msg.what) {
-          onReceiveRecentBoos((BooList) msg.obj);
+          onReceiveBoos((BooList) msg.obj);
         }
         else {
           mErrorCode = msg.what;
@@ -225,7 +227,7 @@ public class BrowseActivity extends ListActivity
 
 
 
-  private void onReceiveRecentBoos(BooList boos)
+  private void onReceiveBoos(BooList boos)
   {
     mBoos = boos;
 
@@ -242,6 +244,7 @@ public class BrowseActivity extends ListActivity
     String[] menu_titles = getResources().getStringArray(R.array.recent_boos_actions);
     final int[] menu_icons = {
       R.drawable.ic_menu_refresh,
+      R.drawable.ic_menu_filter,
     };
     assert(menu_icons.length == menu_titles.length);
 
@@ -263,6 +266,12 @@ public class BrowseActivity extends ListActivity
         getListView().setOnScrollListener(null);
         setListAdapter(mAdapter);
         refreshBoos();
+        break;
+
+
+      case ACTION_FILTER:
+        // FIXME
+        Toast.makeText(this, "Not yet implemented", Toast.LENGTH_LONG).show();
         break;
 
       default:

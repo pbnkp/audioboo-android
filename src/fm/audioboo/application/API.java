@@ -97,6 +97,14 @@ public class API
   public static final int ERR_INVALID_STATE         = 10006;
   public static final int ERR_UNKNOWN               = 10007;
 
+  // Boo types - XXX same order as recent_boos_filters
+  public static final int BOOS_FEATURED             = 0;
+  public static final int BOOS_FOLLOWED             = 1;
+  public static final int BOOS_RECENT               = 2;
+  public static final int BOOS_POPULAR              = 3;
+  public static final int BOOS_NEARBY               = 4;
+  public static final int BOOS_MINE                 = 5;
+
   // API version we're requesting
   public static final int API_VERSION               = 200;
 
@@ -185,8 +193,16 @@ public class API
   // Request/response format for API calls.
   private static final String API_FORMAT                  = "json";
 
-  // URI snippets for various APIs
-  private static final String API_RECENT                  = "audio_clips";
+  // URI snippets for various APIs - XXX indices are BOOS_xxx constants above
+  private static final String API_BOO_URLS[] = {
+    "audio_clips/featured",           // BOOS_FEATURED
+    "account/audio_clips/followed",   // BOOS_FOLLOWED
+    "audio_clips",                    // BOOS_RECENT
+    "audio_clips/popular",            // BOOS_POPULAR
+    "audio_clips/located",            // BOOS_LOCATED
+    "account/audio_clips",            // BOOS_MINE
+  };
+
   //private static final String API_UPLOAD                  = "account/audio_clips";
   private static final String API_UPLOAD                  = "boos";
 
@@ -224,7 +240,9 @@ public class API
   private static final HashMap<String, Integer> REQUEST_TYPES;
   static {
     REQUEST_TYPES = new HashMap<String, Integer>();
-    REQUEST_TYPES.put(API_RECENT,   RT_GET);
+    for (int i = 0 ; i < API_BOO_URLS.length ; ++i) {
+      REQUEST_TYPES.put(API_BOO_URLS[i], RT_GET);
+    }
     REQUEST_TYPES.put(API_UPLOAD,   RT_MULTIPART);
     REQUEST_TYPES.put(API_REGISTER, RT_FORM);
     REQUEST_TYPES.put(API_STATUS,   RT_GET);
@@ -469,7 +487,7 @@ public class API
    * Fetch recent Boos.
    * On success, the message object will be a LinkedList<Boo>.
    **/
-  public void fetchRecentBoos(final Handler result_handler)
+  public void fetchBoos(final int type, final Handler result_handler)
   {
     if (null != mRequester) {
       mRequester.keepRunning = false;
@@ -477,7 +495,7 @@ public class API
     }
 
     // This request has no parameters.
-    mRequester = new Requester(API_RECENT, null, null, null,
+    mRequester = new Requester(API_BOO_URLS[type], null, null, null,
         new Handler(new Handler.Callback() {
           public boolean handleMessage(Message msg)
           {
