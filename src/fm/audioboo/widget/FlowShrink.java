@@ -33,7 +33,7 @@ public class FlowShrink implements Flow.ChildTransform
   private static final String LTAG = "FlowShrink";
 
   // Max Zoom.
-  private static final int  MAX_ZOOM            = -120;
+  private static final int  MAX_ZOOM            = -150;
 
 
 
