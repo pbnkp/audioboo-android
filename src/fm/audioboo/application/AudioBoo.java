@@ -25,6 +25,7 @@ import android.view.animation.AnimationUtils;
 import android.widget.ImageView;
 import android.widget.BaseAdapter;
 import android.widget.AdapterView;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import android.graphics.drawable.Drawable;
@@ -151,6 +152,25 @@ public class AudioBoo extends Activity
 
     // Initialize flow
     flow.setSelection(INITIAL_SELECTION);
+
+    final TextView menu_label = (TextView) findViewById(R.id.main_menu_label);
+    if (null == menu_label) {
+      Log.e(LTAG, "No label found? Weird!");
+    }
+    else {
+      flow.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+          public void onItemSelected(AdapterView parent, View view, int position, long id)
+          {
+            menu_label.setText(mLabels[position]);
+          }
+
+
+          public void onNothingSelected(AdapterView<?> parent)
+          {
+            // Ignore
+          }
+      });
+    }
 
     flow.setOnItemClickListener(new AdapterView.OnItemClickListener() {
         public void onItemClick(AdapterView parent, View v, int position, long id)

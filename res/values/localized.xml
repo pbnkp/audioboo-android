@@ -239,4 +239,6 @@
     <item>Messages</item>
     <item>Contacts</item>
   </string-array>
+
+  <string name="main_menu_now_playing">Now Playing</string>
 </resources>
