@@ -71,9 +71,6 @@ public class AccountActivity extends Activity
   /***************************************************************************
    * Data members
    **/
-  // API Status. We'll need that to determine what to display exactly.
-  private API.Status  mStatus;
-
   // Flag, shows whether to use location information or not.
   private boolean     mUseLocation;
 
@@ -108,11 +105,11 @@ public class AccountActivity extends Activity
       tb.setOnCheckedChangeListener(new ToggleButton.OnCheckedChangeListener() {
         public void onCheckedChanged(CompoundButton buttonView, boolean isChecked)
         {
-          if (null == mStatus) {
+          if (null == Globals.get().getStatus()) {
             return;
           }
 
-          if (mStatus.mLinked == isChecked) {
+          if (Globals.get().getStatus().mLinked == isChecked) {
             return;
           }
 
@@ -140,17 +137,16 @@ public class AccountActivity extends Activity
 
 
     // Load status. Also triggers initUI(), and the whole shebang.
-    mStatus = Globals.get().mAPI.getStatus();
-    determineStatus();
+    determineStatus(false);
   }
 
 
 
-  private void determineStatus()
+  private void determineStatus(boolean force)
   {
     // If we can retrieve the API status, we know what to display here. If not,
     // then we need to do that first.
-    if (null != mStatus) {
+    if (!force && null != Globals.get().getStatus()) {
       initUI();
       return;
     }
@@ -159,29 +155,18 @@ public class AccountActivity extends Activity
     switchToViewState(VIEW_FLAGS_PROGRESS, R.string.account_progress_label_status,
         BG_BLACK);
 
-    Globals.get().mAPI.updateStatus(new Handler(new Handler.Callback() {
-      private int mStatusRetries = 0;
-
-      public boolean handleMessage(Message msg)
-      {
-        if (API.ERR_SUCCESS == msg.what) {
-          mStatus = Globals.get().mAPI.getStatus();
-          initUI();
-        }
-        else {
-          ++mStatusRetries;
-          if (API.STATUS_UPDATE_MAX_RETRIES <= mStatusRetries) {
-            Log.e(LTAG, "Giving up after " + mStatusRetries + " attempts.");
-            mLastErrorCode = msg.what;
-            showDialog(DIALOG_ERROR);
-          }
-          else {
-            // Try again.
-            Globals.get().mAPI.updateStatus(new Handler(this));
-          }
-        }
-        return true;
-      }
+    Globals.get().updateStatus(new Handler(new Handler.Callback() {
+       public boolean handleMessage(Message msg)
+       {
+         if (API.ERR_SUCCESS == msg.what) {
+           initUI();
+         }
+         else {
+           mLastErrorCode = msg.what;
+           showDialog(DIALOG_ERROR);
+         }
+         return true;
+       }
     }));
   }
 
@@ -189,7 +174,9 @@ public class AccountActivity extends Activity
 
   private void initUI()
   {
-    if (null == mStatus) {
+    API.Status status = Globals.get().getStatus();
+    Log.d(LTAG, "init UI: " + status);
+    if (null == status) {
       // Shouldn't happen, but can if the user switches tabs before the status
       // request completes.
       return;
@@ -202,14 +189,14 @@ public class AccountActivity extends Activity
     // If the status is unlinked, then the toggle button must be off.
     ToggleButton tb = (ToggleButton) findViewById(R.id.account_link);
     if (null != tb) {
-      tb.setChecked(mStatus.mLinked);
+      tb.setChecked(status.mLinked);
     }
 
     // Set the username & description fields.
-    if (mStatus.mLinked) {
+    if (status.mLinked) {
       TextView text_view = (TextView) findViewById(R.id.account_name);
       if (null != text_view) {
-        text_view.setText(mStatus.mUsername);
+        text_view.setText(status.mUsername);
       }
 
       text_view = (TextView) findViewById(R.id.account_description);
@@ -280,8 +267,7 @@ public class AccountActivity extends Activity
 
         if (API.ERR_SUCCESS == msg.what) {
           // The status was updated, so we need to fetch it again.
-          mStatus = null;
-          determineStatus();
+          determineStatus(false);
         }
         return true;
       }
@@ -375,7 +361,7 @@ public class AccountActivity extends Activity
                 public void onClick(DialogInterface dialog, int id) {
                   ToggleButton tb = (ToggleButton) findViewById(R.id.account_link);
                   if (null != tb) {
-                    tb.setChecked(mStatus.mLinked);
+                    tb.setChecked(Globals.get().getStatus().mLinked);
                   }
                   dialog.cancel();
                 }
@@ -404,8 +390,6 @@ public class AccountActivity extends Activity
       return;
     }
 
-    mStatus = null;
-    determineStatus();
+    determineStatus(true);
   }
-
 }

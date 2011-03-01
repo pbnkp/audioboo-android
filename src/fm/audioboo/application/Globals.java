@@ -17,6 +17,8 @@ import android.app.Activity;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
+import android.os.Handler;
+import android.os.Message;
 
 import android.telephony.TelephonyManager;
 import java.math.BigInteger;
@@ -143,6 +145,34 @@ public class Globals implements BooPlayerClient.BindListener
   // Map of error codes to error messages.
   private HashMap<Integer, String>  mErrorMessages;
 
+  // Cache/update linked status of the app
+  private API.Status                mStatus;
+  private volatile int              mStatusRetries = 0;
+  private Handler                   mOnwardsHandler;
+  private Handler                   mStatusHandler = new Handler(new Handler.Callback() {
+      public boolean handleMessage(Message msg)
+      {
+        if (API.ERR_SUCCESS == msg.what) {
+          mStatus = mAPI.getStatus();
+          mOnwardsHandler.obtainMessage(msg.what).sendToTarget();
+          mOnwardsHandler = null;
+        }
+        else {
+          ++mStatusRetries;
+          if (API.STATUS_UPDATE_MAX_RETRIES <= mStatusRetries) {
+            Log.e(LTAG, "Giving up after " + mStatusRetries + " attempts.");
+            mOnwardsHandler.obtainMessage(msg.what).sendToTarget();
+            mOnwardsHandler = null;
+          }
+          else {
+            // Try again.
+            mAPI.updateStatus(mStatusHandler);
+          }
+        }
+        return true;
+      }
+  });
+
 
   /***************************************************************************
    * Public instance data
@@ -156,6 +186,7 @@ public class Globals implements BooPlayerClient.BindListener
   // Location information, updated regularly if the appropriate settings are
   // switched on.
   public Location               mLocation;
+
 
 
   /***************************************************************************
@@ -216,6 +247,8 @@ public class Globals implements BooPlayerClient.BindListener
     Log.e(LTAG, "Bind result: " + bindResult);
 
     mTitleGenerator = new TitleGenerator(context);
+
+    mStatus = mAPI.getStatus();
   }
 
 
@@ -546,7 +579,7 @@ public class Globals implements BooPlayerClient.BindListener
           // Determine error code and message.
           int report_code = code;
           String message = null;
-          if (API.ERR_API_ERROR == code) {
+          if (API.ERR_API_ERROR == code && null != exception) {
             message = exception.getMessage();
             report_code = exception.getCode();
           }
@@ -603,5 +636,28 @@ public class Globals implements BooPlayerClient.BindListener
     }
 
     return mBooManager;
+  }
+
+
+
+  /**
+   * Return current linked status of the app
+   **/
+  public API.Status getStatus()
+  {
+    mStatus = mAPI.getStatus();
+    return mStatus;
+  }
+
+
+  /**
+   * Update the app's API status.
+   **/
+  public void updateStatus(final Handler onwardsHandler)
+  {
+    getStatus();
+    mStatusRetries = 0;
+    mOnwardsHandler = onwardsHandler;
+    mAPI.updateStatus(mStatusHandler);
   }
 }
