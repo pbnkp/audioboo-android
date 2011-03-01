@@ -484,7 +484,7 @@ class ResponseParser
 
     JSONObject error = body.getJSONObject(ERROR);
     int code = error.getInt(ERROR_CODE);
-    String message = error.getString(ERROR_DESCRIPTION);
+    String message = error.optString(ERROR_DESCRIPTION);
 
     Log.e(LTAG, "Error response [" + code + "]: " + message);
     handler.obtainMessage(API.ERR_API_ERROR,
