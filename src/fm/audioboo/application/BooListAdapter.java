@@ -51,36 +51,36 @@ public class BooListAdapter extends BaseAdapter
 
   // Text view IDs in list items
   private static final int TEXT_VIEW_IDS[] = {
-    R.id.recent_boos_item_author,
-    R.id.recent_boos_item_title,
-    R.id.recent_boos_item_location,
+    R.id.browse_boos_item_author,
+    R.id.browse_boos_item_title,
+    R.id.browse_boos_item_location,
   };
 
 
   // Color IDs for the above text view IDs for the regular, unselected state
   private static final int TEXT_VIEW_COLORS_REGULAR[] = {
-    R.color.recent_boos_author,
-    R.color.recent_boos_title,
-    R.color.recent_boos_location,
+    R.color.browse_boos_author,
+    R.color.browse_boos_title,
+    R.color.browse_boos_location,
   };
 
   // Color IDs for the above text view IDs for the selected state
   private static final int TEXT_VIEW_COLORS_SELECTED[] = {
-    R.color.recent_boos_author_selected,
-    R.color.recent_boos_title_selected,
-    R.color.recent_boos_location_selected,
+    R.color.browse_boos_author_selected,
+    R.color.browse_boos_title_selected,
+    R.color.browse_boos_location_selected,
   };
 
   // Color IDs for the item background for the regular, unselected state
   private static final int BACKGROUND_RESOURCE_REGULAR[] = {
-    R.drawable.recent_boos_background_odd,
-    R.drawable.recent_boos_background_even,
+    R.drawable.browse_boos_background_odd,
+    R.drawable.browse_boos_background_even,
   };
 
   // Color IDs for the item background for the selected state
   private static final int BACKGROUND_RESOURCE_SELECTED[] = {
-    R.color.recent_boos_background_odd_active,
-    R.color.recent_boos_background_even_active,
+    R.color.browse_boos_background_odd_active,
+    R.color.browse_boos_background_even_active,
   };
 
   /***************************************************************************
@@ -189,7 +189,7 @@ public class BooListAdapter extends BaseAdapter
     }
 
     // Fill view with data.
-    TextView text_view = (TextView) view.findViewById(R.id.recent_boos_item_author);
+    TextView text_view = (TextView) view.findViewById(R.id.browse_boos_item_author);
     if (null != text_view) {
       if (null != boo.mData.mUser && null != boo.mData.mUser.mUsername) {
         text_view.setText(boo.mData.mUser.mUsername);
@@ -199,12 +199,12 @@ public class BooListAdapter extends BaseAdapter
       }
     }
 
-    text_view = (TextView) view.findViewById(R.id.recent_boos_item_title);
+    text_view = (TextView) view.findViewById(R.id.browse_boos_item_title);
     if (null != text_view) {
       text_view.setText(null != boo.mData.mTitle ? boo.mData.mTitle : "");
     }
 
-    text_view = (TextView) view.findViewById(R.id.recent_boos_item_location);
+    text_view = (TextView) view.findViewById(R.id.browse_boos_item_location);
     if (null != text_view) {
       if (null != boo.mData.mLocation && null != boo.mData.mLocation.mDescription) {
         text_view.setText(boo.mData.mLocation.mDescription);
@@ -217,7 +217,7 @@ public class BooListAdapter extends BaseAdapter
     // If the image cache contains an appropriate image at the right size, then
     // we'll display that. If not, display a default image. We need to do the
     // second in case the item view is being reused.
-    ImageView image_view = (ImageView) view.findViewById(R.id.recent_boos_item_image);
+    ImageView image_view = (ImageView) view.findViewById(R.id.browse_boos_item_image);
     if (null != image_view) {
       // First, determine the url we want to display.
       Uri image_url = getDisplayUrl(boo);
@@ -436,7 +436,7 @@ public class BooListAdapter extends BaseAdapter
     }
 
     // Now display the image.
-    ImageView image_view = (ImageView) item_view.findViewById(R.id.recent_boos_item_image);
+    ImageView image_view = (ImageView) item_view.findViewById(R.id.browse_boos_item_image);
     if (null == image_view) {
       return;
     }

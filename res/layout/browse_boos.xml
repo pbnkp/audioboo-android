@@ -22,14 +22,14 @@
     />
 
   <!-- Empty list view -->
-  <LinearLayout android:id="@+id/recent_boos_empty"
+  <LinearLayout android:id="@+id/browse_boos_empty"
       android:orientation="vertical"
       android:layout_width="fill_parent"
       android:layout_height="fill_parent"
       android:gravity="center"
     >
 
-    <ProgressBar android:id="@+id/recent_boos_progress"
+    <ProgressBar android:id="@+id/browse_boos_progress"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:max="10000"
@@ -46,7 +46,7 @@
 
   <!-- Player view -->
   <fm.audioboo.widget.BooPlayerView
-      android:id="@+id/recent_boos_player"
+      android:id="@+id/browse_boos_player"
       android:layout_width="fill_parent"
       android:layout_height="wrap_content"
       android:layout_alignParentBottom="true"

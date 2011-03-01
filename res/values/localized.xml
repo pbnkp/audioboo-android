@@ -24,15 +24,15 @@
     Recent boos tab
   -->
   <!-- Author string to use when the boo was posted anonymously -->
-  <string name="recent_boos_anonymous_author">The BooBot</string>
+  <string name="browse_boos_anonymous_author">The BooBot</string>
 
   <!-- Name for the menu action for refreshing boos. -->
-  <string-array name="recent_boos_actions">
+  <string-array name="browse_boos_actions">
     <item>Refresh</item>
     <item>Filter</item>
   </string-array>
 
-  <string-array name="recent_boos_filters">
+  <string-array name="browse_boos_filters">
     <item>Featured Boos</item>
     <item>Followed Boos</item>
     <item>Recent Boos</item>
@@ -41,7 +41,7 @@
   </string-array>
 
   <!-- Error message when playback ended unsuccessfully -->
-  <string name="recent_boos_playback_error">Playback error, please try again!</string>
+  <string name="browse_boos_playback_error">Playback error, please try again!</string>
 
 
   <!--

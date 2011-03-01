@@ -93,7 +93,7 @@ public class BrowseActivity extends ListActivity
     public void onPlaybackEnded(BooPlayerView view, int endState)
     {
       if (BooPlayerView.END_STATE_SUCCESS != endState) {
-        Toast.makeText(BrowseActivity.this, R.string.recent_boos_playback_error,
+        Toast.makeText(BrowseActivity.this, R.string.browse_boos_playback_error,
             Toast.LENGTH_LONG).show();
       }
       onItemUnselected(mView, mId);
@@ -109,8 +109,8 @@ public class BrowseActivity extends ListActivity
   {
     super.onCreate(savedInstanceState);
 
-    setContentView(R.layout.recent_boos);
-    View v = findViewById(R.id.recent_boos_empty);
+    setContentView(R.layout.browse_boos);
+    View v = findViewById(R.id.browse_boos_empty);
     getListView().setEmptyView(v);
 
     getListView().setOnItemClickListener(new AdapterView.OnItemClickListener() {
@@ -145,7 +145,7 @@ public class BrowseActivity extends ListActivity
     }
     else {
       // Resume playback.
-      BooPlayerView player = (BooPlayerView) findViewById(R.id.recent_boos_player);
+      BooPlayerView player = (BooPlayerView) findViewById(R.id.browse_boos_player);
       if (null != player) {
         if (player.isPaused()) {
           player.resume();
@@ -171,7 +171,7 @@ public class BrowseActivity extends ListActivity
     super.onPause();
 
     // Pause playback.
-    BooPlayerView player = (BooPlayerView) findViewById(R.id.recent_boos_player);
+    BooPlayerView player = (BooPlayerView) findViewById(R.id.browse_boos_player);
     if (null != player) {
       player.pause();
     }
@@ -196,7 +196,7 @@ public class BrowseActivity extends ListActivity
       return;
     }
 
-    View view = findViewById(R.id.recent_boos_progress);
+    View view = findViewById(R.id.browse_boos_progress);
     if (null != view) {
       view.setVisibility(View.VISIBLE);
     }
@@ -214,7 +214,7 @@ public class BrowseActivity extends ListActivity
           mException = (API.APIException) msg.obj;
           showDialog(DIALOG_ERROR);
 
-          View view = findViewById(R.id.recent_boos_progress);
+          View view = findViewById(R.id.browse_boos_progress);
           if (null != view) {
             view.setVisibility(View.INVISIBLE);
           }
@@ -231,7 +231,7 @@ public class BrowseActivity extends ListActivity
   {
     mBoos = boos;
 
-    mAdapter = new BooListAdapter(this, R.layout.recent_boos_item, mBoos);
+    mAdapter = new BooListAdapter(this, R.layout.browse_boos_item, mBoos);
     getListView().setOnScrollListener(new BooListAdapter.ScrollListener(mAdapter));
     setListAdapter(mAdapter);
   }
@@ -241,7 +241,7 @@ public class BrowseActivity extends ListActivity
   @Override
   public boolean onCreateOptionsMenu(Menu menu)
   {
-    String[] menu_titles = getResources().getStringArray(R.array.recent_boos_actions);
+    String[] menu_titles = getResources().getStringArray(R.array.browse_boos_actions);
     final int[] menu_icons = {
       R.drawable.ic_menu_refresh,
       R.drawable.ic_menu_filter,
@@ -295,7 +295,7 @@ public class BrowseActivity extends ListActivity
     Boo boo = mBoos.mClips.get(id);
 
     // Fade in player view
-    BooPlayerView player = (BooPlayerView) findViewById(R.id.recent_boos_player);
+    BooPlayerView player = (BooPlayerView) findViewById(R.id.browse_boos_player);
     if (null != player) {
       player.setVisibility(View.VISIBLE);
       player.bringToFront();
@@ -318,7 +318,7 @@ public class BrowseActivity extends ListActivity
     }
 
     // Fade out player view
-    final BooPlayerView player = (BooPlayerView) findViewById(R.id.recent_boos_player);
+    final BooPlayerView player = (BooPlayerView) findViewById(R.id.browse_boos_player);
     if (null != player) {
       Animation animation = AnimationUtils.loadAnimation(this, R.anim.fade_out);
       animation.setAnimationListener(new Animation.AnimationListener() {
