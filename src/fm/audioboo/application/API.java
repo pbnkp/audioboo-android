@@ -494,8 +494,28 @@ public class API
       mRequester.interrupt();
     }
 
+    // Followed boos require that the request is signed.
+    HashMap<String, Object> signedParams = null;
+    if (type == BOOS_FOLLOWED) {
+      signedParams = new HashMap<String, Object>();
+    }
+
+    // FIXME pagination
+//	int timestamp=[dateCeiling timeIntervalSince1970];
+//	[request setValue:[NSString stringWithFormat:@"%i",paginationItems] forSignedParameter:@"page[items]"];
+//	[request setValue:[NSString stringWithFormat:@"%i",page] forSignedParameter:@"page[number]"];
+//	[request setValue:[NSString stringWithFormat:@"%i", timestamp] forSignedParameter:@"max_time"];
+//	[request setValue:@"1" forSignedParameter:@"find[pg_rated]"];
+//	[request setValue:@"58x58<" forSignedParameter:@"image_size_hint[thumb]"];	 // our tableview cell images are 58x58
+//	[request setValue:@"300x200>" forSignedParameter:@"image_size_hint[full]"];	 // our detail view images are 300px wide
+//	for(NSString* key in extraParams) {
+//		[request setValue:[extraParams objectForKey:key] forSignedParameter:key];
+//	}
+//	jsonDownloader = [[ABURLConnection connectionWithRequest:request delegate:self] retain];
+//	self.isDownloading = YES;
+
     // This request has no parameters.
-    mRequester = new Requester(API_BOO_URLS[type], null, null, null,
+    mRequester = new Requester(API_BOO_URLS[type], null, signedParams, null,
         new Handler(new Handler.Callback() {
           public boolean handleMessage(Message msg)
           {
@@ -996,6 +1016,9 @@ public class API
         Log.e(LTAG, "Unsupported request type: " + request_type);
     }
 
+    // Set common request headers
+    request.setHeader("Accept", "application/json");
+
     return request;
   }
 
@@ -1120,12 +1143,10 @@ public class API
     }
 
     // Try load key/secret.
-    SharedPreferences prefs = Globals.get().getPrefs();
-    String apiKey = prefs.getString(Globals.PREF_API_KEY, null);
-    String apiSecret = prefs.getString(Globals.PREF_API_SECRET, null);
-    if (null != apiKey && null != apiSecret) {
-      mAPIKey = apiKey;
-      mAPISecret = apiSecret;
+    Pair<String, String> creds = Globals.get().getCredentials();
+    if (null != creds) {
+      mAPIKey = creds.mFirst;
+      mAPISecret = creds.mSecond;
       mParamNameKey = KEY_SOURCE_KEY;
       mParamNameSignature = KEY_SOURCE_SIGNATURE;
       mParamNameTimestamp = KEY_SOURCE_TIMESTAMP;
@@ -1179,6 +1200,7 @@ public class API
       mParamNameTimestamp = KEY_SOURCE_TIMESTAMP;
 
       // Store these values
+      SharedPreferences prefs = Globals.get().getPrefs();
       SharedPreferences.Editor edit = prefs.edit();
       edit.putString(Globals.PREF_API_KEY, mAPIKey);
       edit.putString(Globals.PREF_API_SECRET, mAPISecret);

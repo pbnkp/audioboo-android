@@ -302,6 +302,27 @@ public class Globals implements BooPlayerClient.BindListener
 
 
   /**
+   * Return a pair of API key/secret, or null if that does not exist.
+   **/
+  Pair<String, String> getCredentials()
+  {
+    SharedPreferences prefs = getPrefs();
+    if (null == prefs) {
+      return null;
+    }
+
+    String apiKey = prefs.getString(Globals.PREF_API_KEY, null);
+    String apiSecret = prefs.getString(Globals.PREF_API_SECRET, null);
+    if (null == apiKey || null == apiSecret) {
+      return null;
+    }
+
+    return new Pair<String, String>(apiKey, apiSecret);
+  }
+
+
+
+  /**
    * Starts listening for updates to the device's location, if that is
    * requested in the preferencs.
    *
