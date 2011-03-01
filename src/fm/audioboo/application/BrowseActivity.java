@@ -17,9 +17,13 @@ import android.os.Handler;
 import android.os.Message;
 
 import android.content.res.Configuration;
+import android.content.res.Resources;
 
 import android.view.View;
+
 import android.widget.AdapterView;
+import android.widget.ListView;
+import android.widget.ArrayAdapter;
 
 import android.view.Menu;
 import android.view.MenuItem;
@@ -29,7 +33,9 @@ import android.view.animation.AnimationUtils;
 
 import android.widget.Toast;
 
+import android.content.DialogInterface;
 import android.app.Dialog;
+import android.app.AlertDialog;
 
 import java.util.LinkedList;
 
@@ -54,6 +60,7 @@ public class BrowseActivity extends ListActivity
   private static final int  ACTION_FILTER   = 1;
 
   // Dialog IDs
+  private static final int  DIALOG_FILTERS  = 1;
   private static final int  DIALOG_ERROR    = Globals.DIALOG_ERROR;
 
   /***************************************************************************
@@ -270,8 +277,7 @@ public class BrowseActivity extends ListActivity
 
 
       case ACTION_FILTER:
-        // FIXME
-        Toast.makeText(this, "Not yet implemented", Toast.LENGTH_LONG).show();
+        showDialog(DIALOG_FILTERS);
         break;
 
       default:
@@ -350,6 +356,7 @@ public class BrowseActivity extends ListActivity
   protected Dialog onCreateDialog(int id)
   {
     Dialog dialog = null;
+    Resources res = getResources();
 
     switch (id) {
       case DIALOG_ERROR:
@@ -357,9 +364,53 @@ public class BrowseActivity extends ListActivity
         mErrorCode = -1;
         mException = null;
         break;
+
+      case DIALOG_FILTERS:
+        // Create dialog
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder
+          .setTitle(res.getString(R.string.browse_boos_filter_title))
+          .setItems(new String[] { "dummy" },
+              new DialogInterface.OnClickListener() {
+                  public void onClick(DialogInterface dialog, int which)
+                  {
+                    // FIXME this won't work if 'followed' is filtered out.
+                    mBooType = which;
+
+                    mAdapter = null;
+                    getListView().setOnScrollListener(null);
+                    setListAdapter(mAdapter);
+                    refreshBoos();
+                  }
+              }
+            );
+        dialog = builder.create();
+        break;
     }
 
     return dialog;
   }
 
+
+
+  protected void onPrepareDialog(int id, Dialog dialog)
+  {
+    Resources res = getResources();
+
+    switch (id) {
+      case DIALOG_FILTERS:
+        AlertDialog ad = (AlertDialog) dialog;
+
+        // Grab option array from resources.
+        String[] raw_opts = res.getStringArray(R.array.browse_boos_filters);
+
+        // FIXME filter "followed" when not logged in, for which we first need to 
+        // know whether or not we're logged in ... hah!
+
+        // Populate the dialog's list view.
+        final ListView list = ad.getListView();
+        list.setAdapter(new ArrayAdapter<CharSequence>(this,
+            android.R.layout.select_dialog_item, android.R.id.text1, raw_opts));
+    }
+  }
 }

@@ -43,6 +43,9 @@
   <!-- Error message when playback ended unsuccessfully -->
   <string name="browse_boos_playback_error">Playback error, please try again!</string>
 
+  <!-- Filter dialog title -->
+  <string name="browse_boos_filter_title">Filter By</string>
+
 
   <!--
     Recording view
