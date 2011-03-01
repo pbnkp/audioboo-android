@@ -154,15 +154,20 @@ public class Globals implements BooPlayerClient.BindListener
       {
         if (API.ERR_SUCCESS == msg.what) {
           mStatus = mAPI.getStatus();
-          mOnwardsHandler.obtainMessage(msg.what).sendToTarget();
-          mOnwardsHandler = null;
+          Log.i(LTAG, "Device link status: " + mStatus);
+          if (null != mOnwardsHandler) {
+            mOnwardsHandler.obtainMessage(msg.what).sendToTarget();
+            mOnwardsHandler = null;
+          }
         }
         else {
           ++mStatusRetries;
           if (API.STATUS_UPDATE_MAX_RETRIES <= mStatusRetries) {
             Log.e(LTAG, "Giving up after " + mStatusRetries + " attempts.");
-            mOnwardsHandler.obtainMessage(msg.what).sendToTarget();
-            mOnwardsHandler = null;
+            if (null != mOnwardsHandler) {
+              mOnwardsHandler.obtainMessage(msg.what).sendToTarget();
+              mOnwardsHandler = null;
+            }
           }
           else {
             // Try again.
@@ -244,11 +249,11 @@ public class Globals implements BooPlayerClient.BindListener
     mImageCache = new ImageCache(context, IMAGE_CACHE_MAX);
 
     boolean bindResult = BooPlayerClient.bindService(context, this);
-    Log.e(LTAG, "Bind result: " + bindResult);
 
     mTitleGenerator = new TitleGenerator(context);
 
-    mStatus = mAPI.getStatus();
+    // Find out the device linked status early.
+    updateStatus(null);
   }
 
 
