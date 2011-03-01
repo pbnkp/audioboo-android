@@ -59,6 +59,9 @@ public class BrowseActivity extends ListActivity
   private static final int  ACTION_REFRESH  = 0;
   private static final int  ACTION_FILTER   = 1;
 
+  // Index into filter array where the "followed" action is.
+  private static final int  FOLLOWED_INDEX  = 1;
+
   // Dialog IDs
   private static final int  DIALOG_FILTERS  = 1;
   private static final int  DIALOG_ERROR    = Globals.DIALOG_ERROR;
@@ -374,8 +377,19 @@ public class BrowseActivity extends ListActivity
               new DialogInterface.OnClickListener() {
                   public void onClick(DialogInterface dialog, int which)
                   {
-                    // FIXME this won't work if 'followed' is filtered out.
-                    mBooType = which;
+                    String[] raw_opts = getResources().getStringArray(R.array.browse_boos_filters);
+                    AlertDialog d = (AlertDialog) dialog;
+
+                    // See if we're using the unmodified options or not.
+                    if (raw_opts.length == d.getListView().getCount()) {
+                      mBooType = which;
+                    }
+                    else {
+                      mBooType = which;
+                      if (mBooType >= FOLLOWED_INDEX) {
+                        ++mBooType;
+                      }
+                    }
 
                     mAdapter = null;
                     getListView().setOnScrollListener(null);
@@ -404,13 +418,24 @@ public class BrowseActivity extends ListActivity
         // Grab option array from resources.
         String[] raw_opts = res.getStringArray(R.array.browse_boos_filters);
 
-        // FIXME filter "followed" when not logged in, for which we first need to 
-        // know whether or not we're logged in ... hah!
+        // Filter out 'followed' if the device is not linked
+        String[] opts = raw_opts;
+        API.Status status = Globals.get().getStatus();
+        if (null == status || !status.mLinked) {
+          opts = new String[raw_opts.length - 1];
+          int offset = 0;
+          for (int i = 0 ; i < opts.length ; ++i) {
+            if (FOLLOWED_INDEX == i) {
+              offset = 1;
+            }
+            opts[i] = raw_opts[i + offset];
+          }
+        }
 
         // Populate the dialog's list view.
         final ListView list = ad.getListView();
         list.setAdapter(new ArrayAdapter<CharSequence>(this,
-            android.R.layout.select_dialog_item, android.R.id.text1, raw_opts));
+            android.R.layout.select_dialog_item, android.R.id.text1, opts));
     }
   }
 }
