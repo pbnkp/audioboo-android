@@ -111,6 +111,10 @@ public class API
   // Maximum number of retries to use when updating the device status.
   public static final int STATUS_UPDATE_MAX_RETRIES = 3;
 
+  // Page size for Boo requests
+  public static final int BOO_PAGE_SIZE             = 15;
+
+
   /***************************************************************************
    * The APIException class is sent as the message object in ERR_API_ERROR
    * messages.
@@ -489,30 +493,32 @@ public class API
    **/
   public void fetchBoos(final int type, final Handler result_handler)
   {
+    fetchBoos(type, result_handler, 1, BOO_PAGE_SIZE);
+  }
+
+  public void fetchBoos(final int type, final Handler result_handler, int page)
+  {
+    fetchBoos(type, result_handler, page, BOO_PAGE_SIZE);
+  }
+
+  public void fetchBoos(final int type, final Handler result_handler, int page, int amount)
+  {
     if (null != mRequester) {
       mRequester.keepRunning = false;
       mRequester.interrupt();
     }
 
-    // Followed boos require that the request is signed.
-    HashMap<String, Object> signedParams = null;
-    if (type == BOOS_FOLLOWED) {
-      signedParams = new HashMap<String, Object>();
-    }
+    // Honor pagination
+    HashMap<String, Object> signedParams = new HashMap<String, Object>();
+    signedParams.put("page[items]", String.format("%d", amount));
+    signedParams.put("page[number]", String.format("%d", page));
 
-    // FIXME pagination
-//	int timestamp=[dateCeiling timeIntervalSince1970];
-//	[request setValue:[NSString stringWithFormat:@"%i",paginationItems] forSignedParameter:@"page[items]"];
-//	[request setValue:[NSString stringWithFormat:@"%i",page] forSignedParameter:@"page[number]"];
-//	[request setValue:[NSString stringWithFormat:@"%i", timestamp] forSignedParameter:@"max_time"];
-//	[request setValue:@"1" forSignedParameter:@"find[pg_rated]"];
-//	[request setValue:@"58x58<" forSignedParameter:@"image_size_hint[thumb]"];	 // our tableview cell images are 58x58
-//	[request setValue:@"300x200>" forSignedParameter:@"image_size_hint[full]"];	 // our detail view images are 300px wide
-//	for(NSString* key in extraParams) {
-//		[request setValue:[extraParams objectForKey:key] forSignedParameter:key];
-//	}
-//	jsonDownloader = [[ABURLConnection connectionWithRequest:request delegate:self] retain];
-//	self.isDownloading = YES;
+    // Other parameters
+    signedParams.put("max_time", String.format("%d", System.currentTimeMillis() / 1000));
+
+    signedParams.put("find[pg_rated]", "1");
+    signedParams.put("image_size_hint[thumb]", "58x58<");
+    signedParams.put("image_size_hint[full]", "300x200>");
 
     // This request has no parameters.
     mRequester = new Requester(API_BOO_URLS[type], null, signedParams, null,
@@ -900,6 +906,8 @@ public class API
     params.put(KEY_API_VERSION, String.valueOf(API_VERSION));
     params.put(KEY_API_FORMAT, API_FORMAT);
     params.put(mParamNameKey, mAPIKey);
+
+    // params.put("debug_signature", "true");
 
     // 2. If there are signed parameters, perform the signature dance.
     if (null != signedParams) {
