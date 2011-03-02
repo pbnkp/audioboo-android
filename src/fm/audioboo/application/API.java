@@ -849,13 +849,13 @@ public class API
 
     } catch (IOException ex) {
       Log.e(LTAG, "An exception occurred when reading the API response: "
-          + ex.getMessage());
+          + "(" + request.getURI().toString() + "|" + ex + ") " + ex.getMessage());
       if (null != handler) {
         handler.obtainMessage(ERR_TRANSMISSION).sendToTarget();
       }
     } catch (Exception ex) {
       Log.e(LTAG, "An exception occurred when reading the API response: "
-          + ex.getMessage());
+          + "(" + request.getURI().toString() + "|" + ex + ") " + ex.getMessage());
       if (null != handler) {
         handler.obtainMessage(ERR_UNKNOWN).sendToTarget();
       }
