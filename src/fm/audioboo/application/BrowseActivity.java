@@ -26,6 +26,7 @@ import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ListView;
 import android.widget.ArrayAdapter;
+import android.widget.AbsListView;
 
 import android.view.Menu;
 import android.view.MenuItem;
@@ -48,7 +49,9 @@ import android.util.Log;
 /**
  * The BrowseActivity loads recent boos and displays them in a ListView.
  **/
-public class BrowseActivity extends ListActivity
+public class BrowseActivity
+       extends ListActivity
+       implements BooListPaginator.Callback
 {
   /***************************************************************************
    * Private constants
@@ -71,15 +74,8 @@ public class BrowseActivity extends ListActivity
   /***************************************************************************
    * Data members
    **/
-  // Flag, set to true when a request is in progress.
-  private boolean           mRequesting;
-
   // Content
-  private int               mBooType  = API.BOOS_POPULAR;
-  private BooList           mBoos;
-
-  // Adapter
-  private BooListAdapter    mAdapter;
+  private BooListPaginator  mPaginator;
 
   // Last error information - used and cleared in onCreateDialog
   private int               mErrorCode = -1;
@@ -125,13 +121,9 @@ public class BrowseActivity extends ListActivity
     View v = findViewById(R.id.browse_boos_empty);
     getListView().setEmptyView(v);
 
-    getListView().setOnItemClickListener(new AdapterView.OnItemClickListener() {
-      public void onItemClick(AdapterView<?> parent, View view, int position, long id)
-      {
-        // Use id rather than position, because of (future?) filtering.
-        onItemSelected(view, (int) id);
-      }
-    });
+    // Initialize paginator
+    mPaginator = new BooListPaginator(API.BOOS_POPULAR, this, this);
+
   }
 
 
@@ -152,8 +144,8 @@ public class BrowseActivity extends ListActivity
     //Log.d(LTAG, "Resume");
 
     // Load boos, but only if that hasn't happened yet..
-    if (null == mBoos) {
-      refreshBoos();
+    if (null == mPaginator.getList()) {
+      mPaginator.refresh();
     }
     else {
       // Resume playback.
@@ -201,55 +193,6 @@ public class BrowseActivity extends ListActivity
 
 
 
-  private void refreshBoos()
-  {
-    if (mRequesting) {
-      // Wait for the previous request to finish
-      return;
-    }
-
-    View view = findViewById(R.id.browse_boos_progress);
-    if (null != view) {
-      view.setVisibility(View.VISIBLE);
-    }
-
-    mRequesting = true;
-    Globals.get().mAPI.fetchBoos(mBooType, new Handler(new Handler.Callback() {
-      public boolean handleMessage(Message msg)
-      {
-        mRequesting = false;
-        if (API.ERR_SUCCESS == msg.what) {
-          onReceiveBoos((BooList) msg.obj);
-        }
-        else {
-          mErrorCode = msg.what;
-          mException = (API.APIException) msg.obj;
-          showDialog(DIALOG_ERROR);
-
-          View view = findViewById(R.id.browse_boos_progress);
-          if (null != view) {
-            view.setVisibility(View.INVISIBLE);
-          }
-        }
-        return true;
-      }
-
-    }));
-  }
-
-
-
-  private void onReceiveBoos(BooList boos)
-  {
-    mBoos = boos;
-
-    mAdapter = new BooListAdapter(this, R.layout.browse_boos_item, mBoos);
-    getListView().setOnScrollListener(new BooListAdapter.ScrollListener(mAdapter));
-    setListAdapter(mAdapter);
-  }
-
-
-
   @Override
   public boolean onCreateOptionsMenu(Menu menu)
   {
@@ -274,10 +217,7 @@ public class BrowseActivity extends ListActivity
     switch (item.getItemId()) {
       case ACTION_REFRESH:
         // Refresh Boos! While we do that, we want to empty the listview
-        mAdapter = null;
-        getListView().setOnScrollListener(null);
-        setListAdapter(mAdapter);
-        refreshBoos();
+        mPaginator.refresh();
         break;
 
 
@@ -299,11 +239,11 @@ public class BrowseActivity extends ListActivity
   {
     // First, deal with the visual stuff. It's complex enough for it's own
     // function.
-    mAdapter.markSelected(view, id);
+    mPaginator.getAdapter().markSelected(view, id);
 
     // Next, we'll need to kill the audio player and restart it, but only if
     // it's a different view that's been selected.
-    Boo boo = mBoos.mClips.get(id);
+    Boo boo = mPaginator.getList().mClips.get(id);
 
     // Fade in player view
     BooPlayerView player = (BooPlayerView) findViewById(R.id.browse_boos_player);
@@ -324,8 +264,9 @@ public class BrowseActivity extends ListActivity
   private void onItemUnselected(View view, int id)
   {
     // And also switch the view to unselected.
-    if (null != mAdapter) {
-      mAdapter.unselect(view, id);
+    BooListAdapter adapter = mPaginator.getAdapter();
+    if (null != adapter) {
+      adapter.unselect(view, id);
     }
 
     // Fade out player view
@@ -383,20 +324,14 @@ public class BrowseActivity extends ListActivity
                     AlertDialog d = (AlertDialog) dialog;
 
                     // See if we're using the unmodified options or not.
-                    if (raw_opts.length == d.getListView().getCount()) {
-                      mBooType = which;
-                    }
-                    else {
-                      mBooType = which;
-                      if (mBooType >= FOLLOWED_INDEX) {
-                        ++mBooType;
+                    int booType = which;
+                    if (raw_opts.length != d.getListView().getCount()) {
+                      if (booType >= FOLLOWED_INDEX) {
+                        ++booType;
                       }
                     }
 
-                    mAdapter = null;
-                    getListView().setOnScrollListener(null);
-                    setListAdapter(mAdapter);
-                    refreshBoos();
+                    mPaginator.refresh(booType);
                   }
               }
             );
@@ -439,5 +374,63 @@ public class BrowseActivity extends ListActivity
         list.setAdapter(new ArrayAdapter<CharSequence>(this,
             android.R.layout.select_dialog_item, android.R.id.text1, opts));
     }
+  }
+
+
+
+  /***************************************************************************
+   * BooListPaginator.Callback implementation
+   **/
+  public void onStartRequest(boolean firstPage)
+  {
+    if (firstPage) {
+      setListAdapter(null);
+
+      View view = findViewById(R.id.browse_boos_progress);
+      if (null != view) {
+        view.setVisibility(View.VISIBLE);
+      }
+
+    }
+    else {
+
+    // FIXME
+          Toast.makeText(BrowseActivity.this, "Loading more...", Toast.LENGTH_LONG).show();
+    }
+  }
+
+
+
+  public void onResults(boolean firstPage)
+  {
+    // Initialize list view if this was a first request.
+    if (firstPage) {
+      setListAdapter(mPaginator.getAdapter());
+    }
+  }
+
+
+
+  public void onError(int code, API.APIException exception)
+  {
+    // Show error dialog.
+    mErrorCode = code;
+    mException = exception;
+    showDialog(DIALOG_ERROR);
+
+    // Also reset view.
+    setListAdapter(null);
+    View view = findViewById(R.id.browse_boos_progress);
+    if (null != view) {
+      view.setVisibility(View.INVISIBLE);
+    }
+  }
+
+
+
+  public void onItemClick(AdapterView<?> parent, View view, int position, long id)
+  {
+    // Use id rather than position, because of (future?) filtering.
+    onItemSelected(view, (int) id);
   }
 }

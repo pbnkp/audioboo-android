@@ -111,9 +111,6 @@ public class API
   // Maximum number of retries to use when updating the device status.
   public static final int STATUS_UPDATE_MAX_RETRIES = 3;
 
-  // Page size for Boo requests
-  public static final int BOO_PAGE_SIZE             = 15;
-
 
   /***************************************************************************
    * The APIException class is sent as the message object in ERR_API_ERROR
@@ -491,17 +488,8 @@ public class API
    * Fetch recent Boos.
    * On success, the message object will be a LinkedList<Boo>.
    **/
-  public void fetchBoos(final int type, final Handler result_handler)
-  {
-    fetchBoos(type, result_handler, 1, BOO_PAGE_SIZE);
-  }
-
-  public void fetchBoos(final int type, final Handler result_handler, int page)
-  {
-    fetchBoos(type, result_handler, page, BOO_PAGE_SIZE);
-  }
-
-  public void fetchBoos(final int type, final Handler result_handler, int page, int amount)
+  public void fetchBoos(final int type, final Handler result_handler, int page,
+      int amount, Date timestamp)
   {
     if (null != mRequester) {
       mRequester.keepRunning = false;
@@ -514,7 +502,7 @@ public class API
     signedParams.put("page[number]", String.format("%d", page));
 
     // Other parameters
-    signedParams.put("max_time", String.format("%d", System.currentTimeMillis() / 1000));
+    signedParams.put("max_time", String.format("%d", timestamp.getTime() / 1000));
 
     signedParams.put("find[pg_rated]", "1");
     signedParams.put("image_size_hint[thumb]", "58x58<");

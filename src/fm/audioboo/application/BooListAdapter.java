@@ -35,6 +35,8 @@ import android.os.Message;
 
 import java.util.LinkedList;
 
+import java.lang.ref.WeakReference;
+
 import android.util.Log;
 
 /**
@@ -83,6 +85,12 @@ public class BooListAdapter extends BaseAdapter
     R.color.browse_boos_background_even_active,
   };
 
+
+  // Item view types
+  private static final int VIEW_TYPE_BOO  = 0;
+  private static final int VIEW_TYPE_MORE = 1;
+
+
   /***************************************************************************
    * Helper class. Makes the BooListAdapter aware of relevant changes in
    * the scroll state of the ListView it's filling, so it can trigger the
@@ -95,6 +103,7 @@ public class BooListAdapter extends BaseAdapter
     private boolean         mSentInitial = false;
     private int             mFirst;
     private int             mCount;
+
 
     public ScrollListener(BooListAdapter adapter)
     {
@@ -133,23 +142,25 @@ public class BooListAdapter extends BaseAdapter
    * Data
    **/
   // Boo data
-  private BooList       mBoos;
+  private BooList                     mBoos;
 
-  // Layout for the individual boos
-  private int           mBooLayoutId;
+  // Layout for the individual boos, the "..." (more) view.
+  private int                         mBooLayoutId;
+  private int                         mMoreLayoutId = -1;
+
 
   // Calling Activity
-  private ListActivity  mActivity;
+  private WeakReference<ListActivity> mActivity;
 
   // Image dimensions. XXX The (reasonably safe) assumption is that in the view
   // this adapter fills, all Boo images are to be displayed at the same size.
-  private int           mDimensions = -1;
+  private int                         mDimensions = -1;
 
   // State required for restoring the last selected view to it's original
   // looks.
-  private View          mLastView;
-  private int           mLastId = -1;
-  private Boo           mLastBoo;
+  private View                        mLastView;
+  private int                         mLastId = -1;
+  private Boo                         mLastBoo;
 
 
   /***************************************************************************
@@ -157,8 +168,23 @@ public class BooListAdapter extends BaseAdapter
    **/
   public BooListAdapter(ListActivity activity, int booLayoutId, BooList boos)
   {
-    mActivity = activity;
+    super();
+
+    mActivity = new WeakReference<ListActivity>(activity);
     mBooLayoutId = booLayoutId;
+    mBoos = boos;
+  }
+
+
+
+  public BooListAdapter(ListActivity activity, int booLayoutId, BooList boos,
+      int moreLayoutId)
+  {
+    super();
+
+    mActivity = new WeakReference<ListActivity>(activity);
+    mBooLayoutId = booLayoutId;
+    mMoreLayoutId = moreLayoutId;
     mBoos = boos;
   }
 
@@ -166,11 +192,33 @@ public class BooListAdapter extends BaseAdapter
 
   public View getView(int position, View convertView, ViewGroup parent)
   {
+    ListActivity activity = mActivity.get();
+    if (null == activity) {
+      return null;
+    }
+
+    // View type
+    int type = getItemViewType(position);
+
     // Create new view, if required.
     View view = convertView;
     if (null == view) {
-      LayoutInflater inflater = mActivity.getLayoutInflater();
-      view = inflater.inflate(mBooLayoutId, null);
+      LayoutInflater inflater = activity.getLayoutInflater();
+      if (VIEW_TYPE_BOO == type) {
+        view = inflater.inflate(mBooLayoutId, null);
+      }
+      else {
+        if (mMoreLayoutId == -1) {
+          Log.e(LTAG, "No layout for the 'more' view provided...");
+          return null;
+        }
+        view = inflater.inflate(mMoreLayoutId, null);
+      }
+    }
+
+    if (VIEW_TYPE_MORE == type) {
+      // We're done here!
+      return view;
     }
 
     // Set the view's tag to the Boo we want to display. This is for later
@@ -322,12 +370,17 @@ public class BooListAdapter extends BaseAdapter
 
   private void drawViewInternal(View view, int id, int[] backgrounds, int[] text_colors)
   {
+    ListActivity activity = mActivity.get();
+    if (null == activity) {
+      return;
+    }
+
     // First, set the background according to whether or not id points to an
     // odd or even cell.
     view.setBackgroundResource(backgrounds[id % 2]);
 
     // Next, iterate over the known text views, and set their colors.
-    Resources r = mActivity.getResources();
+    Resources r = activity.getResources();
     for (int i = 0 ; i < TEXT_VIEW_IDS.length ; ++i) {
       int viewId = TEXT_VIEW_IDS[i];
       TextView text_view = (TextView) view.findViewById(viewId);
@@ -339,9 +392,26 @@ public class BooListAdapter extends BaseAdapter
 
 
 
+  public int getViewTypeCount()
+  {
+    return (mMoreLayoutId == -1 ? 1 : 2);
+  }
+
+
+
+  public int getItemViewType(int position)
+  {
+    if (position < mBoos.mClips.size()) {
+      return VIEW_TYPE_BOO;
+    }
+    return VIEW_TYPE_MORE;
+  }
+
+
+
   public int getCount()
   {
-    return (null == mBoos ? 0 : mBoos.mClips.size());
+    return (null == mBoos ? 0 : mBoos.mClips.size()) + (mMoreLayoutId == -1 ? 0 : 1);
   }
 
 
@@ -355,6 +425,9 @@ public class BooListAdapter extends BaseAdapter
 
   public Object getItem(int position)
   {
+    if (position >= mBoos.mClips.size()) {
+      return null;
+    }
     return mBoos.mClips.get(position);
   }
 
@@ -369,12 +442,16 @@ public class BooListAdapter extends BaseAdapter
 
   private void startHeavyLifting(int first, int count)
   {
-    // Log.d(LTAG, "Downloads for items from " + first + " to " + (first + count));
+    Log.d(LTAG, "Downloads for items from " + first + " to " + (first + count));
 
     // Prepare the list of uris to download.
     LinkedList<ImageCache.CacheItem> uris = new LinkedList<ImageCache.CacheItem>();
     for (int i = 0 ; i < count ; ++i) {
       int index = first + i;
+      if (index >= mBoos.mClips.size()) {
+        break;
+      }
+
       Boo boo = mBoos.mClips.get(index);
       Uri uri = getDisplayUrl(boo);
 
@@ -416,10 +493,14 @@ public class BooListAdapter extends BaseAdapter
   public void onCacheItemFetched(ImageCache.CacheItem item)
   {
     // Log.d(LTAG, "got results for : " + item.mImageUri);
+    ListActivity activity = mActivity.get();
+    if (null == activity) {
+      return;
+    }
 
     // Right, we got an image. Now we just need to figure out the right view
     // to go with it.
-    View item_view = mActivity.getListView().getChildAt(item.mViewIndex);
+    View item_view = activity.getListView().getChildAt(item.mViewIndex);
     if (null == item_view) {
       return;
     }
