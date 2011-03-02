@@ -9,7 +9,6 @@
 
 package fm.audioboo.application;
 
-import java.util.Date;
 import java.util.LinkedList;
 
 /**
