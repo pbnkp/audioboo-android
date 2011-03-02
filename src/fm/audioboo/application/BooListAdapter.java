@@ -148,6 +148,9 @@ public class BooListAdapter extends BaseAdapter
   private int                         mBooLayoutId;
   private int                         mMoreLayoutId = -1;
 
+  // Flag, for deciding whether the "more" view should be shown as loading or
+  // not.
+  private boolean                     mLoading = false;
 
   // Calling Activity
   private WeakReference<ListActivity> mActivity;
@@ -217,7 +220,7 @@ public class BooListAdapter extends BaseAdapter
     }
 
     if (VIEW_TYPE_MORE == type) {
-      // We're done here!
+      prepareMoreView(view);
       return view;
     }
 
@@ -442,7 +445,7 @@ public class BooListAdapter extends BaseAdapter
 
   private void startHeavyLifting(int first, int count)
   {
-    Log.d(LTAG, "Downloads for items from " + first + " to " + (first + count));
+    // Log.d(LTAG, "Downloads for items from " + first + " to " + (first + count));
 
     // Prepare the list of uris to download.
     LinkedList<ImageCache.CacheItem> uris = new LinkedList<ImageCache.CacheItem>();
@@ -539,5 +542,30 @@ public class BooListAdapter extends BaseAdapter
     }
 
     return result;
+  }
+
+
+
+  public void setLoading(boolean loading, View view)
+  {
+    mLoading = loading;
+    if (null != view) {
+      prepareMoreView(view);
+    }
+  }
+
+
+
+  public void prepareMoreView(View view)
+  {
+    View swap = view.findViewById(R.id.boo_list_more_dots);
+    if (null != swap) {
+      swap.setVisibility(mLoading ? View.GONE : View.VISIBLE);
+    }
+
+    swap = view.findViewById(R.id.boo_list_more_progress);
+    if (null != swap) {
+      swap.setVisibility(mLoading ? View.VISIBLE : View.GONE);
+    }
   }
 }

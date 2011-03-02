@@ -378,12 +378,30 @@ public class BrowseActivity
 
 
 
+  private void setPageLoading(boolean loading)
+  {
+    // Find out which view the progress view is, and switch it to "loading".
+    ListView lv = getListView();
+    int pos = mPaginator.getList().mClips.size();
+    pos = pos - lv.getFirstVisiblePosition();
+
+    if (pos < 0 || pos >= lv.getChildCount()) {
+      mPaginator.getAdapter().setLoading(loading, null);
+    }
+    else {
+      mPaginator.getAdapter().setLoading(loading, lv.getChildAt(pos));
+    }
+  }
+
+
+
   /***************************************************************************
    * BooListPaginator.Callback implementation
    **/
   public void onStartRequest(boolean firstPage)
   {
     if (firstPage) {
+      // Replace the list view with a loading screen.
       setListAdapter(null);
 
       View view = findViewById(R.id.browse_boos_progress);
@@ -393,9 +411,7 @@ public class BrowseActivity
 
     }
     else {
-
-    // FIXME
-          Toast.makeText(BrowseActivity.this, "Loading more...", Toast.LENGTH_LONG).show();
+      setPageLoading(true);
     }
   }
 
@@ -406,6 +422,9 @@ public class BrowseActivity
     // Initialize list view if this was a first request.
     if (firstPage) {
       setListAdapter(mPaginator.getAdapter());
+    }
+    else {
+      setPageLoading(false);
     }
   }
 
@@ -424,6 +443,10 @@ public class BrowseActivity
     if (null != view) {
       view.setVisibility(View.INVISIBLE);
     }
+
+    // Same for "loading" view; not that it matters at this point, but it
+    // will when the view is populated again.
+    mPaginator.getAdapter().setLoading(false, null);
   }
 
 

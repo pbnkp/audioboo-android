@@ -241,7 +241,7 @@ public class BooListPaginator
       mBoos.mCount = boos.mCount;
     }
 
-    Log.d(LTAG, "Boos now: " + mBoos.mClips.size() + " - " + mBoos.mOffset);
+    // Log.d(LTAG, "Boos now: " + mBoos.mClips.size() + " - " + mBoos.mOffset);
 
     boolean firstPage = false;
     if (null == mAdapter) {
