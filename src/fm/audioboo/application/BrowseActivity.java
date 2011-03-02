@@ -446,7 +446,9 @@ public class BrowseActivity
 
     // Same for "loading" view; not that it matters at this point, but it
     // will when the view is populated again.
-    mPaginator.getAdapter().setLoading(false, null);
+    if (null != mPaginator.getAdapter()) {
+      mPaginator.getAdapter().setLoading(false, null);
+    }
   }
 
 

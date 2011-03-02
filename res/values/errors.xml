@@ -26,6 +26,7 @@
     <item>10005</item> <!-- ERR_PARSE_ERROR -->
     <item>10006</item> <!-- ERR_INVALID_STATE -->
     <item>10007</item> <!-- ERR_UNKNOWN -->
+    <item>10008</item> <!-- ERR_LOCATION_REQUIRED -->
     <item>401</item>
     <item>403</item>
   </array>

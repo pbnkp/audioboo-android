@@ -16,6 +16,8 @@ import android.os.Message;
 
 import android.os.Build;
 
+import android.location.Location;
+
 import android.net.Uri;
 
 import org.xbill.DNS.Record;
@@ -96,6 +98,7 @@ public class API
   public static final int ERR_PARSE_ERROR           = 10005;
   public static final int ERR_INVALID_STATE         = 10006;
   public static final int ERR_UNKNOWN               = 10007;
+  public static final int ERR_LOCATION_REQUIRED     = 10008;
 
   // Boo types - XXX same order as recent_boos_filters
   public static final int BOOS_FEATURED             = 0;
@@ -507,6 +510,18 @@ public class API
     signedParams.put("find[pg_rated]", "1");
     signedParams.put("image_size_hint[thumb]", "58x58<");
     signedParams.put("image_size_hint[full]", "300x200>");
+
+    // Location related parameters
+    if (BOOS_NEARBY == type) {
+      Location loc = Globals.get().mLocation;
+      if (null == loc) {
+        result_handler.obtainMessage(ERR_LOCATION_REQUIRED, null).sendToTarget();
+        return;
+      }
+
+      signedParams.put("find[latitude]", String.format("%f", loc.getLatitude()));
+      signedParams.put("find[longitude]", String.format("%f", loc.getLongitude()));
+    }
 
     // This request has no parameters.
     mRequester = new Requester(API_BOO_URLS[type], null, signedParams, null,

@@ -135,6 +135,7 @@
     <item>An error occurred when trying to parse the server response.</item>
     <item>An invalid program state was reached.</item>
     <item>An unknown error occurred.</item>
+    <item>Enable location services to see nearby Boos.</item>
     <item>You may only perform this action with your device linked to an AudioBoo account.</item>
     <item>You may only perform this action with your device linked to an AudioBoo account.</item>
   </string-array>
