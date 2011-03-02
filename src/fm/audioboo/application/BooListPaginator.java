@@ -246,8 +246,7 @@ public class BooListPaginator
     boolean firstPage = false;
     if (null == mAdapter) {
       firstPage = true;
-      // FIXME layouts?
-      mAdapter = new BooListAdapter(activity, R.layout.browse_boos_item, mBoos, R.layout.browse_boos_more);
+      mAdapter = new BooListAdapter(activity, R.layout.boo_list_item, mBoos, R.layout.boo_list_more);
       activity.getListView().setOnScrollListener(new BooListAdapter.ScrollListener(mAdapter));
     }
     else {

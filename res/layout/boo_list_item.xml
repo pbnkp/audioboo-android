@@ -14,7 +14,7 @@
   >
 
   <!-- Boo thumbnail -->
-  <ImageView android:id="@+id/browse_boos_item_image"
+  <ImageView android:id="@+id/boo_list_item_image"
       android:layout_width="60dp"
       android:layout_height="60dp"
       android:layout_margin="2dp"
@@ -22,7 +22,7 @@
       android:layout_alignParentLeft="true"
       android:src="@drawable/anonymous_boo"
       android:padding="1dp"
-      android:background="@color/browse_boos_image_background"
+      android:background="@color/boo_list_image_background"
     />
 
   <!-- Metadata -->
@@ -38,35 +38,35 @@
     >
 
     <!-- Author -->
-    <TextView android:id="@+id/browse_boos_item_author"
+    <TextView android:id="@+id/boo_list_item_author"
         android:layout_width="fill_parent"
         android:layout_height="wrap_content"
-        android:textSize="@dimen/browse_boos_item_author"
-        android:textColor="@color/browse_boos_author"
+        android:textSize="@dimen/boo_list_item_author"
+        android:textColor="@color/boo_list_author"
         android:textStyle="bold"
         android:ellipsize="end"
         android:lines="1"
         android:singleLine="true"
-        android:text="@string/browse_boos_anonymous_author"
+        android:text="@string/boo_list_anonymous_author"
       />
 
     <!-- Title -->
-    <TextView android:id="@+id/browse_boos_item_title"
+    <TextView android:id="@+id/boo_list_item_title"
         android:layout_width="fill_parent"
         android:layout_height="wrap_content"
-        android:textSize="@dimen/browse_boos_item_title"
-        android:textColor="@color/browse_boos_title"
+        android:textSize="@dimen/boo_list_item_title"
+        android:textColor="@color/boo_list_title"
         android:ellipsize="end"
         android:lines="1"
         android:singleLine="true"
       />
 
     <!-- Location -->
-    <TextView android:id="@+id/browse_boos_item_location"
+    <TextView android:id="@+id/boo_list_item_location"
         android:layout_width="fill_parent"
         android:layout_height="wrap_content"
-        android:textSize="@dimen/browse_boos_item_location"
-        android:textColor="@color/browse_boos_location"
+        android:textSize="@dimen/boo_list_item_location"
+        android:textColor="@color/boo_list_location"
         android:textStyle="bold"
         android:ellipsize="end"
         android:lines="1"

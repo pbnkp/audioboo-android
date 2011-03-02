@@ -20,7 +20,7 @@
       android:layout_height="48dp"
       android:layout_centerInParent="true"
       android:padding="4dp"
-      audioboo:pieColor="@color/browse_boos_progress_pie"
+      audioboo:pieColor="@color/play_pause_progress_pie"
       audioboo:indeterminateBitmap="@drawable/play_pause_buffer_fill"
       audioboo:indeterminateMaskBitmap="@drawable/play_pause_buffer_mask"
     />

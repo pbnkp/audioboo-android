@@ -9,16 +9,16 @@
 -->
 <selector xmlns:android="http://schemas.android.com/apk/res/android">
   <!-- Selected via trackball -->
-  <item android:drawable="@color/browse_boos_background_even_active"
+  <item android:drawable="@color/boo_list_background_even_active"
       android:state_selected="true"
       android:state_pressed="false"
     />
 
   <!-- Pressed via screen or trackball -->
-  <item android:drawable="@color/browse_boos_background_even_pressed"
+  <item android:drawable="@color/boo_list_background_even_pressed"
       android:state_pressed="true"
     />
 
   <!-- Regular -->
-  <item android:drawable="@color/browse_boos_background_even_regular" />
+  <item android:drawable="@color/boo_list_background_even_regular" />
 </selector>

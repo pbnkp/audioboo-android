@@ -21,11 +21,14 @@
   </string-array>
 
   <!--
-    Recent boos tab
+    Generic boo lists
   -->
   <!-- Author string to use when the boo was posted anonymously -->
-  <string name="browse_boos_anonymous_author">The BooBot</string>
+  <string name="boo_list_anonymous_author">The BooBot</string>
 
+  <!--
+    Browse boos tab
+  -->
   <!-- Name for the menu action for refreshing boos. -->
   <string-array name="browse_boos_actions">
     <item>Refresh</item>
