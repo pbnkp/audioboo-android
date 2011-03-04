@@ -81,6 +81,9 @@ public class BrowseActivity
   private int               mErrorCode = -1;
   private API.APIException  mException;
 
+  // Labels for filters
+  private String[]          mFilterLabels;
+
 
   /***************************************************************************
    * Helper for respoding to playback end.
@@ -124,6 +127,19 @@ public class BrowseActivity
     // Initialize paginator
     mPaginator = new BooListPaginator(API.BOOS_POPULAR, this, this);
 
+    // Initialize "retry" button on list empty vew
+    v = findViewById(R.id.browse_boos_retry);
+    if (null != v) {
+      v.setOnClickListener(new View.OnClickListener() {
+          public void onClick(View v) {
+            mPaginator.refresh();
+            setTitle(mFilterLabels[mPaginator.getType()]);
+          }
+      });
+    }
+
+    // Load filter labels
+    mFilterLabels = getResources().getStringArray(R.array.browse_boos_filters);
   }
 
 
@@ -146,6 +162,7 @@ public class BrowseActivity
     // Load boos, but only if that hasn't happened yet..
     if (null == mPaginator.getList()) {
       mPaginator.refresh();
+      setTitle(mFilterLabels[mPaginator.getType()]);
     }
     else {
       // Resume playback.
@@ -218,6 +235,7 @@ public class BrowseActivity
       case ACTION_REFRESH:
         // Refresh Boos! While we do that, we want to empty the listview
         mPaginator.refresh();
+        setTitle(mFilterLabels[mPaginator.getType()]);
         break;
 
 
@@ -320,18 +338,18 @@ public class BrowseActivity
               new DialogInterface.OnClickListener() {
                   public void onClick(DialogInterface dialog, int which)
                   {
-                    String[] raw_opts = getResources().getStringArray(R.array.browse_boos_filters);
                     AlertDialog d = (AlertDialog) dialog;
 
                     // See if we're using the unmodified options or not.
                     int booType = which;
-                    if (raw_opts.length != d.getListView().getCount()) {
+                    if (mFilterLabels.length != d.getListView().getCount()) {
                       if (booType >= FOLLOWED_INDEX) {
                         ++booType;
                       }
                     }
 
                     mPaginator.refresh(booType);
+                    setTitle(mFilterLabels[booType]);
                   }
               }
             );
@@ -352,20 +370,17 @@ public class BrowseActivity
       case DIALOG_FILTERS:
         AlertDialog ad = (AlertDialog) dialog;
 
-        // Grab option array from resources.
-        String[] raw_opts = res.getStringArray(R.array.browse_boos_filters);
-
         // Filter out 'followed' if the device is not linked
-        String[] opts = raw_opts;
+        String[] opts = mFilterLabels;
         API.Status status = Globals.get().getStatus();
         if (null == status || !status.mLinked) {
-          opts = new String[raw_opts.length - 1];
+          opts = new String[mFilterLabels.length - 1];
           int offset = 0;
           for (int i = 0 ; i < opts.length ; ++i) {
             if (FOLLOWED_INDEX == i) {
               offset = 1;
             }
-            opts[i] = raw_opts[i + offset];
+            opts[i] = mFilterLabels[i + offset];
           }
         }
 
@@ -408,7 +423,10 @@ public class BrowseActivity
       if (null != view) {
         view.setVisibility(View.VISIBLE);
       }
-
+      view = findViewById(R.id.browse_boos_retry);
+      if (null != view) {
+        view.setVisibility(View.GONE);
+      }
     }
     else {
       setPageLoading(true);
@@ -441,7 +459,11 @@ public class BrowseActivity
     setListAdapter(null);
     View view = findViewById(R.id.browse_boos_progress);
     if (null != view) {
-      view.setVisibility(View.INVISIBLE);
+      view.setVisibility(View.GONE);
+    }
+    view = findViewById(R.id.browse_boos_retry);
+    if (null != view) {
+      view.setVisibility(View.VISIBLE);
     }
 
     // Same for "loading" view; not that it matters at this point, but it

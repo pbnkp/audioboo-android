@@ -161,6 +161,13 @@ public class BooListPaginator
 
 
 
+  public int getType()
+  {
+    return mBooType;
+  }
+
+
+
   public boolean isRequesting()
   {
     return mRequesting;
