@@ -42,13 +42,8 @@
   <color name="boo_list_title_selected">@android:color/white</color> <!-- 16 -->
   <color name="boo_list_location_selected">@color/bb_white_69</color>
 
-  <color name="boo_list_background_even_regular">@android:color/black</color>
-  <color name="boo_list_background_odd_regular">#222222</color>
-  <color name="boo_list_background_even_pressed">#002d46</color>
-  <color name="boo_list_background_odd_pressed">#00455a</color>
-
-  <color name="boo_list_background_even_active">#004463</color>
-  <color name="boo_list_background_odd_active">#005575</color>
+  <!-- FIXME -->
+  <color name="boo_list_background_active">#004463</color>
 
   <color name="boo_list_image_background">#a1a7b2</color>
 

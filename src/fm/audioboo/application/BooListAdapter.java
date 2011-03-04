@@ -75,14 +75,12 @@ public class BooListAdapter extends BaseAdapter
 
   // Color IDs for the item background for the regular, unselected state
   private static final int BACKGROUND_RESOURCE_REGULAR[] = {
-    R.drawable.boo_list_background_odd,
-    R.drawable.boo_list_background_even,
+    R.drawable.boo_list_background,
   };
 
   // Color IDs for the item background for the selected state
   private static final int BACKGROUND_RESOURCE_SELECTED[] = {
-    R.color.boo_list_background_odd_active,
-    R.color.boo_list_background_even_active,
+    R.color.boo_list_background_active,
   };
 
 
