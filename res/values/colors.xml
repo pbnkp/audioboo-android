@@ -18,6 +18,7 @@
 
   <color name="bb_black_80">#cc000000</color>
 
+  <color name="bb_gray_80">#cc888888</color>
   <color name="bb_darkgray_80">#cc222222</color>
 
   <color name="bb_teal">#ff2d383b</color>
@@ -42,9 +43,7 @@
   <color name="boo_list_title_selected">@android:color/white</color> <!-- 16 -->
   <color name="boo_list_location_selected">@color/bb_white_69</color>
 
-  <!-- FIXME -->
-  <color name="boo_list_background_active">#004463</color>
-
+  <color name="boo_list_background_active">@color/bb_deep_pink_dark</color>
   <color name="boo_list_image_background">#a1a7b2</color>
 
   <!--

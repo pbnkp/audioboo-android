@@ -1,7 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
  This file is part of AudioBoo, an android program for audio blogging.
- Copyright (C) 2009 BestBefore Media Ltd. All rights reserved.
+ Copyright (C) 2009 BestBefore Media Ltd.
+ Copyright (C) 2010,2011 AudioBoo Ltd.
+ All rights reserved.
 
  Author: Jens Finkhaeuser <jens@finkhaeuser.de>
 
@@ -9,16 +11,16 @@
 -->
 <selector xmlns:android="http://schemas.android.com/apk/res/android">
   <!-- Selected via trackball -->
-  <item android:color="#b2ffffff"
+  <item android:color="@color/bb_white_69"
       android:state_selected="true"
       android:state_pressed="false"
     />
 
   <!-- Pressed via screen or trackball -->
-  <item android:color="#b2ffffff"
+  <item android:color="@color/bb_white_69"
       android:state_pressed="true"
     />
 
   <!-- Regular -->
-  <item android:color="#b2ffffff" />
+  <item android:color="@color/bb_gray_80" />
 </selector>
