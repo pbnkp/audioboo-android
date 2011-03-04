@@ -49,6 +49,9 @@
   <!-- Filter dialog title -->
   <string name="browse_boos_filter_title">Filter By</string>
 
+  <!-- Hints -->
+  <string name="browse_hint_menu">The menu button reveals more actions you can take.</string>
+
 
   <!--
     Recording view

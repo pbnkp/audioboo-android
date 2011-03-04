@@ -21,28 +21,72 @@
       android:dividerHeight="0dp"
     />
 
+
   <!-- Empty list view -->
-  <LinearLayout android:id="@+id/browse_boos_empty"
-      android:orientation="vertical"
+  <RelativeLayout android:id="@+id/browse_boos_empty"
       android:layout_width="fill_parent"
       android:layout_height="fill_parent"
-      android:gravity="center"
     >
+    <LinearLayout
+        android:orientation="vertical"
+        android:layout_width="fill_parent"
+        android:layout_height="fill_parent"
+        android:layout_alignParentTop="true"
+        android:gravity="center"
+      >
 
-    <ProgressBar android:id="@+id/browse_boos_progress"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:max="10000"
-        style="android:progressBarStyleSmall"
-      />
+      <RelativeLayout
+          android:layout_width="fill_parent"
+          android:layout_height="60dp"
+          android:gravity="center"
+        >
+        <ProgressBar android:id="@+id/browse_boos_progress"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:max="10000"
+            style="android:progressBarStyleSmall"
+          />
 
-    <ImageView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="20dp"
-        android:src="@drawable/logotype"
+        <Button android:id="@+id/browse_boos_retry"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:paddingLeft="15dp"
+            android:paddingRight="15dp"
+            android:text="Retry"
+            android:visibility="gone"
+          />
+      </RelativeLayout>
+
+      <ImageView
+          android:layout_width="wrap_content"
+          android:layout_height="wrap_content"
+          android:layout_marginTop="20dp"
+          android:src="@drawable/logotype"
+        />
+    </LinearLayout>
+
+    <!-- Hint -->
+    <TextView
+        android:id="@+id/browse_boos_hint"
+        android:layout_width="fill_parent"
+        android:layout_height="120dp"
+        android:layout_marginLeft="15dp"
+        android:layout_marginRight="15dp"
+        android:layout_marginBottom="15dp"
+        android:layout_marginTop="15dp"
+        android:layout_alignParentBottom="true"
+        android:background="@drawable/bubble"
+        android:gravity="center"
+        android:text="@string/browse_hint_menu"
+        android:textColor="@android:color/white"
+        android:textStyle="bold"
+        android:textSize="@dimen/text_large"
+        android:shadowColor="@color/text_shadow"
+        android:shadowRadius="1"
+        android:shadowDx="0"
+        android:shadowDy="-1"
       />
-  </LinearLayout>
+  </RelativeLayout>
 
   <!-- Player view -->
   <fm.audioboo.widget.BooPlayerView
