@@ -380,7 +380,7 @@ public class BooListAdapter extends BaseAdapter
 
     // First, set the background according to whether or not id points to an
     // odd or even cell.
-    view.setBackgroundResource(backgrounds[id % 2]);
+    view.setBackgroundResource(backgrounds[id % backgrounds.length]);
 
     // Next, iterate over the known text views, and set their colors.
     Resources r = activity.getResources();
