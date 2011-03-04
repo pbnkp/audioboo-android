@@ -43,9 +43,9 @@
           android:layout_width="wrap_content"
           android:layout_height="wrap_content"
           android:text="foo"
+          android:textColor="@android:color/white"
           android:textStyle="bold"
-          android:textSize="17dp"
-          android:color="@android:color/white"
+          android:textSize="@dimen/text_larger"
           android:background="@drawable/label_background"
           android:paddingTop="2dp"
           android:paddingBottom="2dp"
@@ -68,8 +68,8 @@
         android:layout_marginTop="14dp"
         android:layout_marginLeft="22dp"
         android:text="@string/main_menu_now_playing"
-        android:textSize="14dp"
-        android:color="@android:color/white"
+        android:textColor="@android:color/white"
+        android:textSize="@dimen/text_standard"
       />
   </LinearLayout>
 
