@@ -163,6 +163,9 @@ public class BooListAdapter extends BaseAdapter
   private int                         mLastId = -1;
   private Boo                         mLastBoo;
 
+  // Handler for disclosure clicks
+  private View.OnClickListener        mDisclosureListener;
+
 
   /***************************************************************************
    * Implementation
@@ -187,6 +190,13 @@ public class BooListAdapter extends BaseAdapter
     mBooLayoutId = booLayoutId;
     mMoreLayoutId = moreLayoutId;
     mBoos = boos;
+  }
+
+
+
+  void setDisclosureListener(View.OnClickListener listener)
+  {
+    mDisclosureListener = listener;
   }
 
 
@@ -293,6 +303,13 @@ public class BooListAdapter extends BaseAdapter
       if (!customImageSet) {
         image_view.setImageResource(R.drawable.anonymous_boo);
       }
+    }
+
+    // Disclosure
+    View disclosure = view.findViewById(R.id.boo_list_item_disclosure);
+    if (null != disclosure && null != mDisclosureListener) {
+      disclosure.setTag(boo);
+      disclosure.setOnClickListener(mDisclosureListener);
     }
 
     return view;

@@ -22,6 +22,7 @@ import android.content.res.Configuration;
 import android.content.res.Resources;
 
 import android.view.View;
+import android.view.ViewGroup;
 
 import android.widget.AdapterView;
 import android.widget.ListView;
@@ -126,6 +127,12 @@ public class BrowseActivity
 
     // Initialize paginator
     mPaginator = new BooListPaginator(API.BOOS_POPULAR, this, this);
+    mPaginator.setDisclosureListener(new View.OnClickListener() {
+      public void onClick(View v)
+      {
+        onDisclosureClicked((Boo) v.getTag());
+      }
+    });
 
     // Initialize "retry" button on list empty vew
     v = findViewById(R.id.browse_boos_retry);
@@ -406,6 +413,13 @@ public class BrowseActivity
     else {
       mPaginator.getAdapter().setLoading(loading, lv.getChildAt(pos));
     }
+  }
+
+
+
+  public void onDisclosureClicked(Boo boo)
+  {
+    Log.d(LTAG, "disclosure of " + boo + " clicked.");
   }
 
 

@@ -86,6 +86,7 @@ public class BooListPaginator
   private WeakReference<ListActivity>   mActivity;
   private BooListAdapter                mAdapter;
   private BooListAdapter.ScrollListener mScrollListener;
+  private View.OnClickListener          mDisclosureListener;
 
   // Request/pagination related data
   private int                           mPage;
@@ -144,6 +145,17 @@ public class BooListPaginator
       }
     });
   }
+
+
+
+  void setDisclosureListener(View.OnClickListener listener)
+  {
+    mDisclosureListener = listener;
+    if (null != mAdapter) {
+      mAdapter.setDisclosureListener(mDisclosureListener);
+    }
+  }
+
 
 
 
@@ -254,6 +266,7 @@ public class BooListPaginator
     if (null == mAdapter) {
       firstPage = true;
       mAdapter = new BooListAdapter(activity, R.layout.boo_list_item, mBoos, R.layout.boo_list_more);
+      mAdapter.setDisclosureListener(mDisclosureListener);
       activity.getListView().setOnScrollListener(new BooListAdapter.ScrollListener(mAdapter));
     }
     else {

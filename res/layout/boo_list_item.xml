@@ -31,7 +31,7 @@
       android:layout_height="wrap_content"
       android:layout_alignParentTop="true"
       android:layout_alignParentLeft="true"
-      android:layout_marginRight="10dp"
+      android:layout_marginRight="40dp"
       android:layout_marginLeft="70dp"
       android:layout_marginTop="5dp"
       android:orientation="vertical"
@@ -74,4 +74,16 @@
       />
 
   </LinearLayout>
+
+
+  <!-- Disclosure -->
+  <ImageView android:id="@+id/boo_list_item_disclosure"
+      android:layout_width="30dp"
+      android:layout_height="60dp"
+      android:layout_margin="2dp"
+      android:layout_alignParentTop="true"
+      android:layout_alignParentRight="true"
+      android:clickable="true"
+      android:src="@drawable/disclosure"
+    />
 </RelativeLayout>
