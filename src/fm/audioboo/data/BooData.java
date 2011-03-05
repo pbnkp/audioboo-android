@@ -240,7 +240,37 @@ public class BooData implements Parcelable, Serializable
 
   private BooData(Parcel in)
   {
-    // FIXME
+    mId         = in.readInt();
+    mTitle      = in.readString();
+
+    mUUID       = (UUID) in.readSerializable();
+
+    mDuration   = in.readDouble();
+
+    LinkedList<Tag> tags = new LinkedList<Tag>();
+    in.readTypedList(tags, Tag.CREATOR);
+    mTags = tags.size() > 0 ? tags : null;
+
+    mUser       = in.readParcelable(User.class.getClassLoader());
+
+    mRecordedAt = (Date) in.readSerializable();
+    mUpdatedAt  = (Date) in.readSerializable();
+    mUploadedAt = (Date) in.readSerializable();
+
+    mLocation   = in.readParcelable(BooLocation.class.getClassLoader());
+
+    mHighMP3Url = in.readParcelable(Uri.class.getClassLoader());
+    mImageUrl   = in.readParcelable(Uri.class.getClassLoader());
+    mDetailUrl  = in.readParcelable(Uri.class.getClassLoader());
+
+    mFilename   = in.readString();
+
+    LinkedList<Recording> recordings = new LinkedList<Recording>();
+    in.readTypedList(recordings, Recording.CREATOR);
+    mRecordings = recordings.size() > 0 ? recordings : null;
+
+    mPlays      = in.readInt();
+    mComments   = in.readInt();
   }
 
 
