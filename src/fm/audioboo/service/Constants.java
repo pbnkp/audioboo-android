@@ -38,4 +38,14 @@ public class Constants
   public static final int STATE_FINISHED        = STATE_NONE;
   public static final int STATE_BUFFERING       = 6;
   public static final int STATE_ERROR           = 7;
+
+  // Events
+  public static final String EVENT_PROGRESS     = "fm.audioboo.service.events.progress";
+
+  // Event data.
+  public static final String PROGRESS_STATE     = "fm.audioboo.service.event.data.progress-state";
+  public static final String PROGRESS_PROGRESS  = "fm.audioboo.service.event.data.progress-progress";
+  public static final String PROGRESS_TOTAL     = "fm.audioboo.service.event.data.progress-total";
+
+
 }

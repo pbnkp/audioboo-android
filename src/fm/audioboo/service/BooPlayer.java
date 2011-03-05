@@ -67,9 +67,9 @@ public class BooPlayer extends Thread
   /***************************************************************************
    * Listener to state changes
    **/
-  public static abstract class ProgressListener
+  public static interface ProgressListener
   {
-    public abstract void onProgress(int state, double progress);
+    public void onProgress(int state, double progress, double total);
   }
 
 
@@ -138,6 +138,16 @@ public class BooPlayer extends Thread
   public Object getLock()
   {
     return mLock;
+  }
+
+
+
+  /**
+   * Set progress listener
+   **/
+  void setProgressListener(ProgressListener listener)
+  {
+    mListener = listener;
   }
 
 
@@ -545,7 +555,7 @@ public class BooPlayer extends Thread
     mPlaybackProgress = 0f;
     mTimestamp = System.currentTimeMillis();
 
-    mListener.onProgress(Constants.STATE_PLAYING, mPlaybackProgress);
+    mListener.onProgress(Constants.STATE_PLAYING, mPlaybackProgress, getDuration());
 
     try {
       mTimer = new Timer();
@@ -576,7 +586,7 @@ public class BooPlayer extends Thread
       return;
     }
 
-    mListener.onProgress(Constants.STATE_FINISHED, mPlaybackProgress);
+    mListener.onProgress(Constants.STATE_FINISHED, mPlaybackProgress, getDuration());
   }
 
 
@@ -592,7 +602,7 @@ public class BooPlayer extends Thread
       return;
     }
 
-    mListener.onProgress(Constants.STATE_BUFFERING, 0f);
+    mListener.onProgress(Constants.STATE_BUFFERING, 0f, getDuration());
   }
 
 
@@ -610,7 +620,7 @@ public class BooPlayer extends Thread
       return;
     }
 
-    mListener.onProgress(Constants.STATE_PLAYING, mPlaybackProgress);
+    mListener.onProgress(Constants.STATE_PLAYING, mPlaybackProgress, getDuration());
   }
 
 
@@ -626,7 +636,7 @@ public class BooPlayer extends Thread
       return;
     }
 
-    mListener.onProgress(Constants.STATE_ERROR, 0f);
+    mListener.onProgress(Constants.STATE_ERROR, 0f, getDuration());
   }
 
 
@@ -656,4 +666,19 @@ public class BooPlayer extends Thread
     sendStatePlayback();
   }
 
+
+
+  /**
+   * Helper; get duration if a Boo is set
+   **/
+  private double getDuration()
+  {
+    synchronized (mLock)
+    {
+      if (null != mBoo) {
+        return mBoo.getDuration();
+      }
+    }
+    return 0f;
+  }
 }

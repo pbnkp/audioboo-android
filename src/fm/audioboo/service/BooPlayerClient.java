@@ -13,6 +13,8 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.ServiceConnection;
 import android.content.ComponentName;
+import android.content.BroadcastReceiver;
+import android.content.IntentFilter;
 
 import android.os.IBinder;
 import android.os.RemoteException;
@@ -33,10 +35,13 @@ public class BooPlayerClient
    **/
   private static final String LTAG = "BooPlayerClient";
 
-  // FIXME
-  public static abstract class ProgressListener
+
+  /***************************************************************************
+   * Progress listener
+   **/
+  public static interface ProgressListener
   {
-    public abstract void onProgress(int state, double progress);
+    public void onProgress(int state, double progress, double total);
   }
 
 
@@ -60,21 +65,53 @@ public class BooPlayerClient
   // Service stub
   private volatile IBooPlaybackService  mStub = null;
 
+  // Progress listener
+  private ProgressListener              mListener;
+  private BroadcastReceiver             mReceiver = new BroadcastReceiver() {
+    @Override
+    public void onReceive(Context context, Intent intent)
+    {
+      if (intent.getAction().equals(Constants.EVENT_PROGRESS)) {
+        int state = intent.getIntExtra(Constants.PROGRESS_STATE, 0);
+        double progress = intent.getDoubleExtra(Constants.PROGRESS_PROGRESS, 0f);
+        double total = intent.getDoubleExtra(Constants.PROGRESS_TOTAL, 0f);
+        if (null != mListener) {
+          mListener.onProgress(state, progress, total);
+        }
+      }
+    }
+  };
+
   // Service connection
   private ServiceConnection             mConnection = new ServiceConnection() {
     public void onServiceConnected(ComponentName className, IBinder service)
     {
       mStub = IBooPlaybackService.Stub.asInterface(service);
+
+      // Notify bind success.
       BindListener listener = mBindListener.get();
       if (null != listener) {
         listener.onBound(BooPlayerClient.this);
       }
+
+      // Register a broadcast receiver for state updates
+      Context ctx = mContext.get();
+      if (null == ctx) {
+        return;
+      }
+      ctx.registerReceiver(mReceiver, new IntentFilter(Constants.EVENT_PROGRESS));
     }
 
 
     public void onServiceDisconnected(ComponentName className)
     {
       mStub = null;
+
+      Context ctx = mContext.get();
+      if (null == ctx) {
+        return;
+      }
+      ctx.registerReceiver(null, new IntentFilter(Constants.EVENT_PROGRESS));
     }
   };
 
@@ -136,6 +173,13 @@ public class BooPlayerClient
     return ctx.bindService(
         new Intent(IBooPlaybackService.class.getName()),
         mConnection, Context.BIND_AUTO_CREATE);
+  }
+
+
+
+  public void setProgressListener(ProgressListener listener)
+  {
+    mListener = listener;
   }
 
 

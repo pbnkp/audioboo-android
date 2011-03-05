@@ -161,7 +161,7 @@ public class BooPlayerView extends LinearLayout implements Handler.Callback
   /***************************************************************************
    * Boo Progress Listener
    **/
-  private class BooProgressListener extends BooPlayerClient.ProgressListener
+  private class BooProgressListener implements BooPlayerClient.ProgressListener
   {
     private Handler mHandler;
 
@@ -171,7 +171,7 @@ public class BooPlayerView extends LinearLayout implements Handler.Callback
     }
 
 
-    public void onProgress(int state, double progress)
+    public void onProgress(int state, double progress, double total)
     {
       switch (state) {
         case Constants.STATE_PLAYING:
@@ -315,7 +315,7 @@ public class BooPlayerView extends LinearLayout implements Handler.Callback
     // Log.d(LTAG, "view start");
     // Grab the play/pause button from the View. That's handed to the
     // BooPlayer.
-    // FIXME Globals.get().mPlayer.setProgressListener(new BooProgressListener(this));
+    Globals.get().mPlayer.setProgressListener(new BooProgressListener(this));
     Globals.get().mPlayer.play(mBoo);
 
     // Initialize button state

@@ -129,7 +129,7 @@ public class RecordActivity extends Activity
     mRecordButton.setKeepScreenOn(true);
 
     // Stop playback, regardless where it's been started from.
-    Globals.get().mPlayer.stopPlaying();
+    // FIXME Globals.get().mPlayer.stopPlaying();
     stopPlayer();
 
     // Log.d(LTAG, "Resume recording!");
@@ -240,7 +240,7 @@ public class RecordActivity extends Activity
   private void startCountdown()
   {
     // Stop playback, regardless where it's been started from.
-    Globals.get().mPlayer.stopPlaying();
+    // FIXME Globals.get().mPlayer.stopPlaying();
     stopPlayer();
 
     // Start countdown.

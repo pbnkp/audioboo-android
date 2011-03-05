@@ -35,7 +35,9 @@ import android.util.Log;
 /**
  * Service implementing IAudiobooService
  **/
-public class AudiobooService extends Service
+public class AudiobooService
+       extends Service
+       implements BooPlayer.ProgressListener
 {
   /***************************************************************************
    * Private constants
@@ -71,6 +73,7 @@ public class AudiobooService extends Service
   {
     if (null == mPlayer) {
       mPlayer = new BooPlayer(this);
+      mPlayer.setProgressListener(this);
       mPlayer.start();
     }
   }
@@ -86,6 +89,20 @@ public class AudiobooService extends Service
       mPlayer = null;
     }
   }
+
+
+  /***************************************************************************
+   * ProgressListener implementation
+   **/
+  public void onProgress(int state, double progress, double total)
+  {
+    Intent i = new Intent(Constants.EVENT_PROGRESS);
+    i.putExtra(Constants.PROGRESS_STATE, state);
+    i.putExtra(Constants.PROGRESS_PROGRESS, progress);
+    i.putExtra(Constants.PROGRESS_TOTAL, total);
+    sendBroadcast(i);
+  }
+
 
 
   /***************************************************************************
