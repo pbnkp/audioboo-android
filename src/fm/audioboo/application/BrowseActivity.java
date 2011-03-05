@@ -17,7 +17,9 @@ import android.os.Bundle;
 
 import android.os.Handler;
 import android.os.Message;
+import android.os.Parcelable;
 
+import android.content.Intent;
 import android.content.res.Configuration;
 import android.content.res.Resources;
 
@@ -176,6 +178,7 @@ public class BrowseActivity
       BooPlayerView player = (BooPlayerView) findViewById(R.id.browse_boos_player);
       if (null != player) {
         if (player.isPaused()) {
+          // FIXME
           player.resume();
         }
         else {
@@ -201,6 +204,7 @@ public class BrowseActivity
     // Pause playback.
     BooPlayerView player = (BooPlayerView) findViewById(R.id.browse_boos_player);
     if (null != player) {
+      // FIXME
       player.pause();
     }
   }
@@ -419,7 +423,9 @@ public class BrowseActivity
 
   public void onDisclosureClicked(Boo boo)
   {
-    Log.d(LTAG, "disclosure of " + boo + " clicked.");
+    Intent i = new Intent(this, BooDetailsActivity.class);
+    i.putExtra(BooDetailsActivity.EXTRA_BOO_DATA, (Parcelable) boo.mData);
+    startActivity(i);
   }
 
 

@@ -12,6 +12,7 @@ package fm.audioboo.service;
 import android.app.Service;
 
 import android.os.IBinder;
+import android.os.Parcelable;
 
 import android.content.Context;
 import android.content.Intent;
@@ -23,6 +24,8 @@ import android.app.NotificationManager;
 
 import fm.audioboo.data.BooData;
 import fm.audioboo.application.Boo;
+
+import fm.audioboo.application.BooDetailsActivity;
 
 import fm.audioboo.application.R;
 
@@ -99,8 +102,8 @@ public class AudiobooService extends Service
 
       // Create intent for notification clicks. We want to open the Boo's detail
       // view.
-      Intent intent = new Intent(AudiobooService.this, fm.audioboo.application.AudioBoo.class); // FIXME , ShelfActivity.class);
-      // FIXME intent.putExtra(ShelfActivity.EXTRA_SHELF_ID, shelfId);
+      Intent intent = new Intent(AudiobooService.this, BooDetailsActivity.class);
+      intent.putExtra(BooDetailsActivity.EXTRA_BOO_DATA, (Parcelable) boo);
       PendingIntent contentIntent = PendingIntent.getActivity(AudiobooService.this, 0, intent, 0);
 
       // Create Notification
