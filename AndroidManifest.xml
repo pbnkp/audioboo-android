@@ -76,6 +76,10 @@
         android:configChanges="orientation|keyboardHidden"
       />
 
+    <activity android:name=".BooDetailsActivity"
+        android:configChanges="orientation|keyboardHidden"
+      />
+
 
     <!-- Audio playback service -->
     <service android:name="fm.audioboo.service.AudiobooService"
