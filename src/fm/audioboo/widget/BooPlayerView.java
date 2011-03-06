@@ -111,9 +111,6 @@ public class BooPlayerView extends LinearLayout implements Handler.Callback
   // Title
   private TextView            mTitle;
 
-  // Boo to be played.
-  private Boo                 mBoo;
-
   // Listener
   private PlaybackEndListener mListener;
 
@@ -253,14 +250,14 @@ public class BooPlayerView extends LinearLayout implements Handler.Callback
     setActive(true);
 
     // Log.d(LTAG, "view play: " + playImmediately);
-    mBoo = boo;
+    String title = Globals.get().mPlayer.getTitle();
 
     // Set title
-    if (null == mBoo.mData.mTitle) {
+    if (null == title) {
       setTitle(ctx.getResources().getString(R.string.boo_player_new_title));
     }
     else {
-      setTitle(mBoo.mData.mTitle);
+      setTitle(title);
     }
 
     // Set the button to a neutral state. startPlaying() will set it to a
@@ -269,9 +266,7 @@ public class BooPlayerView extends LinearLayout implements Handler.Callback
     setButtonState(STATE_STOPPED);
 
     // If we're supposed to play back immediately, then do so.
-    if (playImmediately) {
-      startPlaying();
-    }
+    startPlaying(boo, playImmediately);
   }
 
 
@@ -289,9 +284,8 @@ public class BooPlayerView extends LinearLayout implements Handler.Callback
       case STATE_BUFFERING:
         mButton.setChecked(false);
         mButton.setIndeterminate(true);
-        if (null != mBoo && 0.0 != mBoo.getDuration()) {
-          mButton.setMax((int) (mBoo.getDuration() * PROGRESS_MULTIPLIER));
-        }
+        double duration = Globals.get().mPlayer.getDuration();
+        mButton.setMax((int) (duration * PROGRESS_MULTIPLIER));
         break;
 
       case STATE_PLAYING:
@@ -310,13 +304,19 @@ public class BooPlayerView extends LinearLayout implements Handler.Callback
 
 
 
-  private void startPlaying()
+  private void startPlaying(Boo boo, boolean playImmediately)
   {
     // Log.d(LTAG, "view start");
     // Grab the play/pause button from the View. That's handed to the
     // BooPlayer.
     Globals.get().mPlayer.setProgressListener(new BooProgressListener(this));
-    Globals.get().mPlayer.play(mBoo);
+
+    if (null != boo) {
+      Globals.get().mPlayer.play(boo, playImmediately);
+    }
+    else {
+      Globals.get().mPlayer.resume();
+    }
 
     // Initialize button state
     setButtonState(STATE_BUFFERING);
@@ -357,9 +357,7 @@ public class BooPlayerView extends LinearLayout implements Handler.Callback
     setActive(false);
 
     // Stops playback.
-    if (null != mBoo) {
-      Globals.get().mPlayer.stop();
-    }
+    Globals.get().mPlayer.stop();
 
     // Set button to a neutral state
     setButtonState(STATE_STOPPED);
@@ -371,9 +369,7 @@ public class BooPlayerView extends LinearLayout implements Handler.Callback
   {
     // Log.d(LTAG, "view pause");
     // Pauses playback.
-    if (null != mBoo) {
-      Globals.get().mPlayer.pause();
-    }
+    Globals.get().mPlayer.pause();
   }
 
 
@@ -382,9 +378,7 @@ public class BooPlayerView extends LinearLayout implements Handler.Callback
   {
     // Log.d(LTAG, "view resume");
     // Resumes playback.
-    if (null != mBoo) {
-      Globals.get().mPlayer.resume();
-    }
+    Globals.get().mPlayer.resume();
   }
 
 
@@ -456,7 +450,7 @@ public class BooPlayerView extends LinearLayout implements Handler.Callback
     // Log.d(LTAG, "Got message: " + msg.what);
     switch (msg.what) {
       case MSG_ON_START:
-        startPlaying();
+        startPlaying(null, false);
         break;
 
       case MSG_ON_STOP:
