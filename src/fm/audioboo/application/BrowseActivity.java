@@ -45,6 +45,7 @@ import android.app.AlertDialog;
 
 import java.util.LinkedList;
 
+import fm.audioboo.service.Constants;
 import fm.audioboo.widget.BooPlayerView;
 
 import android.util.Log;
@@ -110,7 +111,12 @@ public class BrowseActivity
         Toast.makeText(BrowseActivity.this, R.string.browse_boos_playback_error,
             Toast.LENGTH_LONG).show();
       }
-      onItemUnselected(mView, mId);
+      if (null != mView) {
+        onItemUnselected(mView, mId);
+      }
+      else {
+        hidePlayer();
+      }
     }
   }
 
@@ -173,25 +179,29 @@ public class BrowseActivity
       mPaginator.refresh();
       setTitle(mFilterLabels[mPaginator.getType()]);
     }
-    else {
-      // Resume playback.
-      BooPlayerView player = (BooPlayerView) findViewById(R.id.browse_boos_player);
-      if (null != player) {
-        if (player.isPaused()) {
-          // FIXME
-          player.resume();
+
+    // Also initialize the player view
+    BooPlayerView pv = (BooPlayerView) findViewById(R.id.browse_boos_player);
+    if (null != pv) {
+      PlaybackEndListener listener = (PlaybackEndListener) pv.getPlaybackEndListener();
+
+      if (Constants.STATE_NONE == Globals.get().mPlayer.getState()) {
+        // Right, hide the player if it's still visible.
+        // This is a bit tricky... the only place where we reliably remember
+        // the view/id for unselecting an item is in the playback end listener.
+        if (null != listener) {
+          onItemUnselected(listener.mView, listener.mId);
         }
-        else {
-          // This is a bit tricky... the only place where we reliably remember
-          // the view/id for unselecting an item is in the playback end listener.
-          PlaybackEndListener listener = (PlaybackEndListener) player.getPlaybackEndListener();
-          if (null != listener) {
-            onItemUnselected(listener.mView, listener.mId);
-          }
+      }
+      else {
+        // We appear to be playing back, so let's fade the player in and let it
+        // update.
+        showPlayer();
+        if (null == listener) {
+          pv.setPlaybackEndListener(new PlaybackEndListener(null, -1));
         }
       }
     }
-
   }
 
 
@@ -200,13 +210,6 @@ public class BrowseActivity
   public void onPause()
   {
     super.onPause();
-
-    // Pause playback.
-    BooPlayerView player = (BooPlayerView) findViewById(R.id.browse_boos_player);
-    if (null != player) {
-      // FIXME
-      player.pause();
-    }
   }
 
 
@@ -264,6 +267,61 @@ public class BrowseActivity
 
 
 
+  private void showPlayer()
+  {
+    final BooPlayerView player = (BooPlayerView) findViewById(R.id.browse_boos_player);
+    if (null == player) {
+      return;
+    }
+
+    if (View.VISIBLE == player.getVisibility()) {
+      return;
+    }
+
+    player.setVisibility(View.VISIBLE);
+    player.bringToFront();
+
+    Animation animation = AnimationUtils.loadAnimation(this, R.anim.fade_in);
+    player.startAnimation(animation);
+  }
+
+
+
+  private void hidePlayer()
+  {
+    final BooPlayerView player = (BooPlayerView) findViewById(R.id.browse_boos_player);
+    if (null == player) {
+      return;
+    }
+
+    if (View.GONE == player.getVisibility()) {
+      return;
+    }
+
+    Animation animation = AnimationUtils.loadAnimation(this, R.anim.fade_out);
+    animation.setAnimationListener(new Animation.AnimationListener() {
+      public void onAnimationEnd(Animation animation)
+      {
+        // When the player finished fading out, stop capturing clicks.
+        player.setVisibility(View.GONE);
+        getListView().bringToFront();
+      }
+
+      public void onAnimationRepeat(Animation animation)
+      {
+        // pass
+      }
+
+      public void onAnimationStart(Animation animation)
+      {
+        // pass
+      }
+    });
+    player.startAnimation(animation);
+  }
+
+
+
   private void onItemSelected(View view, int id)
   {
     // First, deal with the visual stuff. It's complex enough for it's own
@@ -275,14 +333,11 @@ public class BrowseActivity
     Boo boo = mPaginator.getList().mClips.get(id);
 
     // Fade in player view
+    showPlayer();
+
+    // Start playback
     BooPlayerView player = (BooPlayerView) findViewById(R.id.browse_boos_player);
     if (null != player) {
-      player.setVisibility(View.VISIBLE);
-      player.bringToFront();
-
-      Animation animation = AnimationUtils.loadAnimation(this, R.anim.fade_in);
-      player.startAnimation(animation);
-
       player.setPlaybackEndListener(new PlaybackEndListener(view, id));
       player.play(boo);
     }
@@ -299,29 +354,11 @@ public class BrowseActivity
     }
 
     // Fade out player view
+    hidePlayer();
+
+    // Stop playback
     final BooPlayerView player = (BooPlayerView) findViewById(R.id.browse_boos_player);
     if (null != player) {
-      Animation animation = AnimationUtils.loadAnimation(this, R.anim.fade_out);
-      animation.setAnimationListener(new Animation.AnimationListener() {
-        public void onAnimationEnd(Animation animation)
-        {
-          // When the player finished fading out, stop capturing clicks.
-          player.setVisibility(View.GONE);
-          getListView().bringToFront();
-        }
-
-        public void onAnimationRepeat(Animation animation)
-        {
-          // pass
-        }
-
-        public void onAnimationStart(Animation animation)
-        {
-          // pass
-        }
-      });
-      player.startAnimation(animation);
-
       player.stop();
     }
   }
