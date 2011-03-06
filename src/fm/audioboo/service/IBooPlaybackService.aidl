@@ -17,14 +17,27 @@ import fm.audioboo.data.BooData;
  **/
 interface IBooPlaybackService
 {
-  void play(in BooData boo);
+  /**
+   * Play the boo represented by BooData
+   **/
+  void play(in BooData boo, boolean playImmediately);
 
+  /**
+   * Stop/pause/resume playback.
+   **/
   void stop();
   void pause();
   void resume();
 
+  /**
+   * Return internal playback state; see Constants.STATE_*
+   **/
   int getState();
 
-  // FIXME progress listener
-
+  /**
+   * Return the title, duration  of the currently played boo, or null/0
+   * if no boo is playing.
+   **/
+  String getTitle();
+  double getDuration();
 }

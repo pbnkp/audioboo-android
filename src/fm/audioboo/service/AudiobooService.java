@@ -110,9 +110,9 @@ public class AudiobooService
    **/
   private final IBooPlaybackService.Stub mBinder = new IBooPlaybackService.Stub()
   {
-    public void play(BooData boo)
+    public void play(BooData boo, boolean playImmediately)
     {
-      mPlayer.play(new Boo(boo));
+      mPlayer.play(new Boo(boo), playImmediately);
 
       // Create notification
       NotificationManager nm = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
@@ -172,6 +172,22 @@ public class AudiobooService
     {
       return mPlayer.getPlaybackState();
     }
+
+
+
+    public String getTitle()
+    {
+      return mPlayer.getTitle();
+    }
+
+
+
+    public double getDuration()
+    {
+      return mPlayer.getDuration();
+    }
+
+
   };
 }
 

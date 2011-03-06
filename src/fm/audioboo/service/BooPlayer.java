@@ -156,7 +156,7 @@ public class BooPlayer extends Thread
    * Prepares the internal player with the given Boo. Starts playback
    * immediately.
    **/
-  public void play(Boo boo)
+  public void play(Boo boo, boolean playImmediately)
   {
     synchronized (mLock)
     {
@@ -164,7 +164,7 @@ public class BooPlayer extends Thread
         mResetState = true;
       }
       mBoo = boo;
-      mPendingState = Constants.STATE_PLAYING;
+      mPendingState = playImmediately ? Constants.STATE_PLAYING : Constants.STATE_PAUSED;
     }
     interrupt();
   }
@@ -216,6 +216,19 @@ public class BooPlayer extends Thread
     synchronized (mLock)
     {
       return getPlaybackStateUnlocked();
+    }
+  }
+
+
+
+  public String getTitle()
+  {
+    synchronized (mLock)
+    {
+      if (null == mBoo || null == mBoo.mData) {
+        return null;
+      }
+      return mBoo.mData.mTitle;
     }
   }
 
@@ -671,7 +684,7 @@ public class BooPlayer extends Thread
   /**
    * Helper; get duration if a Boo is set
    **/
-  private double getDuration()
+  public double getDuration()
   {
     synchronized (mLock)
     {

@@ -187,10 +187,10 @@ public class BooPlayerClient
   /***************************************************************************
    * BooPlayer implementation
    **/
-  public void play(Boo boo)
+  public void play(Boo boo, boolean playImmediately)
   {
     try {
-      mStub.play(boo.mData);
+      mStub.play(boo.mData, playImmediately);
     } catch (RemoteException ex) {
       Log.e(LTAG, "Exception " + ex.getMessage());
     }
@@ -240,4 +240,29 @@ public class BooPlayerClient
     }
     return Constants.STATE_NONE;
   }
+
+
+
+  public String getTitle()
+  {
+    try {
+      return mStub.getTitle();
+    } catch (RemoteException ex) {
+      Log.e(LTAG, "Exception " + ex.getMessage());
+    }
+    return null;
+  }
+
+
+
+  public double getDuration()
+  {
+    try {
+      return mStub.getDuration();
+    } catch (RemoteException ex) {
+      Log.e(LTAG, "Exception " + ex.getMessage());
+    }
+    return 0f;
+  }
+
 }
