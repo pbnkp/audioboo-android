@@ -28,6 +28,7 @@ import android.media.AudioManager;
 import android.os.Handler;
 import android.os.Message;
 
+import fm.audioboo.application.Pair;
 import fm.audioboo.application.Boo;
 import fm.audioboo.application.Globals;
 
@@ -44,7 +45,10 @@ import android.util.Log;
  * Displays a player window, and uses the BooPlayer in Globals to play back
  * Boos.
  **/
-public class BooPlayerView extends LinearLayout implements Handler.Callback
+public class BooPlayerView
+       extends LinearLayout
+       implements BooPlayerClient.ProgressListener,
+                  CompoundButton.OnCheckedChangeListener
 {
   /***************************************************************************
    * Private constants
@@ -58,22 +62,6 @@ public class BooPlayerView extends LinearLayout implements Handler.Callback
 
   // The type of stream Boos play in.
   private static final int  STREAM_TYPE         = AudioManager.STREAM_MUSIC;
-
-  // Messages used to invoke onStart/onStop on main thread.
-  private static final int  MSG_ON_START  = 0;  // Start clicked
-  private static final int  MSG_ON_STOP   = 1;  // Stop clicked
-  private static final int  MSG_PLAYBACK  = 2;  // Display playback progress
-  private static final int  MSG_BUFFERING = 3;  // Display buffering progress
-  private static final int  MSG_FINISHED  = 4;  // Revert to initial state.
-
-  // Button states
-  private static final int  STATE_NONE      = -1; // Only initial state.
-  private static final int  STATE_STOPPED   = 0;  // Shows play button, but no
-                                                  // progress/indeterminate
-  private static final int  STATE_BUFFERING = 1;  // Shows stop button and
-                                                  // indeterminate
-  private static final int  STATE_PLAYING   = 2;  // Shows stop button and
-                                                  // progress.
 
 
   /***************************************************************************
@@ -103,93 +91,23 @@ public class BooPlayerView extends LinearLayout implements Handler.Callback
   private WeakReference<Context>  mContext;
 
   // Seekbar instance
-  private SeekBar             mSeekBar;
+  private SeekBar                 mSeekBar;
 
   // Button instance
-  private PlayPauseButton     mButton;
+  private PlayPauseButton         mButton;
 
   // Title
-  private TextView            mTitle;
+  private TextView                mTitle;
 
   // Listener
-  private PlaybackEndListener mListener;
+  private PlaybackEndListener     mListener;
 
-  // If we've already notified the listener since the last play call, this
-  // will be true and we won't notify the listener again.
-  private boolean             mEndedSent;
+//  // If we've already notified the listener since the last play call, this
+//  // will be true and we won't notify the listener again.
+//  private boolean                 mEndedSent;
 
   // Audio manager - used in more than one place.
-  private AudioManager        mAudioManager;
-
-  // Expected button state
-  private int                 mButtonState = STATE_NONE;
-
-
-  /***************************************************************************
-   * Button Listener
-   **/
-  private class ButtonListener implements CompoundButton.OnCheckedChangeListener
-  {
-    private Handler mHandler;
-
-    public ButtonListener(Handler.Callback callback)
-    {
-      mHandler = new Handler(callback);
-    }
-
-    public void onCheckedChanged(CompoundButton buttonView, boolean isChecked)
-    {
-      boolean shouldBeChecked = (STATE_STOPPED == mButtonState);
-      if (shouldBeChecked == isChecked) {
-        return;
-      }
-
-      if (isChecked) {
-        mHandler.obtainMessage(MSG_ON_STOP, END_STATE_SUCCESS).sendToTarget();
-      }
-      else {
-        mHandler.obtainMessage(MSG_ON_START).sendToTarget();
-      }
-    }
-  }
-
-
-
-  /***************************************************************************
-   * Boo Progress Listener
-   **/
-  private class BooProgressListener implements BooPlayerClient.ProgressListener
-  {
-    private Handler mHandler;
-
-    public BooProgressListener(Handler.Callback callback)
-    {
-      mHandler = new Handler(callback);
-    }
-
-
-    public void onProgress(int state, double progress, double total)
-    {
-      switch (state) {
-        case Constants.STATE_PLAYING:
-          mHandler.obtainMessage(MSG_PLAYBACK, new Double(progress)).sendToTarget();
-          break;
-
-        case Constants.STATE_BUFFERING:
-          mHandler.obtainMessage(MSG_BUFFERING).sendToTarget();
-          break;
-
-        case Constants.STATE_FINISHED:
-          mHandler.obtainMessage(MSG_FINISHED, END_STATE_SUCCESS).sendToTarget();
-          break;
-
-        case Constants.STATE_ERROR:
-          mHandler.obtainMessage(MSG_FINISHED, END_STATE_ERROR).sendToTarget();
-          break;
-      }
-    }
-  }
-
+  private AudioManager            mAudioManager;
 
 
   /***************************************************************************
@@ -250,54 +168,43 @@ public class BooPlayerView extends LinearLayout implements Handler.Callback
     setActive(true);
 
     // Log.d(LTAG, "view play: " + playImmediately);
-    String title = Globals.get().mPlayer.getTitle();
+
+    // Playback
+    startPlaying(boo, playImmediately);
 
     // Set title
-    if (null == title) {
-      setTitle(ctx.getResources().getString(R.string.boo_player_new_title));
-    }
-    else {
-      setTitle(title);
-    }
-
-    // Set the button to a neutral state. startPlaying() will set it to a
-    // indeterminate state, and actual playback will mean it'll switch to
-    // a playback state.
-    setButtonState(STATE_STOPPED);
-
-    // If we're supposed to play back immediately, then do so.
-    startPlaying(boo, playImmediately);
+    updateTitle();
   }
 
 
 
   private void setButtonState(int newState)
   {
-    // Log.d(LTAG, String.format("Got button state %d, switching to %d", mButtonState, newState));
-    if (mButtonState == newState) {
-      // Bail. No state change.
-      return;
-    }
-    mButtonState = newState;
-
     switch (newState) {
-      case STATE_BUFFERING:
-        mButton.setChecked(false);
-        mButton.setIndeterminate(true);
-        double duration = Globals.get().mPlayer.getDuration();
-        mButton.setMax((int) (duration * PROGRESS_MULTIPLIER));
-        break;
-
-      case STATE_PLAYING:
-        mButton.setChecked(false);
-        mButton.setIndeterminate(false);
-        break;
-
-      case STATE_STOPPED:
-      default:
+      case Constants.STATE_NONE: // Same as STATE_FINISHED
+      case Constants.STATE_PREPARING:
+      case Constants.STATE_PAUSED:
         mButton.setChecked(true);
         mButton.setIndeterminate(false);
         mButton.setProgress(0);
+        break;
+
+      case Constants.STATE_ERROR:
+        mButton.setChecked(true);
+        mButton.setIndeterminate(false);
+        mButton.setProgress(0);
+
+        sendEnded(END_STATE_ERROR);
+        break;
+
+      case Constants.STATE_PLAYING:
+        mButton.setChecked(false);
+        mButton.setIndeterminate(false);
+        break;
+
+      case Constants.STATE_BUFFERING:
+        mButton.setChecked(false);
+        mButton.setIndeterminate(true);
         break;
     }
   }
@@ -307,22 +214,18 @@ public class BooPlayerView extends LinearLayout implements Handler.Callback
   private void startPlaying(Boo boo, boolean playImmediately)
   {
     // Log.d(LTAG, "view start");
+
+    // Initialize button state
+    setButtonState(Constants.STATE_BUFFERING);
+
     // Grab the play/pause button from the View. That's handed to the
     // BooPlayer.
-    Globals.get().mPlayer.setProgressListener(new BooProgressListener(this));
-
     if (null != boo) {
       Globals.get().mPlayer.play(boo, playImmediately);
     }
     else {
       Globals.get().mPlayer.resume();
     }
-
-    // Initialize button state
-    setButtonState(STATE_BUFFERING);
-
-    // Reset flag whether an ended message was sent or not.
-    mEndedSent = false;
   }
 
 
@@ -360,7 +263,7 @@ public class BooPlayerView extends LinearLayout implements Handler.Callback
     Globals.get().mPlayer.stop();
 
     // Set button to a neutral state
-    setButtonState(STATE_STOPPED);
+    setButtonState(Constants.STATE_FINISHED);
   }
 
 
@@ -430,63 +333,34 @@ public class BooPlayerView extends LinearLayout implements Handler.Callback
       });
     }
 
-
     // Set up play/pause button
     mButton = (PlayPauseButton) content.findViewById(R.id.boo_player_button);
     if (null != mButton) {
-      setButtonState(STATE_STOPPED);
-
-      mButton.setOnCheckedChangeListener(new ButtonListener(this));
+      setButtonState(Constants.STATE_NONE);
+      mButton.setOnCheckedChangeListener(this);
     }
 
     // Remember
     mTitle = (TextView) content.findViewById(R.id.boo_player_title);
-  }
 
+    // Be informed of whatever player state exists.
+    Globals.get().mPlayer.setProgressListener(this);
 
+    // If the playback service is playing, initialize title, etc.
+    if (Constants.STATE_NONE != Globals.get().mPlayer.getState()) {
+      // Initialize button state
+      setButtonState(Constants.STATE_BUFFERING);
 
-  public boolean handleMessage(Message msg)
-  {
-    // Log.d(LTAG, "Got message: " + msg.what);
-    switch (msg.what) {
-      case MSG_ON_START:
-        startPlaying(null, false);
-        break;
-
-      case MSG_ON_STOP:
-        stop();
-        sendEnded(msg.arg1);
-        break;
-
-      case MSG_PLAYBACK:
-        setButtonState(STATE_PLAYING);
-        Double d = (Double) msg.obj;
-        mButton.setProgress((int) (d * PROGRESS_MULTIPLIER));
-        break;
-
-      case MSG_BUFFERING:
-        setButtonState(STATE_BUFFERING);
-        break;
-
-      case MSG_FINISHED:
-        setButtonState(STATE_STOPPED);
-        sendEnded(msg.arg1);
-        break;
-
-      default:
-        Log.e(LTAG, "Unknown message id: " + msg.what);
-        return false;
+      // Update title
+      updateTitle();
     }
-
-    return true;
   }
 
 
 
   private void sendEnded(int state)
   {
-    if (null != mListener && !mEndedSent) {
-      mEndedSent = true;
+    if (null != mListener) {
       mListener.onPlaybackEnded(this, state);
     }
   }
@@ -506,5 +380,69 @@ public class BooPlayerView extends LinearLayout implements Handler.Callback
           return true;
         }
     });
+  }
+
+
+
+  private void updateTitle()
+  {
+    Context ctx = mContext.get();
+    if (null == ctx) {
+      return;
+    }
+
+
+    String title = Globals.get().mPlayer.getTitle();
+    if (null == title) {
+      setTitle(ctx.getResources().getString(R.string.boo_player_new_title));
+    }
+    else {
+      setTitle(title);
+    }
+  }
+
+
+  /***************************************************************************
+   * BooPlayerClient.ProgressListener implementation
+   **/
+  public void onProgress(int state, double progress, double total)
+  {
+    // Update button state
+    setButtonState(state);
+
+    // If there's progress, update that, too.
+    if (null != mButton && total > 0) {
+      mButton.setMax((int) (total * PROGRESS_MULTIPLIER));
+      mButton.setProgress((int) (progress * PROGRESS_MULTIPLIER));
+    }
+  }
+
+
+
+  /***************************************************************************
+   * CompoundButton.OnCheckedChangeListener implementation
+   **/
+  public void onCheckedChanged(CompoundButton buttonView, boolean isChecked)
+  {
+    int state = Globals.get().mPlayer.getState();
+    boolean shouldBeChecked = (Constants.STATE_NONE == state)
+      || (Constants.STATE_PAUSED == state)
+      || (Constants.STATE_ERROR == state);
+
+    // Log.d(LTAG, "Is checked: " + isChecked + " - should be? " + shouldBeChecked);
+
+    if (shouldBeChecked == isChecked) {
+      return;
+    }
+
+    if (isChecked) {
+      stop();
+      sendEnded(END_STATE_SUCCESS);
+    }
+    else {
+      if (Constants.STATE_PAUSED == state) {
+        startPlaying(null, false);
+      }
+    }
   }
 }
