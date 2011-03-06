@@ -75,6 +75,9 @@ public class BooPlayerClient
         int state = intent.getIntExtra(Constants.PROGRESS_STATE, 0);
         double progress = intent.getDoubleExtra(Constants.PROGRESS_PROGRESS, 0f);
         double total = intent.getDoubleExtra(Constants.PROGRESS_TOTAL, 0f);
+
+        // Log.d(LTAG, String.format("State: %d ... %f/%f", state, progress, total));
+
         if (null != mListener) {
           mListener.onProgress(state, progress, total);
         }
