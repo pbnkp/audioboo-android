@@ -71,18 +71,25 @@ class ResponseParser
   private static final String TOTALS_COUNT            = "count";
   private static final String TIMESTAMP               = "timestamp";
   private static final String AUDIO_CLIPS             = "audio_clips";
+  private static final String MESSAGES                = "messages";
+  private static final String URL                     = "url";
 
   private static final String USER                    = "user";
+  private static final String SENDER                  = "sender";
   private static final String USER_ANONYMOUS          = "anonymous";
   private static final String USER_URLS               = "urls";
   private static final String USER_URLS_PROFILE       = "profile";
   private static final String USER_URLS_IMAGE         = "image";
+  private static final String USER_URLS_IMAGES        = "images";
+  private static final String USER_URLS_IMAGES_THUMB  = "thumb";
+  private static final String USER_URLS_IMAGES_FULL   = "full";
   private static final String USER_USERNAME           = "username";
   private static final String USER_ID                 = "id";
   private static final String USER_COUNTS             = "counts";
   private static final String USER_COUNTS_FOLLOWERS   = "followers";
   private static final String USER_COUNTS_AUDIO_CLIPS = "audio_clips";
   private static final String USER_COUNTS_FOLLOWINGS  = "followings";
+  private static final String USER_MESSAGING_ENABLED  = "messaging_enabled";
 
   private static final String BOO_ID                  = "id";
   private static final String BOO_TITLE               = "title";
@@ -90,12 +97,16 @@ class ResponseParser
   private static final String BOO_URLS_HIGH_MP3       = "high_mp3";
   private static final String BOO_URLS_IMAGE          = "image";
   private static final String BOO_URLS_DETAIL         = "detail";
+  private static final String BOO_URLS_IMAGES         = "images";
+  private static final String BOO_URLS_IMAGES_THUMB   = "thumb";
+  private static final String BOO_URLS_IMAGES_FULL    = "full";
   private static final String BOO_UPLOADED_AT         = "uploaded_at";
   private static final String BOO_RECORDED_AT         = "recorded_at";
   private static final String BOO_COUNTS              = "counts";
   private static final String BOO_COUNTS_PLAYS        = "plays";
   private static final String BOO_COUNTS_COMMENTS     = "comments";
   private static final String BOO_DURATION            = "duration";
+  private static final String BOO_IS_READ             = "is_read";
 
   private static final String LOCATION                = "location";
   private static final String LOCATION_LONGITUDE      = "longitude";
@@ -137,6 +148,7 @@ class ResponseParser
    **/
   public static Response<BooList> parseBooList(String response, Handler handler)
   {
+    Log.d(LTAG, "response: " + response);
     try {
       Response<JSONObject> body = retrieveBody(response, handler);
       if (null == body) {
@@ -150,9 +162,23 @@ class ResponseParser
       list.mCount = totals.getInt(TOTALS_COUNT);
 
       // Read metadata for individual boos
-      JSONArray boos = body.mContent.getJSONArray(AUDIO_CLIPS);
+      JSONArray boos = null;
+      boolean isMessage = false;
+      if (body.mContent.has(AUDIO_CLIPS)) {
+        boos = body.mContent.getJSONArray(AUDIO_CLIPS);
+      }
+      else if (body.mContent.has(MESSAGES)) {
+        boos = body.mContent.getJSONArray(MESSAGES);
+        isMessage = true;
+      }
+      else {
+        Log.e(LTAG, "List missing!");
+        handler.obtainMessage(API.ERR_PARSE_ERROR).sendToTarget();
+        return null;
+      }
+
       for (int i = 0 ; i < boos.length() ; ++i) {
-        list.mClips.add(parseBoo(boos.getJSONObject(i)));
+        list.mClips.add(parseBoo(boos.getJSONObject(i), isMessage));
       }
       // Log.d(LTAG, "# clips: " + list.mClips.size());
 
@@ -316,12 +342,22 @@ class ResponseParser
 
 
 
-  private static Boo parseBoo(JSONObject boo) throws JSONException
+  private static Boo parseBoo(JSONObject boo, boolean isMessage) throws JSONException
   {
     BooData result = new BooData();
 
+    result.mIsMessage = isMessage;
+    if (boo.has(BOO_IS_READ)) {
+      result.mIsRead = boo.getBoolean(BOO_IS_READ);
+    }
+
     // Parse user data
-    result.mUser = parseUser(boo.getJSONObject(USER));
+    if (boo.has(USER)) {
+      result.mUser = parseUser(boo.getJSONObject(USER), false);
+    }
+    else if (boo.has(SENDER)) {
+      result.mUser = parseUser(boo.getJSONObject(SENDER), true);
+    }
 
     // Parse location data
     if (boo.has(LOCATION)) {
@@ -335,7 +371,9 @@ class ResponseParser
     result.mDuration = boo.getDouble(BOO_DURATION);
 
     // Parse tags
-    result.mTags = parseTags(boo.getJSONArray(TAGS));
+    if (boo.has(TAGS)) {
+      result.mTags = parseTags(boo.getJSONArray(TAGS));
+    }
 
     // Timestamps
     result.mRecordedAt = parseTimestamp(boo.getString(BOO_RECORDED_AT));
@@ -344,15 +382,24 @@ class ResponseParser
     // URLs
     JSONObject urls = boo.getJSONObject(BOO_URLS);
     result.mHighMP3Url = Uri.parse(urls.getString(BOO_URLS_HIGH_MP3));
-    result.mDetailUrl = Uri.parse(urls.getString(BOO_URLS_DETAIL));
+    if (urls.has(BOO_URLS_DETAIL)) {
+      result.mDetailUrl = Uri.parse(urls.getString(BOO_URLS_DETAIL));
+    }
     if (urls.has(BOO_URLS_IMAGE)) {
       result.mImageUrl = Uri.parse(urls.getString(BOO_URLS_IMAGE));
     }
+    if (urls.has(BOO_URLS_IMAGES)) {
+      JSONObject images = urls.getJSONObject(BOO_URLS_IMAGES);
+      result.mThumbImageUrl = parseImageUrl(images, BOO_URLS_IMAGES_THUMB);
+      result.mFullImageUrl = parseImageUrl(images, BOO_URLS_IMAGES_FULL);
+    }
 
     // Stats
-    JSONObject stats = boo.getJSONObject(BOO_COUNTS);
-    result.mPlays = stats.getInt(BOO_COUNTS_PLAYS);
-    result.mComments = stats.getInt(BOO_COUNTS_COMMENTS);
+    if (boo.has(BOO_COUNTS)) {
+      JSONObject stats = boo.getJSONObject(BOO_COUNTS);
+      result.mPlays = stats.getInt(BOO_COUNTS_PLAYS);
+      result.mComments = stats.getInt(BOO_COUNTS_COMMENTS);
+    }
 
     // Log.d(LTAG, "result: " + result);
 
@@ -361,7 +408,7 @@ class ResponseParser
 
 
 
-  private static User parseUser(JSONObject user) throws JSONException
+  private static User parseUser(JSONObject user, boolean isSender) throws JSONException
   {
     if (user.has(USER_ANONYMOUS) && user.getBoolean(USER_ANONYMOUS)) {
       return null;
@@ -372,21 +419,50 @@ class ResponseParser
     // Basic information
     result.mId = user.getInt(USER_ID);
     result.mUsername = user.getString(USER_USERNAME);
+    result.mIsMessageSender = isSender;
+    if (isSender && user.has(USER_MESSAGING_ENABLED)) {
+      result.mMessagingEnabled = user.getBoolean(USER_MESSAGING_ENABLED);
+    }
 
     // Urls
     JSONObject urls = user.getJSONObject(USER_URLS);
-    result.mProfileUrl = Uri.parse(urls.getString(USER_URLS_PROFILE));
+    if (user.has(USER_URLS_PROFILE)) {
+      result.mProfileUrl = Uri.parse(urls.getString(USER_URLS_PROFILE));
+    }
     result.mImageUrl = Uri.parse(urls.getString(USER_URLS_IMAGE));
 
+    if (urls.has(USER_URLS_IMAGES)) {
+      JSONObject images = urls.getJSONObject(USER_URLS_IMAGES);
+      result.mThumbImageUrl = parseImageUrl(images, USER_URLS_IMAGES_THUMB);
+      result.mFullImageUrl = parseImageUrl(images, USER_URLS_IMAGES_FULL);
+    }
+
     // Stats
-    JSONObject counts = user.getJSONObject(USER_COUNTS);
-    result.mFollowers = counts.getInt(USER_COUNTS_FOLLOWERS);
-    result.mFollowings = counts.getInt(USER_COUNTS_FOLLOWINGS);
-    result.mAudioClips = counts.getInt(USER_COUNTS_AUDIO_CLIPS);
+    if (user.has(USER_COUNTS)) {
+      JSONObject counts = user.getJSONObject(USER_COUNTS);
+      result.mFollowers = counts.getInt(USER_COUNTS_FOLLOWERS);
+      result.mFollowings = counts.getInt(USER_COUNTS_FOLLOWINGS);
+      result.mAudioClips = counts.getInt(USER_COUNTS_AUDIO_CLIPS);
+    }
 
 //    Log.d(LTAG, "User: " + result);
 
     return result;
+  }
+
+
+
+  private static Uri parseImageUrl(JSONObject images, String key) throws JSONException
+  {
+    if (!images.has(key)) {
+      return null;
+    }
+    JSONObject url = images.getJSONObject(key);
+
+    if (!url.has(URL)) {
+      return null;
+    }
+    return Uri.parse(url.getString(URL));
   }
 
 
