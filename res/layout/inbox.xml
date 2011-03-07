@@ -1,0 +1,101 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+ This file is part of AudioBoo, an android program for audio blogging.
+ Copyright (C) 2011 AudiBoo Ltd.
+ All rights reserved.
+
+ Author: Jens Finkhaeuser <jens@finkhaeuser.de>
+
+ $Id$
+-->
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="fill_parent"
+    android:layout_height="fill_parent"
+  >
+  <!-- List view -->
+  <ListView android:id="@android:id/list"
+      android:orientation="vertical"
+      android:layout_width="fill_parent"
+      android:layout_height="fill_parent"
+      android:layout_marginTop="3dp"
+      android:divider="@android:color/transparent"
+      android:dividerHeight="0dp"
+    />
+
+
+  <!-- Empty list view -->
+  <RelativeLayout android:id="@+id/inbox_empty"
+      android:layout_width="fill_parent"
+      android:layout_height="fill_parent"
+    >
+    <LinearLayout
+        android:orientation="vertical"
+        android:layout_width="fill_parent"
+        android:layout_height="fill_parent"
+        android:layout_alignParentTop="true"
+        android:gravity="center"
+      >
+
+      <RelativeLayout
+          android:layout_width="fill_parent"
+          android:layout_height="60dp"
+          android:gravity="center"
+        >
+        <ProgressBar android:id="@+id/inbox_progress"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:max="10000"
+            style="android:progressBarStyleSmall"
+          />
+
+        <Button android:id="@+id/inbox_retry"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:paddingLeft="15dp"
+            android:paddingRight="15dp"
+            android:text="Retry"
+            android:visibility="gone"
+          />
+      </RelativeLayout>
+
+      <ImageView
+          android:layout_width="wrap_content"
+          android:layout_height="wrap_content"
+          android:layout_marginTop="20dp"
+          android:src="@drawable/logotype"
+        />
+    </LinearLayout>
+
+    <!-- Hint -->
+    <!-- FIXME -->
+    <TextView
+        android:id="@+id/inbox_hint"
+        android:layout_width="fill_parent"
+        android:layout_height="120dp"
+        android:layout_marginLeft="15dp"
+        android:layout_marginRight="15dp"
+        android:layout_marginBottom="15dp"
+        android:layout_marginTop="15dp"
+        android:layout_alignParentBottom="true"
+        android:background="@drawable/bubble"
+        android:gravity="center"
+        android:text="@string/browse_hint_menu"
+        android:textColor="@android:color/white"
+        android:textStyle="bold"
+        android:textSize="@dimen/text_large"
+        android:shadowColor="@color/text_shadow"
+        android:shadowRadius="1"
+        android:shadowDx="0"
+        android:shadowDy="-1"
+      />
+  </RelativeLayout>
+
+  <!-- Player view -->
+  <fm.audioboo.widget.BooPlayerView
+      android:id="@+id/inbox_player"
+      android:layout_width="fill_parent"
+      android:layout_height="wrap_content"
+      android:layout_alignParentBottom="true"
+      android:visibility="gone"
+    />
+</RelativeLayout>

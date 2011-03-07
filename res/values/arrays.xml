@@ -27,7 +27,7 @@
     <item>fm.audioboo.application.AccountActivity</item>
     <item>fm.audioboo.application.BrowseActivity</item>
     <item></item>
-    <item></item>
+    <item>fm.audioboo.application.InboxActivity</item>
     <item></item>
   </string-array>
 </resources>

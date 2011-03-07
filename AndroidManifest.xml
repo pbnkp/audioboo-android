@@ -58,6 +58,11 @@
         android:configChanges="orientation|keyboardHidden"
       />
 
+    <activity android:name=".InboxActivity"
+        android:screenOrientation="portrait"
+        android:configChanges="orientation|keyboardHidden"
+      />
+
     <activity android:name=".RecordActivity"
         android:screenOrientation="portrait"
         android:configChanges="orientation|keyboardHidden"
