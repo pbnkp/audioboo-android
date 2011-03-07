@@ -497,7 +497,7 @@ public class BooListAdapter extends BaseAdapter
 
             case ImageCache.MSG_ERROR:
             default:
-              Log.e(LTAG, "Error fetching image at URL: " + item.mImageUri);
+              Log.e(LTAG, "Error fetching image at URL: " + (item != null ? item.mImageUri : null));
               break;
           }
           return true;
@@ -551,9 +551,9 @@ public class BooListAdapter extends BaseAdapter
       return null;
     }
 
-    Uri result = boo.mData.mImageUrl;
+    Uri result = boo.mData.getThumbUrl();
     if (null == result && null != boo.mData.mUser) {
-      result = boo.mData.mUser.mImageUrl;
+      result = boo.mData.mUser.getThumbUrl();
     }
 
     return result;

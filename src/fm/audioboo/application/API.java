@@ -826,6 +826,18 @@ public class API
    * send error messages, if the Handler is non-null, but always returns the
    * result as a parameter.
    **/
+  public byte[] fetchRawSynchronous(Uri uri, Handler handler)
+  {
+    String request_uri = uri.toString();
+    if (null == uri.getAuthority()) {
+      request_uri = String.format("%s://%s/%s",
+          API_REQUEST_URI_SCHEME, mAPIHost, uri.toString());
+    }
+    return fetchRawSynchronous(request_uri, handler);
+  }
+
+
+
   public byte[] fetchRawSynchronous(String uri_string, Handler handler)
   {
     HttpGet request = new HttpGet(uri_string);

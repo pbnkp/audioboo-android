@@ -140,7 +140,7 @@ public class ImageCache extends SQLiteOpenHelper
         else {
           // Apparently it didn't, so fetch the item.
           byte[] data = Globals.get().mAPI.fetchRawSynchronous(
-              item.mImageUri.toString(), mHandler);
+              item.mImageUri, mHandler);
           if (null != data) {
             fetchItemResult(item, mHandler, data);
           }
