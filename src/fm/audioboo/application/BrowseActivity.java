@@ -11,31 +11,15 @@
 
 package fm.audioboo.application;
 
-import android.app.ListActivity;
-
 import android.os.Bundle;
 
-import android.os.Handler;
-import android.os.Message;
-import android.os.Parcelable;
-
-import android.content.Intent;
-import android.content.res.Configuration;
 import android.content.res.Resources;
 
-import android.view.View;
-import android.view.ViewGroup;
-
-import android.widget.AdapterView;
 import android.widget.ListView;
 import android.widget.ArrayAdapter;
-import android.widget.AbsListView;
 
 import android.view.Menu;
 import android.view.MenuItem;
-
-import android.view.animation.Animation;
-import android.view.animation.AnimationUtils;
 
 import android.widget.Toast;
 
@@ -43,19 +27,12 @@ import android.content.DialogInterface;
 import android.app.Dialog;
 import android.app.AlertDialog;
 
-import java.util.LinkedList;
-
-import fm.audioboo.service.Constants;
-import fm.audioboo.widget.BooPlayerView;
-
 import android.util.Log;
 
 /**
  * The BrowseActivity loads recent boos and displays them in a ListView.
  **/
-public class BrowseActivity
-       extends ListActivity
-       implements BooListPaginator.Callback
+public class BrowseActivity extends BooListActivity
 {
   /***************************************************************************
    * Private constants
@@ -78,9 +55,6 @@ public class BrowseActivity
   /***************************************************************************
    * Data members
    **/
-  // Content
-  private BooListPaginator  mPaginator;
-
   // Last error information - used and cleared in onCreateDialog
   private int               mErrorCode = -1;
   private API.APIException  mException;
@@ -90,35 +64,58 @@ public class BrowseActivity
 
 
   /***************************************************************************
-   * Helper for respoding to playback end.
+   * BooListActivity implementation
    **/
-  private class PlaybackEndListener extends BooPlayerView.PlaybackEndListener
+  public int getViewId(int viewSpec)
   {
-    public View mView;
-    public int  mId;
+    switch (viewSpec) {
+      case VIEW_ID_LAYOUT:
+        return R.layout.browse_boos;
 
+      case VIEW_ID_EMPTY_VIEW:
+        return R.id.browse_boos_empty;
 
-    public PlaybackEndListener(View view, int id)
-    {
-      mView = view;
-      mId = id;
-    }
+      case VIEW_ID_PLAYER:
+        return R.id.browse_boos_player;
 
+      case VIEW_ID_LOADING:
+        return R.id.browse_boos_progress;
 
-    public void onPlaybackEnded(BooPlayerView view, int endState)
-    {
-      if (BooPlayerView.END_STATE_SUCCESS != endState) {
-        Toast.makeText(BrowseActivity.this, R.string.browse_boos_playback_error,
-            Toast.LENGTH_LONG).show();
-      }
-      if (null != mView) {
-        onItemUnselected(mView, mId);
-      }
-      else {
-        hidePlayer();
-      }
+      case VIEW_ID_RETRY:
+        return R.id.browse_boos_retry;
+
+      default:
+        return VIEW_ID_NONE;
     }
   }
+
+
+
+  public int getInitAPI()
+  {
+    return API.BOOS_FEATURED;
+  }
+
+
+
+  public String getTitleString(int api)
+  {
+    return mFilterLabels[api];
+  }
+
+
+
+  @Override
+  public void onError(int code, API.APIException exception)
+  {
+    super.onError(code, exception);
+
+    // Store error variables.
+    mErrorCode = code;
+    mException = exception;
+    showDialog(DIALOG_ERROR);
+  }
+
 
 
   /***************************************************************************
@@ -129,97 +126,8 @@ public class BrowseActivity
   {
     super.onCreate(savedInstanceState);
 
-    setContentView(R.layout.browse_boos);
-    View v = findViewById(R.id.browse_boos_empty);
-    getListView().setEmptyView(v);
-
-    // Initialize paginator
-    mPaginator = new BooListPaginator(API.BOOS_POPULAR, this, this);
-    mPaginator.setDisclosureListener(new View.OnClickListener() {
-      public void onClick(View v)
-      {
-        onDisclosureClicked((Boo) v.getTag());
-      }
-    });
-
-    // Initialize "retry" button on list empty vew
-    v = findViewById(R.id.browse_boos_retry);
-    if (null != v) {
-      v.setOnClickListener(new View.OnClickListener() {
-          public void onClick(View v) {
-            mPaginator.refresh();
-            setTitle(mFilterLabels[mPaginator.getType()]);
-          }
-      });
-    }
-
     // Load filter labels
     mFilterLabels = getResources().getStringArray(R.array.browse_boos_filters);
-  }
-
-
-
-  @Override
-  public void onStart()
-  {
-    super.onStart();
-    //Log.d(LTAG, "Start");
-  }
-
-
-
-  @Override
-  public void onResume()
-  {
-    super.onResume();
-    //Log.d(LTAG, "Resume");
-
-    // Load boos, but only if that hasn't happened yet..
-    if (null == mPaginator.getList()) {
-      mPaginator.refresh();
-      setTitle(mFilterLabels[mPaginator.getType()]);
-    }
-
-    // Also initialize the player view
-    BooPlayerView pv = (BooPlayerView) findViewById(R.id.browse_boos_player);
-    if (null != pv) {
-      PlaybackEndListener listener = (PlaybackEndListener) pv.getPlaybackEndListener();
-
-      if (Constants.STATE_NONE == Globals.get().mPlayer.getState()) {
-        // Right, hide the player if it's still visible.
-        // This is a bit tricky... the only place where we reliably remember
-        // the view/id for unselecting an item is in the playback end listener.
-        if (null != listener) {
-          onItemUnselected(listener.mView, listener.mId);
-        }
-      }
-      else {
-        // We appear to be playing back, so let's fade the player in and let it
-        // update.
-        showPlayer();
-        if (null == listener) {
-          pv.setPlaybackEndListener(new PlaybackEndListener(null, -1));
-        }
-      }
-    }
-  }
-
-
-
-  @Override
-  public void onPause()
-  {
-    super.onPause();
-  }
-
-
-
-  @Override
-  public void onConfigurationChanged(Configuration config)
-  {
-    // Ignore when the keyboard opens to the extent that we don't fetch boos
-    // again.
-    super.onConfigurationChanged(config);
   }
 
 
@@ -247,9 +155,7 @@ public class BrowseActivity
   {
     switch (item.getItemId()) {
       case ACTION_REFRESH:
-        // Refresh Boos! While we do that, we want to empty the listview
-        mPaginator.refresh();
-        setTitle(mFilterLabels[mPaginator.getType()]);
+        refresh();
         break;
 
 
@@ -263,104 +169,6 @@ public class BrowseActivity
     }
 
     return true;
-  }
-
-
-
-  private void showPlayer()
-  {
-    final BooPlayerView player = (BooPlayerView) findViewById(R.id.browse_boos_player);
-    if (null == player) {
-      return;
-    }
-
-    if (View.VISIBLE == player.getVisibility()) {
-      return;
-    }
-
-    player.setVisibility(View.VISIBLE);
-    player.bringToFront();
-
-    Animation animation = AnimationUtils.loadAnimation(this, R.anim.fade_in);
-    player.startAnimation(animation);
-  }
-
-
-
-  private void hidePlayer()
-  {
-    final BooPlayerView player = (BooPlayerView) findViewById(R.id.browse_boos_player);
-    if (null == player) {
-      return;
-    }
-
-    if (View.GONE == player.getVisibility()) {
-      return;
-    }
-
-    Animation animation = AnimationUtils.loadAnimation(this, R.anim.fade_out);
-    animation.setAnimationListener(new Animation.AnimationListener() {
-      public void onAnimationEnd(Animation animation)
-      {
-        // When the player finished fading out, stop capturing clicks.
-        player.setVisibility(View.GONE);
-        getListView().bringToFront();
-      }
-
-      public void onAnimationRepeat(Animation animation)
-      {
-        // pass
-      }
-
-      public void onAnimationStart(Animation animation)
-      {
-        // pass
-      }
-    });
-    player.startAnimation(animation);
-  }
-
-
-
-  private void onItemSelected(View view, int id)
-  {
-    // First, deal with the visual stuff. It's complex enough for it's own
-    // function.
-    mPaginator.getAdapter().markSelected(view, id);
-
-    // Next, we'll need to kill the audio player and restart it, but only if
-    // it's a different view that's been selected.
-    Boo boo = mPaginator.getList().mClips.get(id);
-
-    // Fade in player view
-    showPlayer();
-
-    // Start playback
-    BooPlayerView player = (BooPlayerView) findViewById(R.id.browse_boos_player);
-    if (null != player) {
-      player.setPlaybackEndListener(new PlaybackEndListener(view, id));
-      player.play(boo);
-    }
-  }
-
-
-
-  private void onItemUnselected(View view, int id)
-  {
-    // And also switch the view to unselected.
-    BooListAdapter adapter = mPaginator.getAdapter();
-    if (null != adapter) {
-      adapter.unselect(view, id);
-    }
-
-    // Fade out player view
-    hidePlayer();
-
-    // Stop playback
-    final BooPlayerView player = (BooPlayerView) findViewById(R.id.browse_boos_player);
-    if (null != player) {
-      player.stop();
-    }
   }
 
 
@@ -396,8 +204,7 @@ public class BrowseActivity
                       }
                     }
 
-                    mPaginator.refresh(booType);
-                    setTitle(mFilterLabels[booType]);
+                    refresh(booType);
                   }
               }
             );
@@ -437,104 +244,5 @@ public class BrowseActivity
         list.setAdapter(new ArrayAdapter<CharSequence>(this,
             android.R.layout.select_dialog_item, android.R.id.text1, opts));
     }
-  }
-
-
-
-  private void setPageLoading(boolean loading)
-  {
-    // Find out which view the progress view is, and switch it to "loading".
-    ListView lv = getListView();
-    int pos = mPaginator.getList().mClips.size();
-    pos = pos - lv.getFirstVisiblePosition();
-
-    if (pos < 0 || pos >= lv.getChildCount()) {
-      mPaginator.getAdapter().setLoading(loading, null);
-    }
-    else {
-      mPaginator.getAdapter().setLoading(loading, lv.getChildAt(pos));
-    }
-  }
-
-
-
-  public void onDisclosureClicked(Boo boo)
-  {
-    Intent i = new Intent(this, BooDetailsActivity.class);
-    i.putExtra(BooDetailsActivity.EXTRA_BOO_DATA, (Parcelable) boo.mData);
-    startActivity(i);
-  }
-
-
-
-  /***************************************************************************
-   * BooListPaginator.Callback implementation
-   **/
-  public void onStartRequest(boolean firstPage)
-  {
-    if (firstPage) {
-      // Replace the list view with a loading screen.
-      setListAdapter(null);
-
-      View view = findViewById(R.id.browse_boos_progress);
-      if (null != view) {
-        view.setVisibility(View.VISIBLE);
-      }
-      view = findViewById(R.id.browse_boos_retry);
-      if (null != view) {
-        view.setVisibility(View.GONE);
-      }
-    }
-    else {
-      setPageLoading(true);
-    }
-  }
-
-
-
-  public void onResults(boolean firstPage)
-  {
-    // Initialize list view if this was a first request.
-    if (firstPage) {
-      setListAdapter(mPaginator.getAdapter());
-    }
-    else {
-      setPageLoading(false);
-    }
-  }
-
-
-
-  public void onError(int code, API.APIException exception)
-  {
-    // Show error dialog.
-    mErrorCode = code;
-    mException = exception;
-    showDialog(DIALOG_ERROR);
-
-    // Also reset view.
-    setListAdapter(null);
-    View view = findViewById(R.id.browse_boos_progress);
-    if (null != view) {
-      view.setVisibility(View.GONE);
-    }
-    view = findViewById(R.id.browse_boos_retry);
-    if (null != view) {
-      view.setVisibility(View.VISIBLE);
-    }
-
-    // Same for "loading" view; not that it matters at this point, but it
-    // will when the view is populated again.
-    if (null != mPaginator.getAdapter()) {
-      mPaginator.getAdapter().setLoading(false, null);
-    }
-  }
-
-
-
-  public void onItemClick(AdapterView<?> parent, View view, int position, long id)
-  {
-    // Use id rather than position, because of (future?) filtering.
-    onItemSelected(view, (int) id);
   }
 }
