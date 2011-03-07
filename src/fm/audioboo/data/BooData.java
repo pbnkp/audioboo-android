@@ -108,6 +108,10 @@ public class BooData implements Parcelable, Serializable
   public int                    mId;
   public String                 mTitle;
 
+  // Only for messages
+  public boolean                mIsMessage;
+  public boolean                mIsRead;
+
   // UUID. We generate this when creating new Boos.
   public UUID                   mUUID;
 
@@ -129,6 +133,9 @@ public class BooData implements Parcelable, Serializable
   public transient Uri          mHighMP3Url;
   public transient Uri          mImageUrl;
   public transient Uri          mDetailUrl;
+
+  public transient Uri          mThumbImageUrl; // Conveniently pre-sized thumbnail/full
+  public transient Uri          mFullImageUrl;  // image URIs
 
   // Local information
   public String                 mFilename;
@@ -154,6 +161,29 @@ public class BooData implements Parcelable, Serializable
   {
     return String.format("<%d:%s:%f:[%s]:%d>", mId, mTitle, getDuration(), mUser,
         (null == mRecordings ? 0 : mRecordings.size()));
+  }
+
+
+
+  public Uri getThumbUrl()
+  {
+    if (null != mThumbImageUrl) {
+      return mThumbImageUrl;
+    }
+    if (null != mFullImageUrl) {
+      return mFullImageUrl;
+    }
+    return mImageUrl;
+  }
+
+
+
+  public Uri getFullUrl()
+  {
+    if (null != mFullImageUrl) {
+      return mFullImageUrl;
+    }
+    return mImageUrl;
   }
 
 
@@ -194,6 +224,8 @@ public class BooData implements Parcelable, Serializable
   {
     out.writeInt(mId);
     out.writeString(mTitle);
+    out.writeInt(mIsMessage ? 1 : 0);
+    out.writeInt(mIsRead ? 1 : 0);
 
     out.writeSerializable(mUUID);
 
@@ -212,6 +244,8 @@ public class BooData implements Parcelable, Serializable
     out.writeParcelable(mHighMP3Url, flags);
     out.writeParcelable(mImageUrl, flags);
     out.writeParcelable(mDetailUrl, flags);
+    out.writeParcelable(mThumbImageUrl, flags);
+    out.writeParcelable(mFullImageUrl, flags);
 
     out.writeString(mFilename);
 
@@ -240,37 +274,41 @@ public class BooData implements Parcelable, Serializable
 
   private BooData(Parcel in)
   {
-    mId         = in.readInt();
-    mTitle      = in.readString();
+    mId             = in.readInt();
+    mTitle          = in.readString();
+    mIsMessage      = (in.readInt() != 0);
+    mIsRead         = (in.readInt() != 0);
 
-    mUUID       = (UUID) in.readSerializable();
+    mUUID           = (UUID) in.readSerializable();
 
-    mDuration   = in.readDouble();
+    mDuration       = in.readDouble();
 
     LinkedList<Tag> tags = new LinkedList<Tag>();
     in.readTypedList(tags, Tag.CREATOR);
-    mTags = tags.size() > 0 ? tags : null;
+    mTags           = tags.size() > 0 ? tags : null;
 
-    mUser       = in.readParcelable(User.class.getClassLoader());
+    mUser           = in.readParcelable(User.class.getClassLoader());
 
-    mRecordedAt = (Date) in.readSerializable();
-    mUpdatedAt  = (Date) in.readSerializable();
-    mUploadedAt = (Date) in.readSerializable();
+    mRecordedAt     = (Date) in.readSerializable();
+    mUpdatedAt      = (Date) in.readSerializable();
+    mUploadedAt     = (Date) in.readSerializable();
 
-    mLocation   = in.readParcelable(BooLocation.class.getClassLoader());
+    mLocation       = in.readParcelable(BooLocation.class.getClassLoader());
 
-    mHighMP3Url = in.readParcelable(Uri.class.getClassLoader());
-    mImageUrl   = in.readParcelable(Uri.class.getClassLoader());
-    mDetailUrl  = in.readParcelable(Uri.class.getClassLoader());
+    mHighMP3Url     = in.readParcelable(Uri.class.getClassLoader());
+    mImageUrl       = in.readParcelable(Uri.class.getClassLoader());
+    mDetailUrl      = in.readParcelable(Uri.class.getClassLoader());
+    mThumbImageUrl  = in.readParcelable(Uri.class.getClassLoader());
+    mFullImageUrl   = in.readParcelable(Uri.class.getClassLoader());
 
-    mFilename   = in.readString();
+    mFilename       = in.readString();
 
     LinkedList<Recording> recordings = new LinkedList<Recording>();
     in.readTypedList(recordings, Recording.CREATOR);
-    mRecordings = recordings.size() > 0 ? recordings : null;
+    mRecordings     = recordings.size() > 0 ? recordings : null;
 
-    mPlays      = in.readInt();
-    mComments   = in.readInt();
+    mPlays          = in.readInt();
+    mComments       = in.readInt();
   }
 
 
@@ -285,6 +323,8 @@ public class BooData implements Parcelable, Serializable
     out.writeObject(null != mHighMP3Url ? mHighMP3Url.toString() : null);
     out.writeObject(null != mImageUrl ? mImageUrl.toString() : null);
     out.writeObject(null != mDetailUrl ? mDetailUrl.toString() : null);
+    out.writeObject(null != mThumbImageUrl ? mThumbImageUrl.toString() : null);
+    out.writeObject(null != mFullImageUrl ? mFullImageUrl.toString() : null);
   }
 
 
@@ -306,6 +346,16 @@ public class BooData implements Parcelable, Serializable
     s = (String) in.readObject();
     if (null != s) {
       mDetailUrl = Uri.parse(s);
+    }
+
+    s = (String) in.readObject();
+    if (null != s) {
+      mThumbImageUrl = Uri.parse(s);
+    }
+
+    s = (String) in.readObject();
+    if (null != s) {
+      mFullImageUrl = Uri.parse(s);
     }
   }
 }

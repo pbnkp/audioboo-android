@@ -27,21 +27,27 @@ import java.io.IOException;
  **/
 public class User implements Parcelable, Serializable
 {
+
   /***************************************************************************
    * Public data
    **/
   // Basic information
-  public int            mId;          // Unique user ID
-  public String         mUsername;    // Username
+  public int            mId;                // Unique user ID
+  public String         mUsername;          // Username
+  public boolean        mIsMessageSender;   // Set if this is a sender in messages
+  public boolean        mMessagingEnabled;  // Only used if the above is true.
 
   // URLs associated with the user.
-  public transient Uri  mProfileUrl;  // Profile url
-  public transient Uri  mImageUrl;    // Avatar/image url
+  public transient Uri  mProfileUrl;        // Profile url
+  public transient Uri  mImageUrl;          // Avatar/image url
+
+  public transient Uri  mThumbImageUrl;     // Conveniently pre-sized thumbnail/full
+  public transient Uri  mFullImageUrl;      // image URIs
 
   // Usage statistics.
-  public int            mFollowers;   // # users following this one
-  public int            mFollowings;  // # users this one follows
-  public int            mAudioClips;  // # clips this user uploaded
+  public int            mFollowers;         // # users following this one
+  public int            mFollowings;        // # users this one follows
+  public int            mAudioClips;        // # clips this user uploaded
 
 
 
@@ -55,6 +61,29 @@ public class User implements Parcelable, Serializable
   {
     return String.format("<%d:%s:%d/%d/%d>", mId, mUsername, mFollowers,
         mFollowings, mAudioClips);
+  }
+
+
+
+  public Uri getThumbUrl()
+  {
+    if (null != mThumbImageUrl) {
+      return mThumbImageUrl;
+    }
+    if (null != mFullImageUrl) {
+      return mFullImageUrl;
+    }
+    return mImageUrl;
+  }
+
+
+
+  public Uri getFullUrl()
+  {
+    if (null != mFullImageUrl) {
+      return mFullImageUrl;
+    }
+    return mImageUrl;
   }
 
 
@@ -72,9 +101,13 @@ public class User implements Parcelable, Serializable
   {
     out.writeInt(mId);
     out.writeString(mUsername);
+    out.writeInt(mIsMessageSender ? 1 : 0);
+    out.writeInt(mMessagingEnabled ? 1 : 0);
 
     out.writeParcelable(mProfileUrl, flags);
     out.writeParcelable(mImageUrl, flags);
+    out.writeParcelable(mThumbImageUrl, flags);
+    out.writeParcelable(mFullImageUrl, flags);
 
     out.writeInt(mFollowers);
     out.writeInt(mFollowings);
@@ -100,15 +133,19 @@ public class User implements Parcelable, Serializable
 
   private User(Parcel in)
   {
-    mId         = in.readInt();
-    mUsername   = in.readString();
+    mId               = in.readInt();
+    mUsername         = in.readString();
+    mIsMessageSender  = (in.readInt() != 0);
+    mMessagingEnabled = (in.readInt() != 0);
 
-    mProfileUrl = in.readParcelable(null);
-    mImageUrl   = in.readParcelable(null);
+    mProfileUrl       = in.readParcelable(Uri.class.getClassLoader());
+    mImageUrl         = in.readParcelable(Uri.class.getClassLoader());
+    mThumbImageUrl    = in.readParcelable(Uri.class.getClassLoader());
+    mFullImageUrl     = in.readParcelable(Uri.class.getClassLoader());
 
-    mFollowers  = in.readInt();
-    mFollowings = in.readInt();
-    mAudioClips = in.readInt();
+    mFollowers        = in.readInt();
+    mFollowings       = in.readInt();
+    mAudioClips       = in.readInt();
   }
 
 
@@ -122,6 +159,8 @@ public class User implements Parcelable, Serializable
 
     out.writeObject(null != mProfileUrl ? mProfileUrl.toString() : null);
     out.writeObject(null != mImageUrl ? mImageUrl.toString() : null);
+    out.writeObject(null != mThumbImageUrl ? mThumbImageUrl.toString() : null);
+    out.writeObject(null != mFullImageUrl ? mFullImageUrl.toString() : null);
   }
 
 
@@ -138,6 +177,16 @@ public class User implements Parcelable, Serializable
     s = (String) in.readObject();
     if (null != s) {
       mImageUrl = Uri.parse(s);
+    }
+
+    s = (String) in.readObject();
+    if (null != s) {
+      mThumbImageUrl = Uri.parse(s);
+    }
+
+    s = (String) in.readObject();
+    if (null != s) {
+      mFullImageUrl = Uri.parse(s);
     }
   }
 }
