@@ -92,7 +92,7 @@ public class InboxActivity extends BooListActivity
 
   public String getTitleString(int api)
   {
-    return "Inbox"; // FIXME
+    return getResources().getString(R.string.inbox_title);
   }
 
 
@@ -124,18 +124,9 @@ public class InboxActivity extends BooListActivity
   @Override
   public boolean onCreateOptionsMenu(Menu menu)
   {
-    return false; // FIXME refresh only
-//    String[] menu_titles = getResources().getStringArray(R.array.browse_boos_actions);
-//    final int[] menu_icons = {
-//      R.drawable.ic_menu_refresh,
-//      R.drawable.ic_menu_filter,
-//    };
-//    assert(menu_icons.length == menu_titles.length);
-//
-//    for (int i = 0 ; i < menu_titles.length ; ++i) {
-//      menu.add(0, i, 0, menu_titles[i]).setIcon(menu_icons[i]);
-//    }
-//    return true;
+    menu.add(0, ACTION_REFRESH, 0, getResources().getString(R.string.inbox_menu_refresh))
+      .setIcon(R.drawable.ic_menu_refresh);
+    return true;
   }
 
 

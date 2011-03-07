@@ -83,8 +83,7 @@ public abstract class BooListActivity
     public void onPlaybackEnded(BooPlayerView view, int endState)
     {
       if (BooPlayerView.END_STATE_SUCCESS != endState) {
-        // FIXME rename error message string
-        Toast.makeText(BooListActivity.this, R.string.browse_boos_playback_error,
+        Toast.makeText(BooListActivity.this, R.string.error_message_playback,
             Toast.LENGTH_LONG).show();
       }
       if (null != mView) {

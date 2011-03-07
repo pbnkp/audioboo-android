@@ -43,9 +43,6 @@
     <item>Nearby Boos</item>
   </string-array>
 
-  <!-- Error message when playback ended unsuccessfully -->
-  <string name="browse_boos_playback_error">Playback error, please try again!</string>
-
   <!-- Filter dialog title -->
   <string name="browse_boos_filter_title">Filter By</string>
 
@@ -145,6 +142,10 @@
 
   <string name="error_message_extra">Repeat your action when you are sure you
     have an internet connection.</string>
+
+  <!-- Error message when playback ended unsuccessfully -->
+  <string name="error_message_playback">Playback error, please try again!</string>
+
 
   <!--
     Global dialogs
@@ -262,4 +263,12 @@
   </string-array>
 
   <string name="main_menu_now_playing">Now Playing</string>
+
+  <!--
+    InboxActivity
+  -->
+
+  <string name="inbox_title">Inbox</string>
+
+  <string name="inbox_menu_refresh">Refresh</string>
 </resources>
