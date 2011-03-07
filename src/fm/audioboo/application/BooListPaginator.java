@@ -249,9 +249,8 @@ public class BooListPaginator
       return;
     }
 
-
     // Either replace results or add results.
-    if (null == mBoos || 0 == boos.mOffset || mBoos.mClips.size() != boos.mOffset) {
+    if (null == mBoos || 0 == boos.mOffset) {
       mBoos = boos;
     }
     else {
