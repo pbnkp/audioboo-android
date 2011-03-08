@@ -12,5 +12,143 @@
     android:layout_width="fill_parent"
     android:layout_height="fill_parent"
   >
-  <!-- FIXME -->
+  <ScrollView
+      android:layout_width="fill_parent"
+      android:layout_height="fill_parent"
+      android:layout_weight="1"
+    >
+    <LinearLayout
+        android:orientation="vertical"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:padding="5dp"
+      >
+      <!-- Summary -->
+      <RelativeLayout
+          android:layout_width="fill_parent"
+          android:layout_height="wrap_content"
+          android:background="@android:color/white"
+          android:gravity="left|top"
+        >
+
+        <!-- Boo thumbnail -->
+        <ImageView android:id="@+id/boo_thumb"
+            android:layout_width="60dp"
+            android:layout_height="60dp"
+            android:layout_margin="2dp"
+            android:layout_alignParentTop="true"
+            android:layout_alignParentLeft="true"
+            android:src="@drawable/anonymous_boo"
+            android:padding="1dp"
+            android:background="@color/boo_list_image_background"
+          />
+
+        <!-- Metadata -->
+       <LinearLayout
+           android:layout_width="fill_parent"
+           android:layout_height="wrap_content"
+           android:layout_alignParentTop="true"
+           android:layout_alignParentLeft="true"
+           android:layout_marginRight="40dp"
+           android:layout_marginLeft="70dp"
+           android:layout_marginTop="5dp"
+           android:orientation="vertical"
+         >
+
+        <!-- Author -->
+        <TextView android:id="@+id/boo_author"
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:textSize="@dimen/boo_list_item_author"
+            android:textColor="@color/boo_list_author"
+            android:textStyle="bold"
+            android:ellipsize="end"
+            android:lines="1"
+            android:singleLine="true"
+            android:text="@string/boo_list_anonymous_author"
+          />
+
+        <!-- Title -->
+        <TextView android:id="@+id/boo_title"
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:textSize="@dimen/boo_list_item_title"
+            android:textColor="@android:color/black"
+          />
+
+        <!-- Date -->
+        <TextView android:id="@+id/boo_date"
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:textSize="@dimen/boo_list_item_title"
+            android:textColor="@android:color/black"
+          />
+        </LinearLayout>
+      </RelativeLayout>
+
+      <!-- TODO tags -->
+
+      <!-- Image -->
+      <LinearLayout android:id="@+id/boo_image_container"
+          android:layout_width="fill_parent"
+          android:layout_height="wrap_content"
+          android:layout_marginTop="15dp"
+          android:background="@android:color/white"
+          android:orientation="vertical"
+          android:gravity="center"
+          android:padding="5dp"
+        >
+        <ProgressBar android:id="@+id/boo_image_progress"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:max="10000"
+            style="android:progressBarStyleSmall"
+          />
+
+         <ImageView android:id="@+id/boo_image"
+            android:layout_width="300dp"
+            android:layout_height="300dp"
+            android:visibility="gone"
+          />
+      </LinearLayout>
+
+      <!-- Location image -->
+      <LinearLayout android:id="@+id/boo_location_container"
+          android:layout_width="fill_parent"
+          android:layout_height="wrap_content"
+          android:layout_marginTop="15dp"
+          android:background="@android:color/white"
+          android:orientation="vertical"
+          android:gravity="center"
+          android:padding="5dp"
+        >
+        <TextView android:id="@+id/boo_location_text"
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center"
+            android:textSize="@dimen/boo_list_item_author"
+            android:textColor="@color/boo_list_author"
+            android:textStyle="bold"
+            android:ellipsize="end"
+            android:lines="1"
+            android:singleLine="true"
+          />
+
+        <ProgressBar android:id="@+id/boo_location_progress"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:max="10000"
+            style="android:progressBarStyleSmall"
+          />
+
+         <ImageView android:id="@+id/boo_location"
+            android:layout_width="300dp"
+            android:layout_height="300dp"
+            android:src="@drawable/logotype"
+            android:visibility="gone"
+          />
+      </LinearLayout>
+
+    </LinearLayout>
+  </ScrollView>
 </LinearLayout>
