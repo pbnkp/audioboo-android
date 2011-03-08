@@ -87,20 +87,17 @@ public class ImageCache extends SQLiteOpenHelper
    **/
   public static class CacheItem
   {
-    public int      mItemIndex;
-    public int      mViewIndex;
-
-    public Uri      mImageUri;
-    public int      mDimensions;
+    public Uri        mImageUri;
+    public int        mDimensions;
+    public Object     mBaton;
 
     public Bitmap   mBitmap;
 
-    public CacheItem(int index, int view, Uri uri, int dimensions)
+    public CacheItem(Uri uri, int dimensions, Object baton)
     {
-      mItemIndex = index;
-      mViewIndex = view;
       mImageUri = uri;
       mDimensions = dimensions;
+      mBaton = baton;
     }
   }
 

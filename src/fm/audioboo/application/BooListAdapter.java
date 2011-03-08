@@ -136,6 +136,24 @@ public class BooListAdapter extends BaseAdapter
   }
 
 
+
+  /***************************************************************************
+   * Cache baton
+   **/
+  private class Baton
+  {
+    public int itemIndex;
+    public int viewIndex;
+
+    Baton(int _itemIndex, int _viewIndex)
+    {
+      itemIndex = _itemIndex;
+      viewIndex = _viewIndex;
+    }
+  }
+
+
+
   /***************************************************************************
    * Data
    **/
@@ -477,7 +495,7 @@ public class BooListAdapter extends BaseAdapter
         continue;
       }
 
-      uris.add(new ImageCache.CacheItem(index, i, uri, mDimensions));
+      uris.add(new ImageCache.CacheItem(uri, mDimensions, new Baton(index, i)));
     }
 
     if (0 < uris.size()) {
@@ -516,9 +534,11 @@ public class BooListAdapter extends BaseAdapter
       return;
     }
 
+    Baton baton = (Baton) item.mBaton;
+
     // Right, we got an image. Now we just need to figure out the right view
     // to go with it.
-    View item_view = activity.getListView().getChildAt(item.mViewIndex);
+    View item_view = activity.getListView().getChildAt(baton.viewIndex);
     if (null == item_view) {
       return;
     }
@@ -526,7 +546,7 @@ public class BooListAdapter extends BaseAdapter
     // Make sure that the item for which the request was scheduled and the
     // item we're displaying currently are the same. That's what we set the
     // view's tag for in getView().
-    Boo expected_boo = mBoos.mClips.get(item.mItemIndex);
+    Boo expected_boo = mBoos.mClips.get(baton.itemIndex);
     Boo current_boo = (Boo) item_view.getTag();
     if (expected_boo.mData.mId != current_boo.mData.mId) {
       // There's been a race between cancelling downloads and sending the
