@@ -90,14 +90,26 @@ public class ImageCache extends SQLiteOpenHelper
     public Uri        mImageUri;
     public int        mDimensions;
     public Object     mBaton;
+    public String     mCacheKey;
 
-    public Bitmap   mBitmap;
+    public Bitmap     mBitmap;
 
     public CacheItem(Uri uri, int dimensions, Object baton)
     {
       mImageUri = uri;
       mDimensions = dimensions;
       mBaton = baton;
+      mCacheKey = null;
+    }
+
+
+
+    public CacheItem(Uri uri, int dimensions, Object baton, String cacheKey)
+    {
+      mImageUri = uri;
+      mDimensions = dimensions;
+      mBaton = baton;
+      mCacheKey = cacheKey;
     }
   }
 
@@ -129,7 +141,11 @@ public class ImageCache extends SQLiteOpenHelper
         CacheItem item = mItems.remove();
         // Look up in cache again. It's possible that the previous download
         // fetched the same image
-        Bitmap b = get(item.mImageUri, item.mDimensions);
+        String cacheKey = item.mCacheKey;
+        if (null == cacheKey) {
+          cacheKey = item.mImageUri.toString();
+        }
+        Bitmap b = get(cacheKey, item.mDimensions);
         if (null != b) {
           item.mBitmap = b;
           mHandler.obtainMessage(MSG_OK, item).sendToTarget();
@@ -249,7 +265,12 @@ public class ImageCache extends SQLiteOpenHelper
    * image. If the image is available at different sizes, that's not taken into
    * account, the function still returns null.
    **/
-  public Bitmap get(Uri imageUrl, int dimensions)
+  public Bitmap get(Uri uri, int dimensions)
+  {
+    return get(uri.toString(), dimensions);
+  }
+
+  public Bitmap get(String cacheKey, int dimensions)
   {
     SQLiteDatabase db = getReadableDatabase();
 
@@ -262,7 +283,7 @@ public class ImageCache extends SQLiteOpenHelper
         _ID + " = ? "
           + "AND " + DIMENSIONS + " = ?",
         new String[] {
-          imageUrl.toString(),
+          cacheKey,
           String.valueOf(dimensions)
         },
         null, null, null);
