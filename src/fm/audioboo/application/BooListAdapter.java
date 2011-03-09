@@ -576,6 +576,17 @@ public class BooListAdapter extends BaseAdapter
       result = boo.mData.mUser.getThumbUrl();
     }
 
+    if (null == result) {
+      return null;
+    }
+
+    // If the result is relative (i.e. has no authority), then we need to make
+    // it absolute. Also, we need to sign it.
+    if (null == result.getAuthority()) {
+      result = Globals.get().mAPI.makeAbsoluteUri(result);
+      result = Globals.get().mAPI.signUri(result);
+    }
+
     return result;
   }
 

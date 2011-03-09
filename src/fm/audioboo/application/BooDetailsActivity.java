@@ -209,6 +209,13 @@ public class BooDetailsActivity extends Activity
         container.setVisibility(View.GONE);
       }
       else {
+        // Create signed absolute URI
+        if (null == image_uri.getAuthority()) {
+          image_uri = Globals.get().mAPI.makeAbsoluteUri(image_uri);
+          image_uri = Globals.get().mAPI.signUri(image_uri);
+        }
+
+        // Setup view.
         image_view = (ImageView) container.findViewById(R.id.boo_image);
         if (null != image_view) {
           int size = image_view.getLayoutParams().width - image_view.getPaddingLeft()
@@ -247,7 +254,8 @@ public class BooDetailsActivity extends Activity
           image_view.setOnClickListener(new View.OnClickListener() {
               public void onClick(View v)
               {
-                Uri data = Uri.parse(String.format("http://maps.google.com/?ll=%f,%f&z=11",
+                Uri data = Uri.parse(String.format("http://maps.google.com/?ll=%f,%f&saddr=%f,%f&z=13",
+                    mBoo.mData.mLocation.mLatitude, mBoo.mData.mLocation.mLongitude,
                     mBoo.mData.mLocation.mLatitude, mBoo.mData.mLocation.mLongitude));
                 Intent i = new Intent(Intent.ACTION_VIEW, data);
                 startActivity(i);
