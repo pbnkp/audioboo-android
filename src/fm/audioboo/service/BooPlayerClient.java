@@ -9,6 +9,8 @@
 
 package fm.audioboo.service;
 
+import android.net.Uri;
+
 import android.content.Context;
 import android.content.Intent;
 import android.content.ServiceConnection;
@@ -20,6 +22,7 @@ import android.os.IBinder;
 import android.os.RemoteException;
 
 import fm.audioboo.application.Boo;
+import fm.audioboo.application.Globals;
 
 import java.lang.ref.WeakReference;
 
@@ -192,6 +195,17 @@ public class BooPlayerClient
    **/
   public void play(Boo boo, boolean playImmediately)
   {
+    // Before sending stuff off to the service, make sure the mp3 uri (if it
+    // exists) is absolute.
+    if (null != boo.mData.mHighMP3Url) {
+      Uri uri = Globals.get().mAPI.makeAbsoluteUri(boo.mData.mHighMP3Url);
+      uri = Globals.get().mAPI.signUri(uri);
+      if (null != uri) {
+        boo.mData.mHighMP3Url = uri;
+      }
+    }
+
+
     try {
       mStub.play(boo.mData, playImmediately);
     } catch (RemoteException ex) {
