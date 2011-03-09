@@ -297,7 +297,7 @@ public class BooListAdapter extends BaseAdapter
     ImageView image_view = (ImageView) view.findViewById(R.id.boo_list_item_image);
     if (null != image_view) {
       // First, determine the url we want to display.
-      Uri image_url = getDisplayUrl(boo);
+      Pair<String, Uri> image_url = getDisplayUrl(boo);
 
       boolean customImageSet = false;
       if (null != image_url) {
@@ -308,7 +308,7 @@ public class BooListAdapter extends BaseAdapter
         }
 
         // Next, try to grab an image from the cache.
-        Bitmap bitmap = Globals.get().mImageCache.get(image_url, mDimensions);
+        Bitmap bitmap = Globals.get().mImageCache.get(image_url.mFirst, mDimensions);
 
         if (null != bitmap) {
           image_view.setImageDrawable(new BitmapDrawable(bitmap));
@@ -489,13 +489,14 @@ public class BooListAdapter extends BaseAdapter
       }
 
       Boo boo = mBoos.mClips.get(index);
-      Uri uri = getDisplayUrl(boo);
+      Pair<String, Uri> uri = getDisplayUrl(boo);
 
       if (null == uri) {
         continue;
       }
 
-      uris.add(new ImageCache.CacheItem(uri, mDimensions, new Baton(index, i)));
+      uris.add(new ImageCache.CacheItem(uri.mSecond, mDimensions,
+            new Baton(index, i), uri.mFirst));
     }
 
     if (0 < uris.size()) {
@@ -565,7 +566,7 @@ public class BooListAdapter extends BaseAdapter
 
 
 
-  private Uri getDisplayUrl(Boo boo)
+  private Pair<String, Uri> getDisplayUrl(Boo boo)
   {
     if (null == boo) {
       return null;
@@ -580,6 +581,8 @@ public class BooListAdapter extends BaseAdapter
       return null;
     }
 
+    String cacheKey = result.toString();
+
     // If the result is relative (i.e. has no authority), then we need to make
     // it absolute. Also, we need to sign it.
     if (null == result.getAuthority()) {
@@ -587,7 +590,7 @@ public class BooListAdapter extends BaseAdapter
       result = Globals.get().mAPI.signUri(result);
     }
 
-    return result;
+    return new Pair<String, Uri>(cacheKey, result);
   }
 
 

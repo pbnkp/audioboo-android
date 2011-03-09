@@ -210,6 +210,7 @@ public class BooDetailsActivity extends Activity
       }
       else {
         // Create signed absolute URI
+        String cacheKey = image_uri.toString();
         if (null == image_uri.getAuthority()) {
           image_uri = Globals.get().mAPI.makeAbsoluteUri(image_uri);
           image_uri = Globals.get().mAPI.signUri(image_uri);
@@ -221,7 +222,8 @@ public class BooDetailsActivity extends Activity
           int size = image_view.getLayoutParams().width - image_view.getPaddingLeft()
             - image_view.getPaddingRight();
           uris.add(new ImageCache.CacheItem(image_uri, size,
-                new Baton(R.id.boo_image_container, R.id.boo_image, R.id.boo_image_progress)));
+                new Baton(R.id.boo_image_container, R.id.boo_image, R.id.boo_image_progress),
+                cacheKey));
         }
       }
     }
