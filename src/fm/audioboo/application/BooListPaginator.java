@@ -69,6 +69,11 @@ public class BooListPaginator
      * Also delegates onItemClick() from the ListActivity's ListView.
      **/
     public void onItemClick(AdapterView<?> parent, View view, int position, long id);
+
+    /**
+     * Delegate long clicks, too
+     **/
+    public boolean onItemLongClick(AdapterView<?> parent, View view, int position, long id);
   };
 
 
@@ -144,6 +149,23 @@ public class BooListPaginator
         }
       }
     });
+
+    // Also capture long clicks
+    activity.getListView().setOnItemLongClickListener(new AdapterView.OnItemLongClickListener() {
+      public boolean onItemLongClick(AdapterView<?> parent, View view, int position, long id)
+      {
+        if (position >= mBoos.mClips.size()) {
+          return true;
+        }
+
+        if (null != mCallback) {
+          return mCallback.onItemLongClick(parent, view, position, id);
+        }
+
+        return false;
+      }
+    });
+
   }
 
 

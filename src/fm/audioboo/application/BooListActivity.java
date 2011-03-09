@@ -423,4 +423,12 @@ public abstract class BooListActivity
     // Use id rather than position, because of (future?) filtering.
     onItemSelected(view, (int) id);
   }
+
+
+
+  public boolean onItemLongClick(AdapterView<?> parent, View view, int position, long id)
+  {
+    onDisclosureClicked((Boo) view.getTag());
+    return true;
+  }
 }
