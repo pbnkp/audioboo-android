@@ -9,5 +9,5 @@
 -->
 <resources>
   <!-- App name... probably shouldn't be localized -->
-  <string name="app_name">AudioBoo</string>
+  <string name="app_name">Audioboo</string>
 </resources>

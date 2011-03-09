@@ -77,7 +77,7 @@
   <!--
     Publish view
   -->
-  <string name="publish_activity_title">AudioBoo Publish</string>
+  <string name="publish_activity_title">Audioboo Publish</string>
 
   <string name="publish_label_picture">Attach A Picture</string>
   <string name="publish_label_title">Describe Your Boo</string>
