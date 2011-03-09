@@ -111,6 +111,16 @@ public class ImageCache extends SQLiteOpenHelper
       mBaton = baton;
       mCacheKey = cacheKey;
     }
+
+
+
+    public String getCacheKey()
+    {
+      if (null != mCacheKey) {
+        return mCacheKey;
+      }
+      return mImageUri.toString();
+    }
   }
 
 
@@ -141,11 +151,7 @@ public class ImageCache extends SQLiteOpenHelper
         CacheItem item = mItems.remove();
         // Look up in cache again. It's possible that the previous download
         // fetched the same image
-        String cacheKey = item.mCacheKey;
-        if (null == cacheKey) {
-          cacheKey = item.mImageUri.toString();
-        }
-        Bitmap b = get(cacheKey, item.mDimensions);
+        Bitmap b = get(item.getCacheKey(), item.mDimensions);
         if (null != b) {
           item.mBitmap = b;
           mHandler.obtainMessage(MSG_OK, item).sendToTarget();
@@ -376,7 +382,7 @@ public class ImageCache extends SQLiteOpenHelper
 
     // Store raw image.
     int dimensions = Math.max(bitmap.getWidth(), bitmap.getHeight());
-    storeImage(item.mImageUri, bitmap, dimensions);
+    storeImage(item.getCacheKey(), bitmap, dimensions);
 
     // If the dimensions are other than the requested one, scale the image
     // up/down.
@@ -403,7 +409,7 @@ public class ImageCache extends SQLiteOpenHelper
       }
 
       // Store scaled image with the target dimensions
-      storeImage(item.mImageUri, scaled_bitmap, item.mDimensions);
+      storeImage(item.getCacheKey(), scaled_bitmap, item.mDimensions);
     }
 
     // We can send the scaled image on to the caller now.
@@ -433,7 +439,7 @@ public class ImageCache extends SQLiteOpenHelper
   /**
    * Stores a bitmap's data in the cache database.
    **/
-  private void storeImage(Uri uri, Bitmap bitmap, int dimensions)
+  private void storeImage(String cacheKey, Bitmap bitmap, int dimensions)
   {
     // First, we have to convert the Bitmap into a byte representation, for
     // which it'll need to be compressed.
@@ -443,13 +449,13 @@ public class ImageCache extends SQLiteOpenHelper
       bitmap.compress(Bitmap.CompressFormat.PNG, 100, os);
       data = os.toByteArray();
     } catch (OutOfMemoryError ex) {
-      Log.e(LTAG, "Out of memory, cannot store bitmap: " + uri);
+      Log.e(LTAG, "Out of memory, cannot store bitmap: " + cacheKey);
       return;
     }
 
     // Now store it in the database.
     ContentValues values = new ContentValues();
-    values.put(_ID, uri.toString());
+    values.put(_ID, cacheKey);
     values.put(DIMENSIONS, dimensions);
     values.put(ATIME, System.currentTimeMillis());
     values.put(DATA, data);
