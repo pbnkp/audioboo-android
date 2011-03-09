@@ -29,6 +29,9 @@ import org.xbill.DNS.SimpleResolver;
 
 import java.io.IOException;
 
+import java.net.URI;
+import java.net.URISyntaxException;
+
 import org.apache.http.impl.conn.tsccm.ThreadSafeClientConnManager;
 import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.conn.scheme.SchemeRegistry;
@@ -50,6 +53,9 @@ import org.apache.http.client.entity.UrlEncodedFormEntity;
 import org.apache.http.entity.mime.MultipartEntity;
 import org.apache.http.entity.mime.content.*;
 import org.apache.http.message.BasicNameValuePair;
+
+import org.apache.http.client.utils.URLEncodedUtils;
+import org.apache.http.NameValuePair;
 
 import java.io.File;
 import java.io.BufferedReader;
@@ -828,12 +834,7 @@ public class API
    **/
   public byte[] fetchRawSynchronous(Uri uri, Handler handler)
   {
-    String request_uri = uri.toString();
-    if (null == uri.getAuthority()) {
-      request_uri = String.format("%s://%s/%s",
-          API_REQUEST_URI_SCHEME, mAPIHost, uri.toString());
-    }
-    return fetchRawSynchronous(request_uri, handler);
+    return fetchRawSynchronous(makeAbsoluteUriString(uri.toString()), handler);
   }
 
 
@@ -892,8 +893,7 @@ public class API
       HashMap<String, String> fileParams)
   {
     // Construct request URI.
-    String request_uri = String.format("%s://%s/%s",
-        API_REQUEST_URI_SCHEME, mAPIHost, api);
+    String request_uri = makeAbsoluteUriString(api);
     // Log.d(LTAG, "Request URI: " + request_uri);
 
     // Figure out the type of request to construct.
@@ -919,38 +919,10 @@ public class API
     if (null == params) {
       params = new HashMap<String, Object>();
     }
-    params.put(KEY_API_VERSION, String.valueOf(API_VERSION));
-    params.put(KEY_API_FORMAT, API_FORMAT);
-    params.put(mParamNameKey, mAPIKey);
-
     // params.put("debug_signature", "true");
 
     // 2. If there are signed parameters, perform the signature dance.
-    if (null != signedParams) {
-      // 2.1 We always want a timestamp in the signed parameters.
-      signedParams.put(mParamNameTimestamp, String.valueOf(System.currentTimeMillis() / 1000));
-
-      // 2.2 Then all signed parameters need to be copied to the parameters
-      //     with a prefix.
-      for (Map.Entry<String, Object> param : signedParams.entrySet()) {
-        params.put(String.format("%s%s", SIGNED_PARAM_PREFIX, param.getKey()),
-              param.getValue());
-      }
-
-      // 2.3 Create the signature.
-      String signature = String.format("%s:%s:%s", request_uri,
-          concatenateParametersSorted(signedParams), mAPISecret);
-      // Log.d(LTAG, "signature pre signing: " + signature);
-      try {
-        MessageDigest m = MessageDigest.getInstance("SHA-1");
-        m.update(signature.getBytes());
-        signature = new BigInteger(1, m.digest()).toString(16);
-        // Log.d(LTAG, "signature: " + signature);
-        params.put(mParamNameSignature, signature);
-      } catch (java.security.NoSuchAlgorithmException ex) {
-        Log.e(LTAG, "Error: could not sign request: " + ex.getMessage());
-      }
-    }
+    createSignature(request_uri, params, signedParams);
 
     // 3. Construct request.
     HttpRequestBase request = null;
@@ -1048,6 +1020,78 @@ public class API
 
 
 
+  public String makeAbsoluteUriString(String relative)
+  {
+    String result = relative;
+    Uri uri = Uri.parse(relative);
+    if (null == uri.getAuthority()) {
+      result = String.format("%s://%s/%s",
+          API_REQUEST_URI_SCHEME, mAPIHost, relative);
+    }
+
+    return result;
+  }
+
+
+
+  public Uri makeAbsoluteUri(Uri relative)
+  {
+    // FIXME
+    if (null == relative.getAuthority()) {
+      return Uri.parse(String.format("%s://%s%s",
+          API_REQUEST_URI_SCHEME, mAPIHost, relative));
+    }
+
+    return relative;
+  }
+
+
+
+  /**
+   * Signs a URI, discarding the fragment (if given).
+   **/
+  public Uri signUri(Uri unsigned)
+  {
+    if (null == unsigned) {
+      return null;
+    }
+
+    // If there's a query string, we want to split it off and parse it, so we
+    // can process the query parameters later.
+    HashMap<String, Object> params = new HashMap<String, Object>();
+    String base = unsigned.toString();
+    String query = unsigned.getEncodedQuery();
+    if (null != query) {
+      // Split off query
+      int pos = base.indexOf(query);
+      base = base.substring(0, pos - 1);
+
+      // Parse the query, and add it to params.
+      try {
+        List<NameValuePair> p = URLEncodedUtils.parse(
+            new URI(unsigned.toString()), "utf-8");
+        if (null != p) {
+          for (NameValuePair pair : p) {
+            params.put(pair.getName(), pair.getValue());
+          }
+        }
+      } catch (URISyntaxException ex) {
+        Log.e(LTAG, "Malformed URI: " + ex.getMessage());
+        return null;
+      }
+    }
+
+    // Create signature.
+    HashMap<String, Object> signedParams = new HashMap<String, Object>();
+    createSignature(base, params, signedParams);
+
+    // Create signed Uri
+    String uri_str = String.format("%s?%s", base, constructQueryString(params));
+    return Uri.parse(uri_str);
+  }
+
+
+
   /**
    * Resolves API host; may block for a long time, so must be run in the
    * background. May exit immediately if the API host has already been
@@ -1097,6 +1141,48 @@ public class API
     // trying to look at more records than the first.
     SRVRecord srv = (SRVRecord) records[0];
     mAPIHost = String.format("%s:%d", srv.getTarget(), srv.getPort());
+  }
+
+
+
+  /**
+   * Create a signature from the signed params, and add it to the params map.
+   **/
+  private void createSignature(String request_uri, HashMap<String, Object> params,
+      HashMap<String, Object> signedParams)
+  {
+    if (null == signedParams) {
+      return;
+    }
+
+    // 1. Some parameters are required when signing.
+    params.put(KEY_API_VERSION, String.valueOf(API_VERSION));
+    params.put(KEY_API_FORMAT, API_FORMAT);
+    params.put(mParamNameKey, mAPIKey);
+
+    // 2. We always want a timestamp in the signed parameters.
+    signedParams.put(mParamNameTimestamp, String.valueOf(System.currentTimeMillis() / 1000));
+
+    // 3. Then all signed parameters need to be copied to the parameters
+    //    with a prefix.
+    for (Map.Entry<String, Object> param : signedParams.entrySet()) {
+      params.put(String.format("%s%s", SIGNED_PARAM_PREFIX, param.getKey()),
+            param.getValue());
+    }
+
+    // 4. Create the signature.
+    String signature = String.format("%s:%s:%s", request_uri,
+        concatenateParametersSorted(signedParams), mAPISecret);
+    // Log.d(LTAG, "signature pre signing: " + signature);
+    try {
+      MessageDigest m = MessageDigest.getInstance("SHA-1");
+      m.update(signature.getBytes());
+      signature = new BigInteger(1, m.digest()).toString(16);
+      // Log.d(LTAG, "signature: " + signature);
+      params.put(mParamNameSignature, signature);
+    } catch (java.security.NoSuchAlgorithmException ex) {
+      Log.e(LTAG, "Error: could not sign request: " + ex.getMessage());
+    }
   }
 
 
