@@ -54,12 +54,10 @@
     </activity>
 
     <activity android:name=".BrowseActivity"
-        android:screenOrientation="portrait"
         android:configChanges="orientation|keyboardHidden"
       />
 
     <activity android:name=".InboxActivity"
-        android:screenOrientation="portrait"
         android:configChanges="orientation|keyboardHidden"
       />
 
@@ -69,7 +67,6 @@
       />
 
     <activity android:name=".AccountActivity"
-        android:screenOrientation="portrait"
         android:configChanges="orientation|keyboardHidden"
       />
 
