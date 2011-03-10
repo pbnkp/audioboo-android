@@ -115,6 +115,12 @@ public class Globals implements BooPlayerClient.BindListener
   public static final int         DIALOG_GPS_SETTINGS = 10000;
   public static final int         DIALOG_ERROR        = 10001;
 
+  // Constant here as it's re-used elsewhere
+  public static final int         THUMB_IMAGE_WIDTH   = 58;
+  public static final int         THUMB_IMAGE_HEIGHT  = 58;
+  public static final int         FULL_IMAGE_WIDTH    = 300;
+  public static final int         FULL_IMAGE_HEIGHT   = 200;
+
 
   /***************************************************************************
    * Singleton data

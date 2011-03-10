@@ -1,7 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
  This file is part of AudioBoo, an android program for audio blogging.
- Copyright (C) 2009 BestBefore Media Ltd. All rights reserved.
+ Copyright (C) 2009 BestBefore Media Ltd.
+ Copyright (C) 2010,2011 AudioBoo Ltd.
+ All rights reserved.
 
  Author: Jens Finkhaeuser <jens@finkhaeuser.de>
 
@@ -50,4 +52,12 @@
   <dimen name="account_name">@dimen/text_standard</dimen>
   <dimen name="account_description">@dimen/text_standard</dimen>
   <dimen name="account_location_label">@dimen/text_standard</dimen>
+
+  <!--
+    Details view
+  -->
+  <dimen name="details_author">@dimen/text_small</dimen>
+  <dimen name="details_title">@dimen/text_large</dimen>
+  <dimen name="details_age">@dimen/text_small</dimen>
+  <dimen name="details_location">@dimen/text_small</dimen>
 </resources>

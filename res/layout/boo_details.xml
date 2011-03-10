@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
  This file is part of AudioBoo, an android program for audio blogging.
- Copyright (C) 2011 BestBefore Media Ltd. All rights reserved.
+ Copyright (C) 2011 Audioboo Ltd. All rights reserved.
 
  Author: Jens Finkhaeuser <jens@finkhaeuser.de>
 
@@ -11,6 +11,7 @@
     android:orientation="vertical"
     android:layout_width="fill_parent"
     android:layout_height="fill_parent"
+    android:id="@+id/boo_details"
   >
   <ScrollView
       android:layout_width="fill_parent"
@@ -24,23 +25,27 @@
         android:padding="5dp"
       >
       <!-- Summary -->
-      <RelativeLayout
+      <LinearLayout
           android:layout_width="fill_parent"
           android:layout_height="wrap_content"
-          android:background="@android:color/white"
-          android:gravity="left|top"
+          android:background="@drawable/selectable_frame"
+          android:orientation="horizontal"
+          android:gravity="top"
+          android:padding="5dp"
         >
 
         <!-- Boo thumbnail -->
         <ImageView android:id="@+id/boo_thumb"
-            android:layout_width="60dp"
-            android:layout_height="60dp"
+            android:layout_width="64dp"
+            android:layout_height="64dp"
             android:layout_margin="2dp"
             android:layout_alignParentTop="true"
             android:layout_alignParentLeft="true"
             android:src="@drawable/anonymous_boo"
-            android:padding="1dp"
-            android:background="@color/boo_list_image_background"
+            android:padding="3dp"
+            android:scaleType="centerCrop"
+            android:background="@drawable/selectable_frame"
+            android:focusable="true"
           />
 
         <!-- Metadata -->
@@ -49,9 +54,6 @@
            android:layout_height="wrap_content"
            android:layout_alignParentTop="true"
            android:layout_alignParentLeft="true"
-           android:layout_marginRight="40dp"
-           android:layout_marginLeft="70dp"
-           android:layout_marginTop="5dp"
            android:orientation="vertical"
          >
 
@@ -59,8 +61,8 @@
         <TextView android:id="@+id/boo_author"
             android:layout_width="fill_parent"
             android:layout_height="wrap_content"
-            android:textSize="@dimen/boo_list_item_author"
-            android:textColor="@color/boo_list_author"
+            android:textSize="@dimen/details_author"
+            android:textColor="@color/details_author"
             android:textStyle="bold"
             android:ellipsize="end"
             android:lines="1"
@@ -72,19 +74,19 @@
         <TextView android:id="@+id/boo_title"
             android:layout_width="fill_parent"
             android:layout_height="wrap_content"
-            android:textSize="@dimen/boo_list_item_title"
-            android:textColor="@android:color/black"
+            android:textSize="@dimen/details_title"
+            android:textColor="@color/details_title"
           />
 
         <!-- Date -->
         <TextView android:id="@+id/boo_date"
             android:layout_width="fill_parent"
             android:layout_height="wrap_content"
-            android:textSize="@dimen/boo_list_item_title"
-            android:textColor="@android:color/black"
+            android:textSize="@dimen/details_age"
+            android:textColor="@color/details_age"
           />
         </LinearLayout>
-      </RelativeLayout>
+      </LinearLayout>
 
       <!-- TODO tags -->
 
@@ -93,7 +95,7 @@
           android:layout_width="fill_parent"
           android:layout_height="wrap_content"
           android:layout_marginTop="15dp"
-          android:background="@android:color/white"
+          android:background="@drawable/selectable_frame"
           android:orientation="vertical"
           android:gravity="center"
           android:padding="5dp"
@@ -106,8 +108,10 @@
           />
 
          <ImageView android:id="@+id/boo_image"
-            android:layout_width="300dp"
-            android:layout_height="300dp"
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:scaleType="fitXY"
+            android:src="@drawable/logotype"
             android:visibility="gone"
           />
       </LinearLayout>
@@ -117,17 +121,19 @@
           android:layout_width="fill_parent"
           android:layout_height="wrap_content"
           android:layout_marginTop="15dp"
-          android:background="@android:color/white"
           android:orientation="vertical"
           android:gravity="center"
           android:padding="5dp"
+          android:background="@drawable/selectable_frame"
+          android:focusable="true"
         >
         <TextView android:id="@+id/boo_location_text"
             android:layout_width="fill_parent"
             android:layout_height="wrap_content"
+            android:layout_marginBottom="5dp"
             android:gravity="center"
-            android:textSize="@dimen/boo_list_item_author"
-            android:textColor="@color/boo_list_author"
+            android:textSize="@dimen/details_location"
+            android:textColor="@color/details_location"
             android:textStyle="bold"
             android:ellipsize="end"
             android:lines="1"
@@ -142,8 +148,9 @@
           />
 
          <ImageView android:id="@+id/boo_location"
-            android:layout_width="300dp"
-            android:layout_height="300dp"
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:scaleType="fitXY"
             android:src="@drawable/logotype"
             android:visibility="gone"
           />

@@ -80,4 +80,12 @@
   <color name="account_description">@color/bb_white_80</color>
   <color name="account_location_label">@color/bb_white_80</color>
 
+  <!--
+    Colors for the details view
+  -->
+  <color name="details_author">@color/bb_gray_80</color>
+  <color name="details_title">@android:color/black</color>
+  <color name="details_age">@color/bb_black_80</color>
+  <color name="details_location">@android:color/black</color>
+
 </resources>

@@ -22,10 +22,12 @@ import android.net.Uri;
 
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.ViewTreeObserver;
 
 import android.widget.TextView;
 import android.widget.ImageView;
 
+import android.graphics.drawable.Drawable;
 import android.graphics.drawable.BitmapDrawable;
 
 import android.app.Dialog;
@@ -37,9 +39,11 @@ import fm.audioboo.data.BooData;
 import android.util.Log;
 
 /**
- * FIXME
+ * Show details for a Boo.
  **/
-public class BooDetailsActivity extends Activity
+public class BooDetailsActivity
+       extends Activity
+       implements ViewTreeObserver.OnGlobalLayoutListener
 {
   /***************************************************************************
    * Private constants
@@ -99,21 +103,12 @@ public class BooDetailsActivity extends Activity
     mBoo= new Boo(data);
     Log.d(LTAG, "Boo: " + mBoo);
 
-    // FIXME
+    // Fill view with data!
     populateView();
-  }
 
-
-
-  @Override
-  public void onStart()
-  {
-    super.onStart();
-
-//    // Start listening to location updates, if that's required.
-//    if (!Globals.get().startLocationUpdates()) {
-//      showDialog(DIALOG_GPS_SETTINGS);
-//    }
+    // Listen to changes in layout; we really need this to scale images
+    // properly.
+    findViewById(R.id.boo_details).getViewTreeObserver().addOnGlobalLayoutListener(this);
   }
 
 
@@ -126,17 +121,6 @@ public class BooDetailsActivity extends Activity
     // actvities don't get restarted. Ignoring in the child activities is also
     // required.
     super.onConfigurationChanged(config);
-  }
-
-
-
-  @Override
-  public void onStop()
-  {
-    super.onStop();
-
-//    Globals.get().mPlayer.stopPlaying();
-//    Globals.get().stopLocationUpdates();
   }
 
 
@@ -173,8 +157,19 @@ public class BooDetailsActivity extends Activity
         if (null != uri) {
           int size = image_view.getLayoutParams().width - image_view.getPaddingLeft()
             - image_view.getPaddingRight();
-          uris.add(new ImageCache.CacheItem(uri, size, new Baton(-1, R.id.boo_thumb, -1)));
+         uris.add(new ImageCache.CacheItem(uri, size, new Baton(-1, R.id.boo_thumb, -1)));
         }
+
+
+        image_view.setOnClickListener(new View.OnClickListener() {
+            public void onClick(View v)
+            {
+              Log.d(LTAG, "Stuff clicked");
+                // TODO
+//              Intent i = new Intent(Intent.ACTION_VIEW, data);
+//              startActivity(i);
+            }
+        });
       }
     }
 
@@ -219,8 +214,9 @@ public class BooDetailsActivity extends Activity
         // Setup view.
         image_view = (ImageView) container.findViewById(R.id.boo_image);
         if (null != image_view) {
-          int size = image_view.getLayoutParams().width - image_view.getPaddingLeft()
-            - image_view.getPaddingRight();
+          int size = (int) (Globals.get().FULL_IMAGE_WIDTH
+              * getResources().getDisplayMetrics().density);
+ 
           uris.add(new ImageCache.CacheItem(image_uri, size,
                 new Baton(R.id.boo_image_container, R.id.boo_image, R.id.boo_image_progress),
                 cacheKey));
@@ -247,13 +243,14 @@ public class BooDetailsActivity extends Activity
               mBoo.mData.mLocation.mLatitude, mBoo.mData.mLocation.mLongitude));
         image_view = (ImageView) container.findViewById(R.id.boo_location);
         if (null != image_view) {
-          int size = image_view.getLayoutParams().width - image_view.getPaddingLeft()
-            - image_view.getPaddingRight();
+          int size = (int) (Globals.get().FULL_IMAGE_WIDTH
+              * getResources().getDisplayMetrics().density);
+ 
           uris.add(new ImageCache.CacheItem(uri, size,
                 new Baton(R.id.boo_location_container, R.id.boo_location, R.id.boo_location_progress)));
 
           // Launch a location query
-          image_view.setOnClickListener(new View.OnClickListener() {
+          container.setOnClickListener(new View.OnClickListener() {
               public void onClick(View v)
               {
                 Uri data = Uri.parse(String.format("http://maps.google.com/?ll=%f,%f&saddr=%f,%f&z=13",
@@ -285,13 +282,13 @@ public class BooDetailsActivity extends Activity
           switch (msg.what) {
             case ImageCache.MSG_OK:
               image_view.setImageDrawable(new BitmapDrawable(item.mBitmap));
-
-              // FIXME do we always want this?
-              ViewGroup.LayoutParams params = image_view.getLayoutParams();
-              params.height = item.mBitmap.getScaledHeight(getResources().getDisplayMetrics());
-              image_view.setLayoutParams(params);
-
               image_view.setVisibility(View.VISIBLE);
+
+              if (ImageView.ScaleType.FIT_XY == image_view.getScaleType()) {
+                ViewGroup.LayoutParams params = image_view.getLayoutParams();
+                params.height = item.mBitmap.getScaledHeight(getResources().getDisplayMetrics());
+                image_view.setLayoutParams(params);
+              }
 
               if (-1 != baton.progressId) {
                 View progress = findViewById(baton.progressId);
@@ -321,4 +318,50 @@ public class BooDetailsActivity extends Activity
 
     }
   }
+
+
+
+  /***************************************************************************
+   * ViewTreeObserver.OnGlobalLayoutListener implementation
+   **/
+  public void onGlobalLayout()
+  {
+    // Rescale boo image if necessary
+    ImageView image_view = (ImageView) findViewById(R.id.boo_image);
+    if (null != image_view) {
+      Drawable drawable = image_view.getDrawable();
+
+      float ratio = ((float) drawable.getIntrinsicWidth()) / drawable.getIntrinsicHeight();
+
+      ViewGroup.LayoutParams params = image_view.getLayoutParams();
+      int height = (int) (image_view.getWidth() / ratio);
+      // Only set params if the height changes, or we enter an infinite loop
+      if (height != params.height) {
+        params.height = height;
+        image_view.setLayoutParams(params);
+      }
+    }
+
+    // Rescale boo location image if necessary
+    image_view = (ImageView) findViewById(R.id.boo_location);
+    if (null != image_view) {
+      Drawable drawable = image_view.getDrawable();
+
+      float ratio = ((float) drawable.getIntrinsicWidth()) / drawable.getIntrinsicHeight();
+
+      ViewGroup.LayoutParams params = image_view.getLayoutParams();
+      int height = (int) (image_view.getWidth() / ratio);
+      // Only set params if the height changes, or we enter an infinite loop
+      if (height != params.height) {
+        params.height = height;
+        image_view.setLayoutParams(params);
+      }
+    }
+
+
+  }
+
+
+
+
 }

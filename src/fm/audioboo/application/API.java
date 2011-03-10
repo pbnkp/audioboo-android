@@ -516,8 +516,12 @@ public class API
     signedParams.put("max_time", String.format("%d", timestamp.getTime() / 1000));
 
     signedParams.put("find[pg_rated]", "1");
-    signedParams.put("image_size_hint[thumb]", "58x58<");
-    signedParams.put("image_size_hint[full]", "300x200>");
+    signedParams.put("image_size_hint[thumb]", String.format("%fx%f<",
+          Globals.get().FULL_IMAGE_WIDTH,
+          Globals.get().FULL_IMAGE_HEIGHT));
+    signedParams.put("image_size_hint[full]", String.format("%fx%f>",
+          Globals.get().FULL_IMAGE_WIDTH,
+          Globals.get().FULL_IMAGE_HEIGHT));
 
     // Location related parameters
     if (BOOS_NEARBY == type) {
