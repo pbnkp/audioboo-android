@@ -123,6 +123,7 @@ public class AudioBoo extends Activity
       imageView.setLayoutParams(new Flow.LayoutParams(
             (int) img.getIntrinsicWidth(),
             (int) img.getIntrinsicHeight()));
+      imageView.setBackgroundResource(R.drawable.flow_item_background);
 
       return imageView;
     }
