@@ -35,7 +35,6 @@ import android.content.res.Configuration;
 import android.content.res.TypedArray;
 
 import fm.audioboo.widget.Flow;
-import fm.audioboo.widget.FlowCover;
 
 import android.app.Dialog;
 
@@ -116,8 +115,6 @@ public class AudioBoo extends Activity
         return null;
       }
 
-      final float scale = getResources().getDisplayMetrics().density;
-
       Drawable img = mImages.getDrawable(position);
 
       ImageView imageView = new ImageView(ctx);
@@ -126,6 +123,7 @@ public class AudioBoo extends Activity
       imageView.setLayoutParams(new Flow.LayoutParams(
             (int) img.getIntrinsicWidth(),
             (int) img.getIntrinsicHeight()));
+
       return imageView;
     }
   }
@@ -151,6 +149,8 @@ public class AudioBoo extends Activity
     flow.setAdapter(new ImageAdapter(this, icons));
 
     // Initialize flow
+    flow.setFocusable(true);
+    flow.setFocusableInTouchMode(true);
     flow.setSelection(INITIAL_SELECTION);
 
     final TextView menu_label = (TextView) findViewById(R.id.main_menu_label);
@@ -203,6 +203,25 @@ public class AudioBoo extends Activity
 
 
   @Override
+  public void onWindowFocusChanged(boolean hasFocus)
+  {
+    super.onWindowFocusChanged(hasFocus);
+
+    if (!hasFocus) {
+      return;
+    }
+
+    // We need to put focus on the first selected view in order not to have it
+    // captured by other elements. However, the first selected view is only
+    // available in onWindowFocusChanged(); other functions are called before
+    // layouting.
+    Flow flow = (Flow) findViewById(R.id.main_menu_flow);
+    flow.getSelectedView().requestFocus();
+  }
+
+
+
+  @Override
   public void onConfigurationChanged(Configuration config)
   {
     // Ignore when the keyboard opens to the extent that we don't fetch boos
@@ -218,8 +237,6 @@ public class AudioBoo extends Activity
   public void onStop()
   {
     super.onStop();
-
-    // FIXME Globals.get().mPlayer.stopPlaying();
     Globals.get().stopLocationUpdates();
   }
 

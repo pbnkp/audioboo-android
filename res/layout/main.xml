@@ -27,9 +27,9 @@
         android:id="@+id/main_menu_flow"
         android:layout_width="fill_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="20dp"
-        android:unselectedAlpha="1.0"
-        android:spacing="-5dp"
+        android:layout_marginTop="30dp"
+        android:unselectedAlpha="0.8"
+        android:spacing="-10dp"
         android:fadingEdge="none"
       />
     <LinearLayout
@@ -70,6 +70,13 @@
         android:text="@string/main_menu_now_playing"
         android:textColor="@android:color/white"
         android:textSize="@dimen/text_standard"
+      />
+
+    <fm.audioboo.widget.BooPlayerView
+        android:id="@+id/main_boos_player"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true"
       />
   </LinearLayout>
 
