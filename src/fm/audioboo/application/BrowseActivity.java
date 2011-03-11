@@ -78,6 +78,9 @@ public class BrowseActivity extends BooListActivity
       case VIEW_ID_PLAYER:
         return R.id.browse_boos_player;
 
+      case VIEW_ID_PLAYER_CONTAINER:
+        return R.id.browse_boos_player_container;
+
       case VIEW_ID_LOADING:
         return R.id.browse_boos_progress;
 

@@ -102,12 +102,13 @@ public abstract class BooListActivity
   /**
    * Public constants, that are passed to getViewId()
    **/
-  public static final int VIEW_ID_NONE            = -1;
-  public static final int VIEW_ID_LAYOUT          = 0;
-  public static final int VIEW_ID_EMPTY_VIEW      = 1;
-  public static final int VIEW_ID_PLAYER          = 2;
-  public static final int VIEW_ID_LOADING         = 3;
-  public static final int VIEW_ID_RETRY           = 4;
+  public static final int VIEW_ID_NONE              = -1;
+  public static final int VIEW_ID_LAYOUT            = 0;
+  public static final int VIEW_ID_EMPTY_VIEW        = 1;
+  public static final int VIEW_ID_PLAYER            = 2;
+  public static final int VIEW_ID_PLAYER_CONTAINER  = 3;
+  public static final int VIEW_ID_LOADING           = 4;
+  public static final int VIEW_ID_RETRY             = 5;
 
   /**
    * Get View identifier for the specified View constant. Return VIEW_ID_NONE
@@ -234,7 +235,7 @@ public abstract class BooListActivity
 
   private void showPlayer()
   {
-    final BooPlayerView player = (BooPlayerView) findViewById(getViewId(VIEW_ID_PLAYER));
+    final View player = findViewById(getViewId(VIEW_ID_PLAYER_CONTAINER));
     if (null == player) {
       return;
     }
@@ -254,7 +255,7 @@ public abstract class BooListActivity
 
   private void hidePlayer()
   {
-    final BooPlayerView player = (BooPlayerView) findViewById(getViewId(VIEW_ID_PLAYER));
+    final View player = findViewById(getViewId(VIEW_ID_PLAYER_CONTAINER));
     if (null == player) {
       return;
     }
