@@ -90,4 +90,10 @@
   <color name="details_age">@color/bb_black_80</color>
   <color name="details_location">@android:color/black</color>
 
+  <!--
+    Main page
+  -->
+  <color name="main_menu_label">@android:color/white</color>
+  <color name="main_player_label">@color/bb_gray_80</color>
+
 </resources>

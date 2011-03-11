@@ -12,7 +12,6 @@
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="fill_parent"
     android:layout_height="fill_parent"
-    android:background="@android:color/black"
     android:orientation="vertical"
   >
 
@@ -43,7 +42,7 @@
           android:layout_width="wrap_content"
           android:layout_height="wrap_content"
           android:text="foo"
-          android:textColor="@android:color/white"
+          android:textColor="@color/main_menu_label"
           android:textStyle="bold"
           android:textSize="@dimen/text_larger"
           android:background="@drawable/label_background"
@@ -68,7 +67,7 @@
         android:layout_marginTop="14dp"
         android:layout_marginLeft="22dp"
         android:text="@string/main_menu_now_playing"
-        android:textColor="@android:color/white"
+        android:textColor="@color/main_player_label"
         android:textSize="@dimen/text_standard"
       />
 
