@@ -516,10 +516,10 @@ public class API
     signedParams.put("max_time", String.format("%d", timestamp.getTime() / 1000));
 
     signedParams.put("find[pg_rated]", "1");
-    signedParams.put("image_size_hint[thumb]", String.format("%fx%f<",
+    signedParams.put("image_size_hint[thumb]", String.format("%dx%d<",
           Globals.get().FULL_IMAGE_WIDTH,
           Globals.get().FULL_IMAGE_HEIGHT));
-    signedParams.put("image_size_hint[full]", String.format("%fx%f>",
+    signedParams.put("image_size_hint[full]", String.format("%dx%d>",
           Globals.get().FULL_IMAGE_WIDTH,
           Globals.get().FULL_IMAGE_HEIGHT));
 
