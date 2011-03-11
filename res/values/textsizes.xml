@@ -24,7 +24,9 @@
   <!--
     Texts for the player view
   -->
-  <dimen name="boo_player_title">@dimen/text_small</dimen>
+  <dimen name="boo_player_title">@dimen/text_standard</dimen>
+  <dimen name="boo_player_author">@dimen/text_small</dimen>
+  <dimen name="boo_player_progress">@dimen/text_small</dimen>
 
   <!--
     Record view

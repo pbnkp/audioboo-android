@@ -1,7 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
  This file is part of AudioBoo, an android program for audio blogging.
- Copyright (C) 2009 BestBefore Media Ltd. All rights reserved.
+ Copyright (C) 2009 BestBefore Media Ltd.
+ Copyright (C) 2010,2011 AudioBoo Ltd.
+ All rights reserved.
 
  Author: Jens Finkhaeuser <jens@finkhaeuser.de>
 
@@ -10,36 +12,17 @@
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="fill_parent"
     android:layout_height="wrap_content"
+    android:layout_margin="0dp"
     android:orientation="vertical"
-    android:background="@color/boo_player_background"
+    android:padding="0dp"
   >
-  <!-- Separator -->
-  <ImageView
-      android:src="@android:drawable/divider_horizontal_dark"
-      android:layout_width="fill_parent"
-      android:layout_height="wrap_content"
-      android:scaleType="fitXY"
-    />
 
-  <!-- Title -->
-  <TextView android:id="@+id/boo_player_title"
-      android:layout_width="fill_parent"
-      android:layout_height="wrap_content"
-      android:layout_marginTop="2dp"
-      android:layout_marginLeft="5dp"
-      android:layout_marginRight="5dp"
-      android:textSize="@dimen/boo_player_title"
-      android:textStyle="bold"
-      android:textColor="@color/boo_player_title"
-      android:ellipsize="end"
-      android:lines="1"
-      android:singleLine="true"
-    />
-
+  <!-- Playback & Metadata -->
   <LinearLayout
       android:layout_width="fill_parent"
       android:layout_height="wrap_content"
       android:orientation="horizontal"
+      android:gravity="center"
     >
     <!-- Play/pause button -->
     <fm.audioboo.widget.PlayPauseButton android:id="@+id/boo_player_button"
@@ -48,13 +31,88 @@
         android:layout_margin="5dp"
       />
 
-    <!-- Volume bar -->
-    <SeekBar android:id="@+id/boo_player_volume"
+    <!-- Metadata -->
+    <LinearLayout
         android:layout_width="fill_parent"
         android:layout_height="wrap_content"
-        android:layout_gravity="center"
-        android:layout_marginLeft="10dp"
-        android:layout_marginRight="15dp"
+        android:layout_weight="1"
+        android:orientation="vertical"
+        android:gravity="center"
+      >
+      <!-- Author -->
+      <TextView android:id="@+id/boo_player_author"
+          android:layout_width="fill_parent"
+          android:layout_height="wrap_content"
+          android:layout_marginTop="2dp"
+          android:layout_marginLeft="5dp"
+          android:layout_marginRight="5dp"
+          android:textSize="@dimen/boo_player_author"
+          android:textStyle="bold"
+          android:textColor="@color/boo_player_author"
+          android:ellipsize="end"
+          android:lines="1"
+          android:singleLine="true"
+        />
+
+      <!-- Title -->
+      <TextView android:id="@+id/boo_player_title"
+          android:layout_width="fill_parent"
+          android:layout_height="wrap_content"
+          android:layout_marginTop="2dp"
+          android:layout_marginLeft="5dp"
+          android:layout_marginRight="5dp"
+          android:textSize="@dimen/boo_player_title"
+          android:textStyle="bold"
+          android:textColor="@color/boo_player_title"
+          android:ellipsize="end"
+          android:lines="1"
+          android:singleLine="true"
+        />
+    </LinearLayout>
+
+    <!-- Disclosure -->
+    <ImageView android:id="@+id/boo_player_disclosure"
+        android:layout_width="30dp"
+        android:layout_height="fill_parent"
+        android:layout_alignParentTop="true"
+        android:layout_alignParentRight="true"
+        android:padding="2dp"
+        android:clickable="true"
+        android:src="@drawable/disclosure"
+      />
+  </LinearLayout>
+
+
+  <!-- Progress -->
+  <LinearLayout
+      android:layout_width="fill_parent"
+      android:layout_height="wrap_content"
+      android:layout_marginBottom="3dp"
+      android:orientation="horizontal"
+      android:gravity="center"
+    >
+
+    <!-- Seek bar -->
+    <SeekBar android:id="@+id/boo_player_seek"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:layout_marginLeft="8dp"
+        android:layout_marginRight="10dp"
+        style="?android:progressBarStyleHorizontal"
+      />
+
+    <!-- Progress in seconds -->
+    <TextView android:id="@+id/boo_player_progress"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginRight="8dp"
+        android:textSize="@dimen/boo_player_progress"
+        android:textStyle="bold"
+        android:textColor="@color/boo_player_progress"
+        android:lines="1"
+        android:singleLine="true"
+        android:text="00:00"
       />
   </LinearLayout>
 </LinearLayout>

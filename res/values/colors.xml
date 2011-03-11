@@ -63,6 +63,8 @@
   -->
   <color name="boo_player_background">@color/bb_darkgray_80</color>
   <color name="boo_player_title">@color/bb_white_80</color>
+  <color name="boo_player_author">@color/bb_white_80</color>
+  <color name="boo_player_progress">@color/bb_white_80</color>
 
 
   <!--

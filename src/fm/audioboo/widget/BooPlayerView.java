@@ -15,15 +15,14 @@ import android.content.Context;
 import android.util.AttributeSet;
 
 import android.view.View;
+import android.view.ViewGroup;
 import android.view.View.OnTouchListener;
 import android.view.MotionEvent;
 
-import android.widget.LinearLayout;
+import android.widget.RelativeLayout;
 import android.widget.CompoundButton;
 import android.widget.SeekBar;
 import android.widget.TextView;
-
-import android.media.AudioManager;
 
 import android.os.Handler;
 import android.os.Message;
@@ -46,7 +45,7 @@ import android.util.Log;
  * Boos.
  **/
 public class BooPlayerView
-       extends LinearLayout
+       extends RelativeLayout
        implements BooPlayerClient.ProgressListener,
                   CompoundButton.OnCheckedChangeListener
 {
@@ -56,12 +55,9 @@ public class BooPlayerView
   // Log ID
   private static final String LTAG  = "BooPlayerView";
 
-  // Multiplier applied to boo playback progress (in seconds) before it's
+  // FIXME Multiplier applied to boo playback progress (in seconds) before it's
   // used as max/current in the progress display.
-  private static final int  PROGRESS_MULTIPLIER = 5000;
-
-  // The type of stream Boos play in.
-  private static final int  STREAM_TYPE         = AudioManager.STREAM_MUSIC;
+  private static final int  PROGRESS_MAX        = 10000;
 
 
   /***************************************************************************
@@ -96,18 +92,12 @@ public class BooPlayerView
   // Button instance
   private PlayPauseButton         mButton;
 
-  // Title
+  // Metadata
+  private TextView                mAuthor;
   private TextView                mTitle;
 
   // Listener
   private PlaybackEndListener     mListener;
-
-//  // If we've already notified the listener since the last play call, this
-//  // will be true and we won't notify the listener again.
-//  private boolean                 mEndedSent;
-
-  // Audio manager - used in more than one place.
-  private AudioManager            mAudioManager;
 
 
   /***************************************************************************
@@ -172,8 +162,47 @@ public class BooPlayerView
     // Playback
     startPlaying(boo, playImmediately);
 
-    // Set title
-    updateTitle();
+    updateMetadata();
+  }
+
+
+
+  private void resetProgress()
+  {
+    if (null != mButton) {
+      mButton.setIndeterminate(false);
+      mSeekBar.setMax(PROGRESS_MAX);
+      mButton.setProgress(0);
+    }
+    if (null != mSeekBar) {
+      mSeekBar.setIndeterminate(false);
+      mSeekBar.setMax(PROGRESS_MAX);
+      mSeekBar.setProgress(0);
+    }
+  }
+
+
+
+  private void showPlaying()
+  {
+    if (null != mButton) {
+      mButton.setIndeterminate(false);
+    }
+    if (null != mSeekBar) {
+      mSeekBar.setIndeterminate(false);
+    }
+  }
+
+
+
+  private void showBuffering()
+  {
+    if (null != mButton) {
+      mButton.setIndeterminate(true);
+    }
+    if (null != mSeekBar) {
+      mSeekBar.setIndeterminate(true);
+    }
   }
 
 
@@ -185,26 +214,23 @@ public class BooPlayerView
       case Constants.STATE_PREPARING:
       case Constants.STATE_PAUSED:
         mButton.setChecked(true);
-        mButton.setIndeterminate(false);
-        mButton.setProgress(0);
+        resetProgress();
         break;
 
       case Constants.STATE_ERROR:
         mButton.setChecked(true);
-        mButton.setIndeterminate(false);
-        mButton.setProgress(0);
-
+        resetProgress();
         sendEnded(END_STATE_ERROR);
         break;
 
       case Constants.STATE_PLAYING:
         mButton.setChecked(false);
-        mButton.setIndeterminate(false);
+        showPlaying();
         break;
 
       case Constants.STATE_BUFFERING:
         mButton.setChecked(false);
-        mButton.setIndeterminate(true);
+        showBuffering();
         break;
     }
   }
@@ -234,6 +260,15 @@ public class BooPlayerView
   {
     if (null != mTitle) {
       mTitle.setText(title);
+    }
+  }
+
+
+
+  public void setAuthor(String author)
+  {
+    if (null != mAuthor) {
+      mAuthor.setText(author);
     }
   }
 
@@ -303,21 +338,15 @@ public class BooPlayerView
       return;
     }
 
-    // Grab and remember the audio manager
-    mAudioManager = (AudioManager) ctx.getSystemService(Context.AUDIO_SERVICE);
-
-    LinearLayout content = (LinearLayout) inflate(ctx, R.layout.boo_player, this);
+    ViewGroup content = (ViewGroup) inflate(ctx, R.layout.boo_player, this);
 
     // Set up seekbar
-    mSeekBar = (SeekBar) content.findViewById(R.id.boo_player_volume);
+    mSeekBar = (SeekBar) content.findViewById(R.id.boo_player_seek);
     if (null != mSeekBar) {
-      mSeekBar.setMax(mAudioManager.getStreamMaxVolume(STREAM_TYPE));
-      mSeekBar.setProgress(mAudioManager.getStreamVolume(STREAM_TYPE));
-
       mSeekBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
         public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser)
         {
-          mAudioManager.setStreamVolume(STREAM_TYPE, progress, 0);
+          // FIXME seek within audio
         }
 
         public void onStartTrackingTouch(SeekBar seekBar)
@@ -340,19 +369,29 @@ public class BooPlayerView
       mButton.setOnCheckedChangeListener(this);
     }
 
+    // Set the view to show buffering animations
+    showBuffering();
+
     // Remember
     mTitle = (TextView) content.findViewById(R.id.boo_player_title);
+    mAuthor = (TextView) content.findViewById(R.id.boo_player_author);
 
-    // Be informed of whatever player state exists.
-    Globals.get().mPlayer.setProgressListener(this);
+    // FIXME need this in main view, too!
+    Globals g = Globals.get();
+    if (null != g) {
+      BooPlayerClient c = g.mPlayer;
 
-    // If the playback service is playing, initialize title, etc.
-    if (Constants.STATE_NONE != Globals.get().mPlayer.getState()) {
-      // Initialize button state
-      setButtonState(Constants.STATE_BUFFERING);
+      if (null != c) {
+        // Be informed of whatever player state exists.
+        c.setProgressListener(this);
 
-      // Update title
-      updateTitle();
+        // If the playback service is playing, initialize title, etc.
+        if (Constants.STATE_NONE != c.getState()) {
+          // Initialize button state
+          setButtonState(Constants.STATE_BUFFERING);
+          updateMetadata();
+        }
+      }
     }
   }
 
@@ -384,7 +423,7 @@ public class BooPlayerView
 
 
 
-  private void updateTitle()
+  private void updateMetadata()
   {
     Context ctx = mContext.get();
     if (null == ctx) {
@@ -399,6 +438,15 @@ public class BooPlayerView
     else {
       setTitle(title);
     }
+
+
+    String author = Globals.get().mPlayer.getUsername();
+    if (null == author) {
+      setAuthor(""); // FIXME
+    }
+    else {
+      setAuthor(author);
+    }
   }
 
 
@@ -411,9 +459,18 @@ public class BooPlayerView
     setButtonState(state);
 
     // If there's progress, update that, too.
-    if (null != mButton && total > 0) {
-      mButton.setMax((int) (total * PROGRESS_MULTIPLIER));
-      mButton.setProgress((int) (progress * PROGRESS_MULTIPLIER));
+    if (total > 0) {
+      int cur = (int) ((progress / total) * PROGRESS_MAX);
+      Log.d(LTAG, "cur/max: " + cur + "/" + PROGRESS_MAX);
+
+      if (null != mButton) {
+        mButton.setMax(PROGRESS_MAX);
+        mButton.setProgress(cur);
+      }
+      if (null != mSeekBar) {
+        mSeekBar.setMax(PROGRESS_MAX);
+        mSeekBar.setProgress(cur);
+      }
     }
   }
 
