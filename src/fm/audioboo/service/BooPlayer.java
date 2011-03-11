@@ -234,6 +234,19 @@ public class BooPlayer extends Thread
 
 
 
+  public String getUsername()
+  {
+    synchronized (mLock)
+    {
+      if (null == mBoo || null == mBoo.mData || null == mBoo.mData.mUser) {
+        return null;
+      }
+      return mBoo.mData.mUser.mUsername;
+    }
+  }
+
+
+
   public void setPendingState(int state)
   {
     synchronized (mLock)

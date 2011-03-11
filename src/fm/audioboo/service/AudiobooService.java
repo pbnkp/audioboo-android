@@ -182,6 +182,13 @@ public class AudiobooService
 
 
 
+    public String getUsername()
+    {
+      return mPlayer.getUsername();
+    }
+
+
+
     public double getDuration()
     {
       return mPlayer.getDuration();

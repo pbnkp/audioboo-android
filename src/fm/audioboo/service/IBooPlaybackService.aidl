@@ -35,9 +35,10 @@ interface IBooPlaybackService
   int getState();
 
   /**
-   * Return the title, duration  of the currently played boo, or null/0
+   * Return the title, duration, etc. of the currently played boo, or null/0
    * if no boo is playing.
    **/
   String getTitle();
+  String getUsername();
   double getDuration();
 }

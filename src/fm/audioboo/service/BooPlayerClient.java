@@ -272,6 +272,18 @@ public class BooPlayerClient
 
 
 
+  public String getUsername()
+  {
+    try {
+      return mStub.getUsername();
+    } catch (RemoteException ex) {
+      Log.e(LTAG, "Exception " + ex.getMessage());
+    }
+    return null;
+  }
+
+
+
   public double getDuration()
   {
     try {
