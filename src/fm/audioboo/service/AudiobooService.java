@@ -96,6 +96,7 @@ public class AudiobooService
    **/
   public void onProgress(int state, double progress, double total)
   {
+    // Log.d(LTAG, "Got state 1: " + state + " - " + System.currentTimeMillis());
     Intent i = new Intent(Constants.EVENT_PROGRESS);
     i.putExtra(Constants.PROGRESS_STATE, state);
     i.putExtra(Constants.PROGRESS_PROGRESS, progress);

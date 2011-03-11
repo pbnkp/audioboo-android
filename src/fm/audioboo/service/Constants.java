@@ -35,9 +35,9 @@ public class Constants
   public static final int STATE_PAUSED          = 2;
   public static final int STATE_PLAYING         = 3;
 
-  public static final int STATE_FINISHED        = STATE_NONE;
-  public static final int STATE_BUFFERING       = 6;
-  public static final int STATE_ERROR           = 7;
+  public static final int STATE_FINISHED        = 4;
+  public static final int STATE_BUFFERING       = 5;
+  public static final int STATE_ERROR           = 6;
 
   // Events
   public static final String EVENT_PROGRESS     = "fm.audioboo.service.events.progress";

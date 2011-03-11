@@ -11,8 +11,6 @@ package fm.audioboo.service;
 
 import android.content.Context;
 
-import android.media.MediaPlayer;
-
 import java.util.TimerTask;
 import java.util.Timer;
 
@@ -35,7 +33,9 @@ public class BooPlayer extends Thread
   private static final String LTAG              = "BooPlayer";
 
   // Sleep time, if the thread's not woken.
-  private static final int SLEEP_TIME           = 60 * 1000;
+  private static final int SLEEP_TIME_LONG      = 60 * 1000;
+  // Sleep time for retrying an action
+  private static final int SLEEP_TIME_SHORT     = 251;
 
   // Interval at which we notify the user of playback progress (msec)
   private static final int TIMER_TASK_INTERVAL  = 500;
@@ -58,7 +58,7 @@ public class BooPlayer extends Thread
   // the desired state.
   private static final int STATE_DECISION_MATRIX[][] = {
     { T_NONE,   T_PREPARE,  T_PREPARE,  T_START,  },
-    { T_IGNORE, T_NONE,     T_IGNORE,   T_IGNORE, },
+    { T_IGNORE, T_NONE,     T_IGNORE,   T_RESUME, },
     { T_STOP,   T_RESET,    T_NONE,     T_RESUME, },
     { T_STOP,   T_RESET,    T_PAUSE,    T_NONE,   },
   };
@@ -93,9 +93,6 @@ public class BooPlayer extends Thread
 
   // Player instance.
   private volatile PlayerBase   mPlayer;
-
-  // Player for MP3 Boos streamed from the Web.
-  private volatile MediaPlayer  mMediaPlayer;
 
   // Listener for state changes
   private ProgressListener      mListener;
@@ -314,6 +311,7 @@ public class BooPlayer extends Thread
           else {
             action = STATE_DECISION_MATRIX[normalizeState(currentState)][normalizeState(pendingState)];
           }
+          // Log.d(LTAG, "#1 Current: " + currentState + " Pending: " + pendingState + " Action: " + action);
 
           // We also set the new state here. This is primarily done because
           // STATE_PREPARING should be set as soon as possible, but it doesn't
@@ -337,7 +335,8 @@ public class BooPlayer extends Thread
               break;
 
             case T_RESUME:
-              mState = mPendingState = Constants.STATE_PLAYING;
+              // State and pending state are determined by whether the resume
+              // action succeeds.
               break;
 
             case T_STOP:
@@ -376,10 +375,17 @@ public class BooPlayer extends Thread
         }
 
         // Now perform the appropriate action to attain the new state.
-        performAction(action, currentBoo);
+        boolean ares = performAction(action, currentBoo);
+        // Log.d(LTAG, "#2 Current: " + currentState + " Pending: " + pendingState + " Action: " + action);
 
-        // Sleep until the next interrupt occurs.
-        sleep(SLEEP_TIME);
+        if (ares) {
+          // Sleep until the next interrupt occurs.
+          sleep(SLEEP_TIME_LONG);
+        }
+        else {
+          // Sleep for a short time, then try again.
+          sleep(SLEEP_TIME_SHORT);
+        }
       } catch (InterruptedException ex) {
         // pass
       }
@@ -397,8 +403,10 @@ public class BooPlayer extends Thread
 
 
 
-  private void performAction(int action, Boo boo)
+  private boolean performAction(int action, Boo boo)
   {
+    boolean result = true;
+
     switch (action) {
       case T_IGNORE:
       case T_NONE:
@@ -415,7 +423,7 @@ public class BooPlayer extends Thread
         break;
 
       case T_RESUME:
-        resumeInternal();
+        result = resumeInternal();
         break;
 
       case T_STOP:
@@ -437,6 +445,8 @@ public class BooPlayer extends Thread
         Log.e(LTAG, "Unknown action: " + action);
         break;
     }
+
+    return result;
   }
 
 
@@ -523,10 +533,15 @@ public class BooPlayer extends Thread
 
 
 
-  private void resumeInternal()
+  private boolean resumeInternal()
   {
     synchronized (mLock) {
-      mPlayer.resume();
+      if (mPlayer.resume()) {
+        mState = mPendingState = Constants.STATE_PLAYING;
+      }
+      else {
+        return false;
+      }
     }
 
     if (null == mTimer) {
@@ -535,6 +550,8 @@ public class BooPlayer extends Thread
     else {
       sendStatePlayback();
     }
+
+    return true;
   }
 
 

@@ -35,6 +35,8 @@ public class APIPlayer extends PlayerBase
   // Player API
   private MediaPlayer mMediaPlayer;
 
+  // Flag to indicate whether resume() can be called or not.
+  private volatile boolean mPrepared;
 
   /***************************************************************************
    * Implementation
@@ -61,8 +63,11 @@ public class APIPlayer extends PlayerBase
     }
 
     // Prepare player
-    mMediaPlayer = MediaPlayer.create(ctx, boo.mData.mHighMP3Url);
-    if (null == mMediaPlayer) {
+    mPrepared = false;
+    mMediaPlayer = new MediaPlayer();
+    try {
+      mMediaPlayer.setDataSource(ctx, boo.mData.mHighMP3Url);
+    } catch (java.io.IOException ex) {
       Log.e(LTAG, "Could not start playback of URI: " + boo.mData.mHighMP3Url);
       return false;
     }
@@ -118,6 +123,16 @@ public class APIPlayer extends PlayerBase
       }
     });
 
+    mMediaPlayer.setOnPreparedListener(new MediaPlayer.OnPreparedListener() {
+        public void onPrepared(MediaPlayer mp)
+        {
+          mPrepared = true;
+        }
+    });
+
+    // Prepare asynchronously; we don't want to block the UI thread.
+    mMediaPlayer.prepareAsync();
+
     return true;
   }
 
@@ -133,12 +148,16 @@ public class APIPlayer extends PlayerBase
 
 
 
-  public void resume()
+  public boolean resume()
   {
     if (null == mMediaPlayer) {
-      return;
+      return false;
+    }
+    if (!mPrepared) {
+      return false;
     }
     mMediaPlayer.start();
+    return true;
   }
 
 

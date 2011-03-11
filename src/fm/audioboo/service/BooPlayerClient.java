@@ -195,6 +195,13 @@ public class BooPlayerClient
    **/
   public void play(Boo boo, boolean playImmediately)
   {
+    // The first thing we do is send a "buffering" state. The first event from
+    // the service can be delayed up to 5 seconds, in which time we may not show
+    // any progress at all.
+    if (null != mListener) {
+      mListener.onProgress(Constants.STATE_BUFFERING, 0f, boo.getDuration());
+    }
+
     // Before sending stuff off to the service, make sure the mp3 uri (if it
     // exists) is absolute.
     if (null != boo.mData.mHighMP3Url) {
@@ -204,7 +211,6 @@ public class BooPlayerClient
         boo.mData.mHighMP3Url = uri;
       }
     }
-
 
     try {
       mStub.play(boo.mData, playImmediately);

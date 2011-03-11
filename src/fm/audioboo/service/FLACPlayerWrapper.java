@@ -95,9 +95,10 @@ public class FLACPlayerWrapper extends PlayerBase
 
 
 
-  public void resume()
+  public boolean resume()
   {
     mFlacPlayer.resumePlayback();
+    return true;
   }
 
 

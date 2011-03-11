@@ -58,9 +58,10 @@ abstract class PlayerBase
   abstract boolean prepare(Boo boo);
 
   // Pauses/resumes playback. Can only be called after start() has been
-  // called.
+  // called. The resume() may return false if the player is not yet prepared
+  // for playback.
   abstract void pause();
-  abstract void resume();
+  abstract boolean resume();
 
   // Stops playback and also releases player resources; after this call
   // pause()/resume() won't work any longer.
