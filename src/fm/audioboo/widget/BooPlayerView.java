@@ -55,8 +55,7 @@ public class BooPlayerView
   // Log ID
   private static final String LTAG  = "BooPlayerView";
 
-  // FIXME Multiplier applied to boo playback progress (in seconds) before it's
-  // used as max/current in the progress display.
+  // Scale for the seek bar
   private static final int  PROGRESS_MAX        = 10000;
 
 
@@ -461,7 +460,7 @@ public class BooPlayerView
     // If there's progress, update that, too.
     if (total > 0) {
       int cur = (int) ((progress / total) * PROGRESS_MAX);
-      Log.d(LTAG, "cur/max: " + cur + "/" + PROGRESS_MAX);
+      //Log.d(LTAG, "cur/max: " + cur + "/" + PROGRESS_MAX);
 
       if (null != mButton) {
         mButton.setMax(PROGRESS_MAX);
