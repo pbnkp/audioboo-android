@@ -76,6 +76,9 @@
         android:id="@+id/main_boos_player"
         android:layout_width="fill_parent"
         android:layout_height="wrap_content"
+        android:layout_marginTop="10dp"
+        android:layout_marginLeft="17dp"
+        android:layout_marginRight="17dp"
         android:layout_alignParentBottom="true"
       />
   </LinearLayout>
