@@ -406,6 +406,11 @@ public class ImageCache extends SQLiteOpenHelper
         Log.e(LTAG, "Out of memory, can't scale bitmap: " + item.mImageUri);
         resultHandler.obtainMessage(MSG_ERROR, item).sendToTarget();
         return;
+      } catch (IllegalArgumentException ex) {
+        bitmap.recycle();
+        Log.e(LTAG, "Illegal argument: " + item.mImageUri + " @ " + new_width + "x" + new_height);
+        resultHandler.obtainMessage(MSG_ERROR, item).sendToTarget();
+        return;
       }
 
       // Store scaled image with the target dimensions
