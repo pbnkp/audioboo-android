@@ -1,21 +1,25 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
  This file is part of AudioBoo, an android program for audio blogging.
- Copyright (C) 2009 BestBefore Media Ltd. All rights reserved.
+ Copyright (C) 2009 BestBefore Media Ltd.
+ Copyright (C) 2010,2011 AudioBoo Ltd.
+ All rights reserved.
 
  Author: Jens Finkhaeuser <jens@finkhaeuser.de>
 
  $Id$
 -->
-<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="fill_parent"
     android:layout_height="fill_parent"
+    android:orientation="vertical"
   >
   <!-- List view -->
   <ListView android:id="@android:id/list"
       android:orientation="vertical"
       android:layout_width="fill_parent"
       android:layout_height="fill_parent"
+      android:layout_weight="1"
       android:layout_marginTop="3dp"
       android:divider="@android:color/transparent"
       android:dividerHeight="0dp"
@@ -26,6 +30,7 @@
   <RelativeLayout android:id="@+id/browse_boos_empty"
       android:layout_width="fill_parent"
       android:layout_height="fill_parent"
+      android:layout_weight="1"
     >
     <LinearLayout
         android:orientation="vertical"
@@ -113,4 +118,4 @@
         android:layout_height="wrap_content"
       />
   </LinearLayout>
-</RelativeLayout>
+</LinearLayout>

@@ -19,9 +19,6 @@ import android.content.res.Configuration;
 
 import android.view.View;
 
-import android.view.animation.Animation;
-import android.view.animation.AnimationUtils;
-
 import android.widget.AdapterView;
 import android.widget.ListView;
 import android.widget.Toast;
@@ -245,10 +242,6 @@ public abstract class BooListActivity
     }
 
     player.setVisibility(View.VISIBLE);
-    player.bringToFront();
-
-    Animation animation = AnimationUtils.loadAnimation(this, R.anim.fade_in);
-    player.startAnimation(animation);
   }
 
 
@@ -264,26 +257,7 @@ public abstract class BooListActivity
       return;
     }
 
-    Animation animation = AnimationUtils.loadAnimation(this, R.anim.fade_out);
-    animation.setAnimationListener(new Animation.AnimationListener() {
-      public void onAnimationEnd(Animation animation)
-      {
-        // When the player finished fading out, stop capturing clicks.
-        player.setVisibility(View.GONE);
-        getListView().bringToFront();
-      }
-
-      public void onAnimationRepeat(Animation animation)
-      {
-        // pass
-      }
-
-      public void onAnimationStart(Animation animation)
-      {
-        // pass
-      }
-    });
-    player.startAnimation(animation);
+    player.setVisibility(View.GONE);
   }
 
 
