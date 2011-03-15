@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+ This file is part of AudioBoo, an android program for audio blogging.
+ Copyright (C) 2009 BestBefore Media Ltd.
+ Copyright (C) 2010,2011 AudioBoo Ltd.
+ All rights reserved.
+
+ Author: Jens Finkhaeuser <jens@finkhaeuser.de>
+
+ $Id$
+-->
+<set xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shareInterpolator="false"
+    android:fillAfter="true"
+  >
+  <alpha android:fillAfter="true"
+      android:startOffset="0"
+      android:fromAlpha="0.0"
+      android:toAlpha="1.0"
+      android:duration="600"
+    />
+</set>
