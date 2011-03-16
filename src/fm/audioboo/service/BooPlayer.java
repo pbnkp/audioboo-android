@@ -16,6 +16,7 @@ import java.util.Timer;
 
 import java.lang.ref.WeakReference;
 
+import fm.audioboo.data.PersistentPlaybackState;
 import fm.audioboo.application.Boo;
 
 import android.util.Log;
@@ -230,6 +231,23 @@ public class BooPlayer extends Thread
         return null;
       }
       return mBoo.mData.mTitle;
+    }
+  }
+
+
+
+  public PersistentPlaybackState getPersistentState()
+  {
+    synchronized (mLock)
+    {
+      if (null == mBoo || null == mBoo.mData) {
+        return null;
+      }
+      PersistentPlaybackState state = new PersistentPlaybackState();
+      state.mBooData = mBoo.mData;
+      state.mState = mState;
+      state.mProgress = mPlaybackProgress;
+      return state;
     }
   }
 

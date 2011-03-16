@@ -13,6 +13,7 @@ import android.app.Service;
 
 import android.os.IBinder;
 import android.os.Parcelable;
+import android.os.Environment;
 
 import android.content.Context;
 import android.content.Intent;
@@ -22,7 +23,16 @@ import android.app.PendingIntent;
 import android.app.Notification;
 import android.app.NotificationManager;
 
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.ObjectInputStream;
+import java.io.FileOutputStream;
+import java.io.ObjectOutputStream;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+
 import fm.audioboo.data.BooData;
+import fm.audioboo.data.PersistentPlaybackState;
 import fm.audioboo.application.Boo;
 
 import fm.audioboo.application.BooDetailsActivity;
@@ -75,6 +85,27 @@ public class AudiobooService
       mPlayer = new BooPlayer(this);
       mPlayer.setProgressListener(this);
       mPlayer.start();
+
+      // Search for and read state.
+      String path = getStateFilename();
+      File statefile = new File(path);
+      if (statefile.exists()) {
+        PersistentPlaybackState state = null;
+        try {
+          ObjectInputStream is = new ObjectInputStream(new FileInputStream(statefile));
+          state = (PersistentPlaybackState) is.readObject();
+          is.close();
+        } catch (FileNotFoundException ex) {
+          Log.e(LTAG, "File not found: " + path);
+        } catch (ClassNotFoundException ex) {
+          Log.e(LTAG, "Class not found: " + path);
+        } catch (IOException ex) {
+          Log.e(LTAG, "Error reading file: " + path);
+        }
+
+        // FIXME
+        // Restore state
+      }
     }
   }
 
@@ -84,10 +115,38 @@ public class AudiobooService
   public void onDestroy()
   {
     if (null != mPlayer) {
+      // Get state
+      PersistentPlaybackState state = mPlayer.getPersistentState();
+
+      // Stop player
       mPlayer.mShouldRun = false;
       mPlayer.interrupt();
       mPlayer = null;
+
+      // Write playback state.
+      if (null != state) {
+        String path = getStateFilename();
+        try {
+          ObjectOutputStream os = new ObjectOutputStream(new FileOutputStream(new File(path)));
+          os.writeObject(state);
+          os.flush();
+          os = null;
+        } catch (FileNotFoundException ex) {
+          Log.e(LTAG, "File not found: " + path);
+        } catch (IOException ex) {
+          Log.e(LTAG, "Error writing file '" + path + "': " + ex.getMessage());
+        }
+      }
     }
+  }
+
+
+
+  private String getStateFilename()
+  {
+    String path = Environment.getExternalStorageDirectory().getPath();
+    path += File.separator + "data" + File.separator + getPackageName() + File.separator + "state";
+    return path;
   }
 
 
