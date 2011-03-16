@@ -186,6 +186,18 @@ public class AudioBoo extends Activity
           }
         }
     });
+
+    // Hook up record button.
+    final View button = findViewById(R.id.main_record);
+    if (null != button) {
+      button.setOnClickListener(new View.OnClickListener() {
+          public void onClick(View v)
+          {
+            Intent i = new Intent(AudioBoo.this, RecordActivity.class);
+            startActivity(i);
+          }
+      });
+    }
   }
 
 

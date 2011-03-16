@@ -49,6 +49,9 @@
   <!-- Hints -->
   <string name="browse_hint_menu">The menu button reveals more actions you can take.</string>
 
+  <!-- Button labels -->
+  <string name="browse_retry">Retry</string>
+
 
   <!--
     Recording view
@@ -263,6 +266,8 @@
   </string-array>
 
   <string name="main_menu_now_playing">Now Playing</string>
+
+  <string name="main_record">Record</string>
 
   <!--
     InboxActivity
