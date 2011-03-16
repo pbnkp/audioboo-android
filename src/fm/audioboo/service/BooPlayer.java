@@ -157,7 +157,11 @@ public class BooPlayer extends Thread
   {
     synchronized (mLock)
     {
-      if (null != mBoo && mBoo != boo) {
+      if (null != mBoo && null != mBoo.mData) {
+        mResetState = true;
+        return;
+      }
+      if (mBoo != boo) {
         mResetState = true;
       }
       mBoo = boo;
@@ -471,7 +475,7 @@ public class BooPlayer extends Thread
 
   private void prepareInternal(Boo boo)
   {
-    if (null == boo) {
+    if (null == boo || null == boo.mData) {
       Log.e(LTAG, "Prepare without boo!");
       synchronized (mLock)
       {
