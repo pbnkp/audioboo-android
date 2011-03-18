@@ -22,6 +22,7 @@ import org.json.JSONObject;
 import java.util.Date;
 import java.text.SimpleDateFormat;
 import java.text.ParseException;
+import java.util.List;
 import java.util.LinkedList;
 
 import fm.audioboo.data.Tag;
@@ -119,6 +120,8 @@ class ResponseParser
   private static final String TAG_NORMALISED          = "normalised_tag";
   private static final String TAG_URL                 = "url";
 
+  private static final String USERS                   = "users";
+
   // Fields for registration responses
   private static final String SOURCE                  = "source";
   private static final String API_SECRET              = "api_secret";
@@ -148,7 +151,6 @@ class ResponseParser
    **/
   public static Response<BooList> parseBooList(String response, Handler handler)
   {
-    Log.d(LTAG, "response: " + response);
     try {
       Response<JSONObject> body = retrieveBody(response, handler);
       if (null == body) {
@@ -516,6 +518,42 @@ class ResponseParser
 
 
 
+
+  /**
+   * Parses a contact list response
+   **/
+  public static Response<List<User>> parseUserList(String response, Handler handler)
+  {
+    try {
+      Response<JSONObject> body = retrieveBody(response, handler);
+      if (null == body) {
+        return null;
+      }
+
+      JSONArray json_users = body.mContent.getJSONArray(USERS);
+      List<User> users = new LinkedList<User>();
+      if (null != json_users) {
+        for (int i = 0 ; i < json_users.length() ; ++i) {
+          users.add(parseUser(json_users.getJSONObject(i), false));
+        }
+      }
+
+      Response<List<User>> result = new Response<List<User>>();
+      result.mTimestamp = body.mTimestamp;
+      result.mWindow = body.mWindow;
+      result.mContent = users;
+      return result;
+
+    } catch (JSONException ex) {
+      Log.e(LTAG, "Could not parse JSON response: " + ex);
+      handler.obtainMessage(API.ERR_PARSE_ERROR).sendToTarget();
+      return null;
+    }
+  }
+
+
+
+
   /**
    * Convenience function: checks the returned version, and checks for errors.
    * Returns a JSONObject representing the response body on success, null
@@ -524,6 +562,8 @@ class ResponseParser
    **/
   private static Response<JSONObject> retrieveBody(String response, Handler handler) throws JSONException
   {
+    Log.d(LTAG, "response: " + response);
+
     JSONObject object = new JSONObject(response);
 
     Response<JSONObject> result = new Response<JSONObject>();

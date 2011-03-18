@@ -80,6 +80,7 @@ import java.security.MessageDigest;
 import android.content.SharedPreferences;
 
 import fm.audioboo.data.Tag;
+import fm.audioboo.data.User;
 
 import android.util.Log;
 
@@ -222,6 +223,7 @@ public class API
   private static final String API_STATUS                  = "sources/status";
   // XXX API_LINK isn't required; the link uri is returned in the status call.
   private static final String API_UNLINK                  = "sources/unlink";
+  private static final String API_CONTACTS                = "account/followings";
 
   // API version, format parameter
   private static final String KEY_API_VERSION             = "version";
@@ -547,6 +549,45 @@ public class API
                 // If boos were null, then the ResponseParser would already have sent an
                 // error message to the result_handler.
                 result_handler.obtainMessage(ERR_SUCCESS, boos.mContent).sendToTarget();
+              }
+            }
+            else {
+              result_handler.obtainMessage(msg.what, msg.obj).sendToTarget();
+            }
+            return true;
+          }
+        }
+    ));
+    mRequester.start();
+  }
+
+
+
+  /**
+   * Fetch a user's contacts
+   **/
+  public void fetchContacts(final Handler result_handler)
+  {
+    if (null != mRequester) {
+      mRequester.keepRunning = false;
+      mRequester.interrupt();
+    }
+
+    // Must force signature.
+    HashMap<String, Object> signedParams = new HashMap<String, Object>();
+
+    // This request has no parameters.
+    mRequester = new Requester(API_CONTACTS, null, signedParams, null,
+        new Handler(new Handler.Callback() {
+          public boolean handleMessage(Message msg)
+          {
+            if (ERR_SUCCESS == msg.what) {
+              ResponseParser.Response<List<User>> users
+                  = ResponseParser.parseUserList((String) msg.obj, result_handler);
+              if (null != users) {
+                // If boos were null, then the ResponseParser would already have sent an
+                // error message to the result_handler.
+                result_handler.obtainMessage(ERR_SUCCESS, users.mContent).sendToTarget();
               }
             }
             else {
