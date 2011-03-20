@@ -142,7 +142,7 @@ public class BooDetailsActivity
         if (null != uri) {
           int size = image_view.getLayoutParams().width - image_view.getPaddingLeft()
             - image_view.getPaddingRight();
-         uris.add(new ImageCache.CacheItem(uri, size, new Baton(-1, R.id.boo_thumb, -1)));
+          uris.add(new ImageCache.CacheItem(uri, size, new Baton(-1, R.id.boo_thumb, -1)));
         }
       }
 
