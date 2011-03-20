@@ -1,6 +1,8 @@
 /**
  * This file is part of AudioBoo, an android program for audio blogging.
- * Copyright (C) 2009 BestBefore Media Ltd. All rights reserved.
+ * Copyright (C) 2009 BestBefore Media Ltd.
+ * Copyright (C) 2010,2011 AudioBoo Ltd.
+ * All rights reserved.
  *
  * Author: Jens Finkhaeuser <jens@finkhaeuser.de>
  *
@@ -193,6 +195,7 @@ public class Globals implements BooPlayerClient.BindListener
   public ImageCache             mImageCache;
   public BooPlayerClient        mPlayer;
   public TitleGenerator         mTitleGenerator;
+  public ObjectMemoryCache      mObjectCache;
 
   // Location information, updated regularly if the appropriate settings are
   // switched on.
@@ -258,6 +261,8 @@ public class Globals implements BooPlayerClient.BindListener
 
     mTitleGenerator = new TitleGenerator(context);
 
+    mObjectCache = new ObjectMemoryCache();
+
     // Find out the device linked status early.
     updateStatus(null);
   }
@@ -270,6 +275,8 @@ public class Globals implements BooPlayerClient.BindListener
     mImageCache = null;
 
     mTitleGenerator = null;
+
+    mObjectCache = null;
   }
 
 
