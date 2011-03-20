@@ -85,12 +85,16 @@ class ResponseParser
   private static final String USER_URLS_IMAGES_THUMB  = "thumb";
   private static final String USER_URLS_IMAGES_FULL   = "full";
   private static final String USER_USERNAME           = "username";
+  private static final String USER_FULL_NAME          = "full_name";
+  private static final String USER_DESCRIPTION        = "profile_description";
   private static final String USER_ID                 = "id";
   private static final String USER_COUNTS             = "counts";
   private static final String USER_COUNTS_FOLLOWERS   = "followers";
   private static final String USER_COUNTS_AUDIO_CLIPS = "audio_clips";
   private static final String USER_COUNTS_FOLLOWINGS  = "followings";
+  private static final String USER_COUNTS_FAVORITES   = "favorites";
   private static final String USER_MESSAGING_ENABLED  = "messaging_enabled";
+  private static final String USER_FOLLOWING_ENABLED  = "folloowing_enabled";
 
   private static final String BOO_ID                  = "id";
   private static final String BOO_TITLE               = "title";
@@ -421,10 +425,23 @@ class ResponseParser
     // Basic information
     result.mId = user.getInt(USER_ID);
     result.mUsername = user.getString(USER_USERNAME);
+    if (user.has(USER_FULL_NAME)) {
+      result.mFullName = user.getString(USER_FULL_NAME);
+    }
+    if (user.has(USER_DESCRIPTION)) {
+      result.mDescription = user.getString(USER_DESCRIPTION);
+    }
     result.mIsMessageSender = isSender;
     if (isSender && user.has(USER_MESSAGING_ENABLED)) {
       result.mMessagingEnabled = user.getBoolean(USER_MESSAGING_ENABLED);
     }
+    if (user.has(USER_FOLLOWING_ENABLED)) {
+      result.mFollowingEnabled = user.getBoolean(USER_FOLLOWING_ENABLED);
+    }
+    else {
+      result.mFollowingEnabled = false;
+    }
+
 
     // Urls
     JSONObject urls = user.getJSONObject(USER_URLS);
@@ -445,6 +462,9 @@ class ResponseParser
       result.mFollowers = counts.getInt(USER_COUNTS_FOLLOWERS);
       result.mFollowings = counts.getInt(USER_COUNTS_FOLLOWINGS);
       result.mAudioClips = counts.getInt(USER_COUNTS_AUDIO_CLIPS);
+      if (counts.has(USER_COUNTS_FAVORITES)) {
+        result.mFavorites = counts.getInt(USER_COUNTS_FAVORITES);
+      }
     }
 
 //    Log.d(LTAG, "User: " + result);
@@ -552,6 +572,31 @@ class ResponseParser
   }
 
 
+  /**
+   * Parses a response containing a single User
+   **/
+  public static Response<User> parseUserResponse(String response, Handler handler)
+  {
+    try {
+      Response<JSONObject> body = retrieveBody(response, handler);
+      if (null == body) {
+        return null;
+      }
+
+      User user = parseUser(body.mContent.getJSONObject(USER), false);
+
+      Response<User> result = new Response<User>();
+      result.mTimestamp = body.mTimestamp;
+      result.mWindow = body.mWindow;
+      result.mContent = user;
+      return result;
+
+    } catch (JSONException ex) {
+      Log.e(LTAG, "Could not parse JSON response: " + ex);
+      handler.obtainMessage(API.ERR_PARSE_ERROR).sendToTarget();
+      return null;
+    }
+  }
 
 
   /**

@@ -34,8 +34,11 @@ public class User implements Parcelable, Serializable
   // Basic information
   public int            mId;                // Unique user ID
   public String         mUsername;          // Username
+  public String         mFullName;          // Full name
+  public String         mDescription;       // Profile description
   public boolean        mIsMessageSender;   // Set if this is a sender in messages
   public boolean        mMessagingEnabled;  // Only used if the above is true.
+  public boolean        mFollowingEnabled;  // Whether or not following is enabled
 
   // URLs associated with the user.
   public transient Uri  mProfileUrl;        // Profile url
@@ -48,6 +51,7 @@ public class User implements Parcelable, Serializable
   public int            mFollowers;         // # users following this one
   public int            mFollowings;        // # users this one follows
   public int            mAudioClips;        // # clips this user uploaded
+  public int            mFavorites;         // # clips favorited
 
 
 
@@ -101,8 +105,11 @@ public class User implements Parcelable, Serializable
   {
     out.writeInt(mId);
     out.writeString(mUsername);
+    out.writeString(mFullName);
+    out.writeString(mDescription);
     out.writeInt(mIsMessageSender ? 1 : 0);
     out.writeInt(mMessagingEnabled ? 1 : 0);
+    out.writeInt(mFollowingEnabled ? 1 : 0);
 
     out.writeParcelable(mProfileUrl, flags);
     out.writeParcelable(mImageUrl, flags);
@@ -112,6 +119,7 @@ public class User implements Parcelable, Serializable
     out.writeInt(mFollowers);
     out.writeInt(mFollowings);
     out.writeInt(mAudioClips);
+    out.writeInt(mFavorites);
   }
 
 
@@ -135,8 +143,11 @@ public class User implements Parcelable, Serializable
   {
     mId               = in.readInt();
     mUsername         = in.readString();
+    mFullName         = in.readString();
+    mDescription      = in.readString();
     mIsMessageSender  = (in.readInt() != 0);
     mMessagingEnabled = (in.readInt() != 0);
+    mFollowingEnabled = (in.readInt() != 0);
 
     mProfileUrl       = in.readParcelable(Uri.class.getClassLoader());
     mImageUrl         = in.readParcelable(Uri.class.getClassLoader());
@@ -146,6 +157,7 @@ public class User implements Parcelable, Serializable
     mFollowers        = in.readInt();
     mFollowings       = in.readInt();
     mAudioClips       = in.readInt();
+    mFavorites        = in.readInt();
   }
 
 
