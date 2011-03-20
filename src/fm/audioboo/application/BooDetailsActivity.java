@@ -101,9 +101,7 @@ public class BooDetailsActivity
       throw new IllegalArgumentException("Intent needs to define the '"
           + EXTRA_BOO_DATA + "' extra.");
     }
-
-    mBoo= new Boo(data);
-    Log.d(LTAG, "Boo: " + mBoo);
+    mBoo = new Boo(data);
 
     // Fill view with data!
     populateView();
