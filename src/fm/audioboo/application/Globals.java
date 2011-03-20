@@ -50,6 +50,7 @@ import android.content.res.Resources;
 import android.provider.Settings;
 
 import fm.audioboo.service.BooPlayerClient;
+import fm.audioboo.data.User;
 
 import java.lang.ref.WeakReference;
 
@@ -163,9 +164,14 @@ public class Globals implements BooPlayerClient.BindListener
         if (API.ERR_SUCCESS == msg.what) {
           mStatus = mAPI.getStatus();
           Log.i(LTAG, "Device link status: " + mStatus);
-          if (null != mOnwardsHandler) {
-            mOnwardsHandler.obtainMessage(msg.what).sendToTarget();
-            mOnwardsHandler = null;
+          if (mStatus.mLinked) {
+            mAPI.fetchAccount(mAccountHandler);
+          }
+          else {
+            if (null != mOnwardsHandler) {
+              mOnwardsHandler.obtainMessage(msg.what).sendToTarget();
+              mOnwardsHandler = null;
+            }
           }
         }
         else {
@@ -186,6 +192,21 @@ public class Globals implements BooPlayerClient.BindListener
       }
   });
 
+  private Handler                   mAccountHandler = new Handler(new Handler.Callback() {
+      public boolean handleMessage(Message msg)
+      {
+        if (API.ERR_SUCCESS == msg.what) {
+          mAccount = (User) msg.obj;
+        }
+        if (null != mOnwardsHandler) {
+          mOnwardsHandler.obtainMessage(msg.what).sendToTarget();
+          mOnwardsHandler = null;
+        }
+        return true;
+      }
+  });
+
+
 
   /***************************************************************************
    * Public instance data
@@ -200,6 +221,9 @@ public class Globals implements BooPlayerClient.BindListener
   // Location information, updated regularly if the appropriate settings are
   // switched on.
   public Location               mLocation;
+
+  // Account information; only set if the device is linked.
+  public User                   mAccount;
 
 
 
@@ -676,6 +700,7 @@ public class Globals implements BooPlayerClient.BindListener
     getStatus();
     mStatusRetries = 0;
     mOnwardsHandler = onwardsHandler;
+    mAccount = null;
     mAPI.updateStatus(mStatusHandler);
   }
 }

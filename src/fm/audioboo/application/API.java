@@ -224,6 +224,7 @@ public class API
   // XXX API_LINK isn't required; the link uri is returned in the status call.
   private static final String API_UNLINK                  = "sources/unlink";
   private static final String API_CONTACTS                = "account/followings";
+  private static final String API_ACCOUNT                 = "account";
 
   // API version, format parameter
   private static final String KEY_API_VERSION             = "version";
@@ -588,6 +589,45 @@ public class API
                 // If boos were null, then the ResponseParser would already have sent an
                 // error message to the result_handler.
                 result_handler.obtainMessage(ERR_SUCCESS, users.mContent).sendToTarget();
+              }
+            }
+            else {
+              result_handler.obtainMessage(msg.what, msg.obj).sendToTarget();
+            }
+            return true;
+          }
+        }
+    ));
+    mRequester.start();
+  }
+
+
+
+  /**
+   * Fetch account information
+   **/
+  public void fetchAccount(final Handler result_handler)
+  {
+    if (null != mRequester) {
+      mRequester.keepRunning = false;
+      mRequester.interrupt();
+    }
+
+    // Must force signature.
+    HashMap<String, Object> signedParams = new HashMap<String, Object>();
+
+    // This request has no parameters.
+    mRequester = new Requester(API_ACCOUNT, null, signedParams, null,
+        new Handler(new Handler.Callback() {
+          public boolean handleMessage(Message msg)
+          {
+            if (ERR_SUCCESS == msg.what) {
+              ResponseParser.Response<User> user
+                  = ResponseParser.parseUserResponse((String) msg.obj, result_handler);
+              if (null != user) {
+                // If boos were null, then the ResponseParser would already have sent an
+                // error message to the result_handler.
+                result_handler.obtainMessage(ERR_SUCCESS, user.mContent).sendToTarget();
               }
             }
             else {
