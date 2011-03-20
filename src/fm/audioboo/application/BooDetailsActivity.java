@@ -14,6 +14,7 @@ import android.app.Activity;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
+import android.os.Parcelable;
 
 import android.content.Intent;
 import android.content.res.Configuration;
@@ -26,6 +27,7 @@ import android.view.ViewTreeObserver;
 
 import android.widget.TextView;
 import android.widget.ImageView;
+import android.widget.Toast;
 
 import android.graphics.drawable.Drawable;
 import android.graphics.drawable.BitmapDrawable;
@@ -49,7 +51,7 @@ public class BooDetailsActivity
    * Private constants
    **/
   // Log ID
-  private static final String LTAG  = "BooDetails";
+  private static final String LTAG  = "BooDetailsActivity";
 
 
   /***************************************************************************
@@ -125,21 +127,6 @@ public class BooDetailsActivity
 
 
 
-  protected Dialog onCreateDialog(int id)
-  {
-    Dialog dialog = null;
-//
-//    switch (id) {
-//      case DIALOG_GPS_SETTINGS:
-//        dialog = Globals.get().createDialog(this, id);
-//        break;
-//    }
-
-    return dialog;
-  }
-
-
-
   private void populateView()
   {
     if (null == mBoo || null == mBoo.mData) {
@@ -159,18 +146,22 @@ public class BooDetailsActivity
             - image_view.getPaddingRight();
          uris.add(new ImageCache.CacheItem(uri, size, new Baton(-1, R.id.boo_thumb, -1)));
         }
-
-
-        image_view.setOnClickListener(new View.OnClickListener() {
-            public void onClick(View v)
-            {
-              Log.d(LTAG, "Stuff clicked");
-                // TODO
-//              Intent i = new Intent(Intent.ACTION_VIEW, data);
-//              startActivity(i);
-            }
-        });
       }
+
+
+      image_view.setOnClickListener(new View.OnClickListener() {
+          public void onClick(View v)
+          {
+            if (null != mBoo.mData.mUser) {
+              Intent i = new Intent(BooDetailsActivity.this, ContactDetailsActivity.class);
+              i.putExtra(ContactDetailsActivity.EXTRA_CONTACT, (Parcelable) mBoo.mData.mUser);
+              startActivity(i);
+            }
+            else {
+              Toast.makeText(BooDetailsActivity.this, R.string.details_user_not_available, Toast.LENGTH_LONG).show();
+            }
+          }
+      });
     }
 
     // Author
