@@ -50,9 +50,6 @@ public abstract class BooListActivity
   protected static final int  ACTION_REFRESH  = 0;
   protected static final int  ACTION_LAST     = ACTION_REFRESH;
 
-  // Dialog IDs
-  protected static final int  DIALOG_ERROR    = Globals.DIALOG_ERROR;
-
 
   /***************************************************************************
    * Data members
