@@ -77,11 +77,14 @@
           android:gravity="left|center_vertical"
         >
         <ImageView
-            android:layout_width="30dp"
-            android:layout_height="30dp"
+            android:id="@+id/account_thumb"
+            android:layout_width="34dp"
+            android:layout_height="34dp"
             android:layout_margin="2dp"
             android:src="@drawable/anonymous_boo"
-            android:padding="1dp"
+            android:padding="3dp"
+            android:scaleType="centerCrop"
+            android:background="@drawable/selectable_frame"
           />
 
         <TextView android:id="@+id/account_name"

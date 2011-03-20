@@ -16,6 +16,9 @@ import android.app.Activity;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
+import android.os.Parcelable;
+
+import android.net.Uri;
 
 import android.content.res.Configuration;
 import android.content.SharedPreferences;
@@ -27,10 +30,17 @@ import android.widget.CompoundButton;
 import android.widget.ToggleButton;
 import android.widget.CheckBox;
 import android.widget.TextView;
+import android.widget.ImageView;
 
 import android.content.DialogInterface;
 import android.app.Dialog;
 import android.app.AlertDialog;
+
+import android.graphics.drawable.BitmapDrawable;
+
+import java.util.LinkedList;
+
+import fm.audioboo.data.User;
 
 import android.util.Log;
 
@@ -205,6 +215,8 @@ public class AccountActivity extends Activity
       if (null != text_view) {
         text_view.setText(getResources().getString(R.string.account_description_linked));
       }
+
+      activateThumbnail();
     }
     else {
       TextView text_view = (TextView) findViewById(R.id.account_name);
@@ -215,6 +227,13 @@ public class AccountActivity extends Activity
       text_view = (TextView) findViewById(R.id.account_description);
       if (null != text_view) {
         text_view.setText(getResources().getString(R.string.account_description_unlinked));
+      }
+
+      ImageView image_view = (ImageView) findViewById(R.id.account_thumb);
+      if (null != image_view) {
+        image_view.setImageResource(R.drawable.anonymous_boo);
+        image_view.setFocusable(false);
+        image_view.setOnClickListener(null);
       }
     }
 
@@ -393,5 +412,72 @@ public class AccountActivity extends Activity
     }
 
     determineStatus(true);
+  }
+
+
+  private void activateThumbnail()
+  {
+    final User account = Globals.get().mAccount;
+    Log.d(LTAG, "Account: " + account);
+    if (null == account) {
+      return;
+    }
+
+    ImageView image_view = (ImageView) findViewById(R.id.account_thumb);
+    if (null == image_view) {
+      return;
+    }
+
+    // Prepare for loading images.
+    LinkedList<ImageCache.CacheItem> uris = new LinkedList<ImageCache.CacheItem>();
+
+    Uri uri = account.getThumbUrl();
+    if (null != uri) {
+      int size = image_view.getLayoutParams().width - image_view.getPaddingLeft()
+        - image_view.getPaddingRight();
+      uris.add(new ImageCache.CacheItem(uri, size, null));
+    }
+
+    image_view.setFocusable(true);
+    image_view.setOnClickListener(new View.OnClickListener() {
+        public void onClick(View v)
+        {
+          Intent i = new Intent(AccountActivity.this, ContactDetailsActivity.class);
+          i.putExtra(ContactDetailsActivity.EXTRA_CONTACT, (Parcelable) account);
+          startActivity(i);
+        }
+    });
+
+    // Finally, fire off requests for images.
+    if (0 < uris.size()) {
+      Globals.get().mImageCache.fetch(uris, new Handler(new Handler.Callback() {
+        public boolean handleMessage(Message msg)
+        {
+          ImageCache.CacheItem item = (ImageCache.CacheItem) msg.obj;
+
+          ImageView image_view = (ImageView) findViewById(R.id.account_thumb);
+          if (null == image_view) {
+            Log.d(LTAG, "did not find thumbnail view");
+            return true;
+          }
+
+          switch (msg.what) {
+            case ImageCache.MSG_OK:
+              image_view.setImageDrawable(new BitmapDrawable(item.mBitmap));
+              break;
+
+            case ImageCache.MSG_ERROR:
+            default:
+              Log.e(LTAG, "Error fetching image at URL: " + (item != null ? item.mImageUri : null));
+
+            case ImageCache.MSG_CANCELLED:
+              break;
+          }
+          return true;
+        }
+      }));
+    }
+
+
   }
 }
