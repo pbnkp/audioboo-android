@@ -197,6 +197,9 @@ public class Globals implements BooPlayerClient.BindListener
       {
         if (API.ERR_SUCCESS == msg.what) {
           mAccount = (User) msg.obj;
+
+          String key = String.format(ContactDetailsActivity.CONTACT_KEY_FORMAT, mAccount.mId);
+          mObjectCache.put(key, mAccount, ContactDetailsActivity.CONTACT_TIMEOUT);
         }
         if (null != mOnwardsHandler) {
           mOnwardsHandler.obtainMessage(msg.what).sendToTarget();
