@@ -28,6 +28,6 @@
     <item>fm.audioboo.application.BrowseActivity</item>
     <item></item>
     <item>fm.audioboo.application.InboxActivity</item>
-    <item></item>
+    <item>fm.audioboo.application.ContactsListActivity</item>
   </string-array>
 </resources>

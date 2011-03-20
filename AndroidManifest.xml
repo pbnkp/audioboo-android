@@ -82,6 +82,13 @@
         android:configChanges="orientation|keyboardHidden"
       />
 
+    <activity android:name=".ContactsListActivity"
+        android:configChanges="orientation|keyboardHidden"
+      />
+
+    <activity android:name=".ContactDetailsActivity"
+        android:configChanges="orientation|keyboardHidden"
+      />
 
     <!-- Audio playback service -->
     <service android:name="fm.audioboo.service.AudiobooService"
