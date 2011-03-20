@@ -225,6 +225,7 @@ public class API
   private static final String API_UNLINK                  = "sources/unlink";
   private static final String API_CONTACTS                = "account/followings";
   private static final String API_ACCOUNT                 = "account";
+  private static final String API_USER                    = "users/%d";
 
   // API version, format parameter
   private static final String KEY_API_VERSION             = "version";
@@ -604,7 +605,7 @@ public class API
 
 
   /**
-   * Fetch account information
+   * Fetch account information for the linked user's account
    **/
   public void fetchAccount(final Handler result_handler)
   {
@@ -618,6 +619,44 @@ public class API
 
     // This request has no parameters.
     mRequester = new Requester(API_ACCOUNT, null, signedParams, null,
+        new Handler(new Handler.Callback() {
+          public boolean handleMessage(Message msg)
+          {
+            if (ERR_SUCCESS == msg.what) {
+              ResponseParser.Response<User> user
+                  = ResponseParser.parseUserResponse((String) msg.obj, result_handler);
+              if (null != user) {
+                // If boos were null, then the ResponseParser would already have sent an
+                // error message to the result_handler.
+                result_handler.obtainMessage(ERR_SUCCESS, user.mContent).sendToTarget();
+              }
+            }
+            else {
+              result_handler.obtainMessage(msg.what, msg.obj).sendToTarget();
+            }
+            return true;
+          }
+        }
+    ));
+    mRequester.start();
+  }
+
+
+
+  /**
+   * Fetch account information for another user's account.
+   **/
+  public void fetchAccount(int userId, final Handler result_handler)
+  {
+    if (null != mRequester) {
+      mRequester.keepRunning = false;
+      mRequester.interrupt();
+    }
+
+    String api = String.format(API_USER, userId);
+
+    // This request has no parameters.
+    mRequester = new Requester(api, null, null, null,
         new Handler(new Handler.Callback() {
           public boolean handleMessage(Message msg)
           {
