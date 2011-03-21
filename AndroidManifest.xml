@@ -88,6 +88,7 @@
 
     <activity android:name=".ContactDetailsActivity"
         android:configChanges="orientation|keyboardHidden"
+        android:screenOrientation="portrait"
       />
 
     <!-- Audio playback service -->

@@ -63,4 +63,14 @@
   <dimen name="details_title">@dimen/text_large</dimen>
   <dimen name="details_age">@dimen/text_small</dimen>
   <dimen name="details_location">@dimen/text_small</dimen>
+
+  <!--
+    Contact details
+  -->
+  <dimen name="contact_number">75sp</dimen>
+  <dimen name="contact_label">@dimen/text_large</dimen>
+  <dimen name="contact_button">@dimen/text_larger</dimen>
+
+  <dimen name="contact_name">@dimen/text_large</dimen>
+  <dimen name="contact_description">@dimen/text_standard</dimen>
 </resources>

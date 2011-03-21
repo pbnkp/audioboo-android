@@ -314,4 +314,14 @@
 
   <!-- Contacts -->
   <string name="contacts_title">Contacts</string>
+
+  <string name="contact_button_follow">Follow</string>
+  <string name="contact_button_unfollow">Unfollow</string>
+  <string name="contact_button_message">Send DM</string>
+
+  <string name="contact_label_boos">boos</string>
+  <string name="contact_label_favorites">favourites</string>
+  <string name="contact_label_followings">following</string>
+  <string name="contact_label_followers">followers</string>
+
 </resources>

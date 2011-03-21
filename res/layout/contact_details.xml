@@ -1,0 +1,262 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+ This file is part of AudioBoo, an android program for audio blogging.
+ Copyright (C) 2011 Audioboo Ltd. All rights reserved.
+
+ Author: Jens Finkhaeuser <jens@finkhaeuser.de>
+
+ $Id$
+-->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:orientation="vertical"
+    android:layout_width="fill_parent"
+    android:layout_height="fill_parent"
+    android:padding="15dp"
+  >
+  <!-- Summary -->
+  <LinearLayout
+      android:layout_width="fill_parent"
+      android:layout_height="wrap_content"
+      android:orientation="horizontal"
+      android:gravity="top"
+    >
+
+    <!-- Contact thumbnail -->
+    <ImageView android:id="@+id/contact_thumb"
+        android:layout_width="100dp"
+        android:layout_height="100dp"
+        android:layout_margin="2dp"
+        android:layout_alignParentTop="true"
+        android:layout_alignParentLeft="true"
+        android:src="@drawable/anonymous_boo"
+        android:padding="3dp"
+        android:scaleType="centerCrop"
+        android:background="@drawable/selectable_frame"
+      />
+
+    <!-- Metadata -->
+   <LinearLayout
+       android:layout_width="fill_parent"
+       android:layout_height="wrap_content"
+       android:layout_alignParentTop="true"
+       android:layout_alignParentLeft="true"
+       android:layout_marginLeft="10dp"
+       android:orientation="vertical"
+     >
+
+    <!-- Author -->
+    <TextView android:id="@+id/contact_author"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:textSize="@dimen/contact_name"
+        android:textColor="@color/contact_name"
+        android:textStyle="bold"
+        android:ellipsize="end"
+        android:lines="1"
+        android:singleLine="true"
+        android:text=""
+      />
+
+    <!-- Description -->
+    <ScrollView
+        android:layout_width="fill_parent"
+        android:layout_height="80dp"
+      >
+      <TextView android:id="@+id/contact_description"
+          android:layout_width="fill_parent"
+          android:layout_height="wrap_content"
+          android:textSize="@dimen/contact_description"
+          android:textColor="@color/contact_description"
+          android:text=""
+        />
+      </ScrollView>
+    </LinearLayout>
+  </LinearLayout>
+
+  <ViewAnimator
+      android:id="@+id/contact_flipper"
+      android:layout_width="fill_parent"
+      android:layout_height="fill_parent"
+      android:layout_marginTop="20dp"
+    >
+    <!-- Progress -->
+    <LinearLayout
+        android:layout_width="fill_parent"
+        android:layout_height="fill_parent"
+        android:gravity="center"
+      >
+      <ProgressBar
+          android:layout_width="wrap_content"
+          android:layout_height="wrap_content"
+          android:max="10000"
+          style="android:progressBarStyleSmall"
+        />
+    </LinearLayout>
+
+    <!-- User data -->
+    <TableLayout
+        android:layout_width="290dp"
+        android:layout_height="wrap_content"
+        android:gravity="center"
+        android:stretchColumns="0,1"
+      >
+      <!-- 1. Row: buttons -->
+      <TableRow android:id="@+id/contact_buttons"
+          android:layout_height="wrap_content"
+        >
+        <Button android:id="@+id/contact_follow"
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:paddingLeft="15dp"
+            android:paddingRight="15dp"
+            android:text="Follow"
+            android:background="@drawable/btn_green"
+            android:textColor="@android:color/white"
+            android:textStyle="bold"
+            android:textSize="@dimen/contact_button"
+            android:shadowColor="@color/text_shadow"
+            android:shadowRadius="1"
+            android:shadowDx="0"
+            android:shadowDy="-1"
+          />
+        <Button android:id="@+id/contact_message"
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:paddingLeft="15dp"
+            android:paddingRight="15dp"
+            android:text="Send DM"
+            android:background="@drawable/btn_green"
+            android:textColor="@android:color/white"
+            android:textStyle="bold"
+            android:textSize="@dimen/contact_button"
+            android:shadowColor="@color/text_shadow"
+            android:shadowRadius="1"
+            android:shadowDx="0"
+            android:shadowDy="-1"
+          />
+      </TableRow>
+
+      <!-- 2. Row: Numbers -->
+      <TableRow
+          android:layout_height="wrap_content"
+        >
+        <TextView android:id="@+id/contact_boos"
+            android:layout_width="145dp"
+            android:layout_height="wrap_content"
+            android:gravity="center"
+            android:textSize="@dimen/contact_number"
+            android:textColor="@android:color/white"
+            android:textStyle="bold"
+            android:ellipsize="end"
+            android:lines="1"
+            android:singleLine="true"
+            android:text="0"
+          />
+        <TextView android:id="@+id/contact_favorites"
+            android:layout_width="145dp"
+            android:layout_height="wrap_content"
+            android:gravity="center"
+            android:textSize="@dimen/contact_number"
+            android:textColor="@android:color/white"
+            android:textStyle="bold"
+            android:ellipsize="end"
+            android:lines="1"
+            android:singleLine="true"
+            android:text="0"
+          />
+      </TableRow>
+
+      <!-- 3. Row: Labels -->
+      <TableRow
+          android:layout_height="wrap_content"
+          android:layout_marginTop="-15dp"
+        >
+        <TextView
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center"
+            android:textSize="@dimen/contact_label"
+            android:textColor="@android:color/white"
+            android:textStyle="bold"
+            android:ellipsize="end"
+            android:lines="1"
+            android:singleLine="true"
+            android:text="@string/contact_label_boos"
+          />
+        <TextView
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center"
+            android:textSize="@dimen/contact_label"
+            android:textColor="@android:color/white"
+            android:textStyle="bold"
+            android:ellipsize="end"
+            android:lines="1"
+            android:singleLine="true"
+            android:text="@string/contact_label_favorites"
+          />
+      </TableRow>
+
+      <!-- 4. Row: Numbers -->
+      <TableRow
+          android:layout_height="wrap_content"
+        >
+        <TextView android:id="@+id/contact_followings"
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center"
+            android:textSize="@dimen/contact_number"
+            android:textColor="@android:color/white"
+            android:textStyle="bold"
+            android:ellipsize="end"
+            android:lines="1"
+            android:singleLine="true"
+            android:text="0"
+          />
+        <TextView android:id="@+id/contact_followers"
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center"
+            android:textSize="@dimen/contact_number"
+            android:textColor="@android:color/white"
+            android:textStyle="bold"
+            android:ellipsize="end"
+            android:lines="1"
+            android:singleLine="true"
+            android:text="0"
+          />
+      </TableRow>
+
+      <!-- 5. Row: Labels -->
+      <TableRow
+          android:layout_height="wrap_content"
+          android:layout_marginTop="-15dp"
+        >
+        <TextView
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center"
+            android:textSize="@dimen/contact_label"
+            android:textColor="@android:color/white"
+            android:textStyle="bold"
+            android:ellipsize="end"
+            android:lines="1"
+            android:singleLine="true"
+            android:text="@string/contact_label_followings"
+          />
+        <TextView
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center"
+            android:textSize="@dimen/contact_label"
+            android:textColor="@android:color/white"
+            android:textStyle="bold"
+            android:ellipsize="end"
+            android:lines="1"
+            android:singleLine="true"
+            android:text="@string/contact_label_followers"
+          />
+      </TableRow>
+    </TableLayout>
+  </ViewAnimator>
+</LinearLayout>

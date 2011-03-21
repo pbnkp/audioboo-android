@@ -96,4 +96,10 @@
   <color name="main_menu_label">@android:color/white</color>
   <color name="main_player_label">@color/bb_gray_80</color>
 
+  <!--
+    Contact details
+  -->
+  <color name="contact_name">@android:color/white</color>
+  <color name="contact_description">@android:color/white</color>
+
 </resources>
