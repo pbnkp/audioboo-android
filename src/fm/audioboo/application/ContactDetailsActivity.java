@@ -29,6 +29,7 @@ import android.widget.Button;
 import android.graphics.drawable.Drawable;
 import android.graphics.drawable.BitmapDrawable;
 
+import java.util.List;
 import java.util.LinkedList;
 
 import fm.audioboo.data.User;
@@ -143,7 +144,6 @@ public class ContactDetailsActivity extends Activity
       if (null != loading) {
         loading.setDisplayedChild(0);
       }
-      // TODO More?
 
       Globals.get().mAPI.fetchAccount(mUserId, mHandler);
       return;
@@ -190,11 +190,19 @@ public class ContactDetailsActivity extends Activity
     Button button = (Button) findViewById(R.id.contact_follow);
     if (null != button) {
       button.setEnabled(user.mFollowingEnabled);
+
+      // Follow or unfollow?
+      final boolean following = isFollowing(user);
+      button.setText(following ? R.string.contact_button_unfollow : R.string.contact_button_follow);
       button.setOnClickListener(new View.OnClickListener() {
           public void onClick(View v)
           {
-            // FIXME unfollow?
-            onFollow(user);
+            if (following) {
+              onUnfollow(user);
+            }
+            else {
+              onFollow(user);
+            }
           }
       });
     }
@@ -210,8 +218,14 @@ public class ContactDetailsActivity extends Activity
       });
     }
 
-    // TODO hide/show all buttons for own profile
-
+    // Hide buttons if this is the current user's page.
+    User account = Globals.get().mAccount;
+    if (null == account || user.mId == account.mId) {
+      View view = findViewById(R.id.contact_buttons);
+      if (null != view) {
+        view.setVisibility(View.GONE);
+      }
+    }
 
     // Prepare for loading images.
     LinkedList<ImageCache.CacheItem> uris = new LinkedList<ImageCache.CacheItem>();
@@ -226,8 +240,6 @@ public class ContactDetailsActivity extends Activity
         uris.add(new ImageCache.CacheItem(uri, size, null));
       }
     }
-
-    // FIXME
 
     // Finally, fire off requests for images.
     if (0 < uris.size()) {
@@ -262,16 +274,105 @@ public class ContactDetailsActivity extends Activity
 
 
 
-  private void onFollow(User user)
+  private void onFollow(final User user)
   {
-    // TODO
+    Button button = (Button) findViewById(R.id.contact_follow);
+    if (null != button) {
+      button.setEnabled(false);
+    }
+
+    Globals.get().mAPI.followUser(user, new Handler(new Handler.Callback() {
+        public boolean handleMessage(Message msg)
+        {
+          if (API.ERR_SUCCESS == msg.what) {
+            // Add to local following list.
+            @SuppressWarnings("unchecked")
+            List<User> following = (List<User>) Globals.get().mObjectCache.get(ContactsListActivity.CONTACT_LIST_KEY);
+            if (null == following) {
+              following = new LinkedList<User>();
+            }
+
+            boolean doAdd = true;
+            for (User u : following) {
+              if (u.mId == user.mId) {
+                doAdd = false;
+                break;
+              }
+            }
+
+            if (doAdd) {
+              following.add(user);
+              Globals.get().mObjectCache.put(ContactsListActivity.CONTACT_LIST_KEY,
+                  following, ContactsListActivity.CONTACT_LIST_TIMEOUT);
+            }
+
+            // Invalidate in cache.
+            String key = String.format(CONTACT_KEY_FORMAT, user.mId);
+            Globals.get().mObjectCache.invalidate(key);
+          }
+
+          populateView();
+          return true;
+        }
+    }));
   }
 
 
 
-  private void onUnfollow(User user)
+  private void onUnfollow(final User user)
   {
-    // TODO
+    Button button = (Button) findViewById(R.id.contact_follow);
+    if (null != button) {
+      button.setEnabled(false);
+    }
+
+    Globals.get().mAPI.unfollowUser(user, new Handler(new Handler.Callback() {
+        public boolean handleMessage(Message msg)
+        {
+          if (API.ERR_SUCCESS == msg.what) {
+            // Remove from local following list.
+            @SuppressWarnings("unchecked")
+            List<User> following = (List<User>) Globals.get().mObjectCache.get(ContactsListActivity.CONTACT_LIST_KEY);
+            if (null != following) {
+              for (int i = 0 ; i < following.size() ; ++i) {
+                User u = following.get(i);
+                if (u.mId == user.mId) {
+                  following.remove(i);
+                  Globals.get().mObjectCache.put(ContactsListActivity.CONTACT_LIST_KEY,
+                      following, ContactsListActivity.CONTACT_LIST_TIMEOUT);
+                  break;
+                }
+              }
+            }
+
+            // Invalidate in cache.
+            String key = String.format(CONTACT_KEY_FORMAT, user.mId);
+            Globals.get().mObjectCache.invalidate(key);
+          }
+
+          populateView();
+          return true;
+        }
+    }));
+
   }
 
+
+
+  private boolean isFollowing(User user)
+  {
+    @SuppressWarnings("unchecked")
+    List<User> following = (List<User>) Globals.get().mObjectCache.get(ContactsListActivity.CONTACT_LIST_KEY);
+    if (null == following) {
+      return false;
+    }
+
+    for (User u : following) {
+      if (u.mId == user.mId) {
+        return true;
+      }
+    }
+
+    return false;
+  }
 }
