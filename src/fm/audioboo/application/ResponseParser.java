@@ -430,6 +430,10 @@ class ResponseParser
     }
     if (user.has(USER_DESCRIPTION)) {
       result.mDescription = user.getString(USER_DESCRIPTION);
+      // AARGHH!!!
+      if ("null" == result.mDescription) {
+        result.mDescription = null;
+      }
     }
     result.mIsMessageSender = isSender;
     if (user.has(USER_MESSAGING_ENABLED)) {
