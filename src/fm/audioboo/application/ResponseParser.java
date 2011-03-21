@@ -388,10 +388,10 @@ class ResponseParser
     // URLs
     JSONObject urls = boo.getJSONObject(BOO_URLS);
     result.mHighMP3Url = Uri.parse(urls.getString(BOO_URLS_HIGH_MP3));
-    if (urls.has(BOO_URLS_DETAIL)) {
+    if (!urls.isNull(BOO_URLS_DETAIL)) {
       result.mDetailUrl = Uri.parse(urls.getString(BOO_URLS_DETAIL));
     }
-    if (urls.has(BOO_URLS_IMAGE)) {
+    if (!urls.isNull(BOO_URLS_IMAGE)) {
       result.mImageUrl = Uri.parse(urls.getString(BOO_URLS_IMAGE));
     }
     if (urls.has(BOO_URLS_IMAGES)) {
@@ -425,15 +425,11 @@ class ResponseParser
     // Basic information
     result.mId = user.getInt(USER_ID);
     result.mUsername = user.getString(USER_USERNAME);
-    if (user.has(USER_FULL_NAME)) {
+    if (!user.isNull(USER_FULL_NAME)) {
       result.mFullName = user.getString(USER_FULL_NAME);
     }
-    if (user.has(USER_DESCRIPTION)) {
+    if (!user.isNull(USER_DESCRIPTION)) {
       result.mDescription = user.getString(USER_DESCRIPTION);
-      // AARGHH!!!
-      if ("null" == result.mDescription) {
-        result.mDescription = null;
-      }
     }
     result.mIsMessageSender = isSender;
     if (user.has(USER_MESSAGING_ENABLED)) {
@@ -453,7 +449,7 @@ class ResponseParser
 
     // Urls
     JSONObject urls = user.getJSONObject(USER_URLS);
-    if (user.has(USER_URLS_PROFILE)) {
+    if (!user.isNull(USER_URLS_PROFILE)) {
       result.mProfileUrl = Uri.parse(urls.getString(USER_URLS_PROFILE));
     }
     result.mImageUrl = Uri.parse(urls.getString(USER_URLS_IMAGE));
