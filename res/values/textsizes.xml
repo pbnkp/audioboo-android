@@ -67,7 +67,7 @@
   <!--
     Contact details
   -->
-  <dimen name="contact_number">75sp</dimen>
+  <dimen name="contact_number">65sp</dimen>
   <dimen name="contact_label">@dimen/text_large</dimen>
   <dimen name="contact_button">@dimen/text_larger</dimen>
 
