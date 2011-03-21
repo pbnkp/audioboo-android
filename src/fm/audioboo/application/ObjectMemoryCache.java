@@ -69,4 +69,18 @@ public class ObjectMemoryCache
     return value.mSecond;
   }
 
+
+
+  /**
+   * Invalidate a cache object.
+   **/
+  public void invalidate(Object key)
+  {
+    if (!mCache.containsKey(key)) {
+      return;
+    }
+
+    mCache.remove(key);
+  }
+
 }
