@@ -45,6 +45,7 @@ import org.apache.http.HttpVersion;
 
 import org.apache.http.client.methods.HttpRequestBase;
 import org.apache.http.client.methods.HttpGet;
+import org.apache.http.client.methods.HttpDelete;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.HttpResponse;
 
@@ -251,6 +252,7 @@ public class API
   private static final int RT_GET                         = 0;
   private static final int RT_FORM                        = 1;
   private static final int RT_MULTIPART                   = 2;
+  private static final int RT_DELETE                      = 3;
 
   // Map of APIs to request types.
   private static final HashMap<String, Integer> REQUEST_TYPES;
@@ -263,8 +265,12 @@ public class API
     REQUEST_TYPES.put(API_REGISTER, RT_FORM);
     REQUEST_TYPES.put(API_STATUS,   RT_GET);
     REQUEST_TYPES.put(API_UNLINK,   RT_FORM);
+    REQUEST_TYPES.put(API_CONTACTS, RT_GET);
+    REQUEST_TYPES.put(API_ACCOUNT,  RT_GET);
     // XXX Add request types for different API calls; if they're not specified
     //     here, the default is RT_GET.
+    // XXX API_USER varies in form, can't be easily matched like this, but wants
+    //     RT_GET anyway.
   }
 
   // HTTP Client parameters
@@ -296,6 +302,7 @@ public class API
     private HashMap<String, Object> mSignedParams;
     private HashMap<String, String> mFileParams;
     private Handler                 mHandler;
+    private int                     mRequestType;
 
     public Requester(String api,
         HashMap<String, Object> params,
@@ -309,6 +316,24 @@ public class API
       mSignedParams = signedParams;
       mFileParams = fileParams;
       mHandler = handler;
+      mRequestType = -1;
+    }
+
+
+    public Requester(String api,
+        HashMap<String, Object> params,
+        HashMap<String, Object> signedParams,
+        HashMap<String, String> fileParams,
+        Handler handler,
+        int requestType)
+    {
+      super();
+      mApi = api;
+      mParams = params;
+      mSignedParams = signedParams;
+      mFileParams = fileParams;
+      mHandler = handler;
+      mRequestType = requestType;
     }
 
 
@@ -354,7 +379,7 @@ public class API
 
         // Construct request.
         HttpRequestBase request = constructRequest(mApi, mParams, mSignedParams,
-            mFileParams);
+            mFileParams, mRequestType);
 
         // Perform request.
         byte[] data = fetchRawSynchronous(request, mHandler);
@@ -761,6 +786,53 @@ public class API
 
 
   /**
+   * Follow/unfollow the given user.
+   **/
+  public void followUser(User user, final Handler result_handler)
+  {
+    followUserInternal(user, result_handler, RT_FORM);
+  }
+
+  public void unfollowUser(User user, final Handler result_handler)
+  {
+    followUserInternal(user, result_handler, RT_DELETE);
+  }
+
+  private void followUserInternal(User user, final Handler result_handler,
+      int requestType)
+  {
+    if (null != mRequester) {
+      mRequester.keepRunning = false;
+      mRequester.interrupt();
+    }
+
+    // Must force signature.
+    HashMap<String, Object> signedParams = new HashMap<String, Object>();
+    signedParams.put("following_user_id", String.format("%d", user.mId));
+
+    // This request has no parameters.
+    mRequester = new Requester(API_CONTACTS, null, signedParams, null,
+        new Handler(new Handler.Callback() {
+          public boolean handleMessage(Message msg)
+          {
+            if (ERR_SUCCESS == msg.what) {
+              // The body is pretty much pointless to parse here.
+              // {"window":60,"timestamp":1300732052,"body":{"following":true},"version":200}
+              result_handler.obtainMessage(ERR_SUCCESS).sendToTarget();
+            }
+            else {
+              result_handler.obtainMessage(msg.what, msg.obj).sendToTarget();
+            }
+            return true;
+          }
+        }
+    ), requestType);
+    mRequester.start();
+  }
+
+
+
+  /**
    * Returns a fully signed URI for linking a device.
    **/
   public String getSignedLinkUrl()
@@ -1016,13 +1088,28 @@ public class API
       HashMap<String, Object> signedParams,
       HashMap<String, String> fileParams)
   {
+    return constructRequest(api, params, signedParams, fileParams, -1);
+  }
+
+  private HttpRequestBase constructRequest(String api,
+      HashMap<String, Object> params,
+      HashMap<String, Object> signedParams,
+      HashMap<String, String> fileParams,
+      int requestType)
+  {
     // Construct request URI.
     String request_uri = makeAbsoluteUriString(api);
     // Log.d(LTAG, "Request URI: " + request_uri);
 
     // Figure out the type of request to construct.
-    Integer request_type_obj = REQUEST_TYPES.get(api);
-    int request_type = (null == request_type_obj ? RT_GET : (int) request_type_obj);
+    int request_type = RT_GET;
+    if (-1 == requestType) {
+      Integer request_type_obj = REQUEST_TYPES.get(api);
+      request_type = (null == request_type_obj ? RT_GET : (int) request_type_obj);
+    }
+    else {
+      request_type = requestType;
+    }
     if (null != fileParams) {
       request_type = RT_MULTIPART;
     }
@@ -1128,6 +1215,15 @@ public class API
           } catch (java.io.UnsupportedEncodingException ex) {
             Log.e(LTAG, "Unsupported encoding, can't send request.");
           }
+        }
+        break;
+
+
+      case RT_DELETE:
+        {
+          request_uri = String.format("%s?%s", request_uri,
+              constructQueryString(params));
+          request = new HttpDelete(request_uri);
         }
         break;
 
