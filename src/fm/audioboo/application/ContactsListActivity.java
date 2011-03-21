@@ -45,12 +45,16 @@ public class ContactsListActivity extends ListActivity
   // Log ID
   private static final String LTAG  = "ContactsListActivity";
 
-  // Contact list cache key & timeout in seconds
-  private static final String CONTACT_LIST_KEY      = "fm.audioboo.cache.contacts";
-  private static final double CONTACT_LIST_TIMEOUT  = 300.0;
-
   // Dialog IDs
   private static final int  DIALOG_ERROR            = Globals.DIALOG_ERROR;
+
+
+  /***************************************************************************
+   * Public constants
+   **/
+  // Contact list cache key & timeout in seconds
+  public static final String CONTACT_LIST_KEY       = "fm.audioboo.cache.contacts";
+  public static final double CONTACT_LIST_TIMEOUT   = 300.0;
 
 
   /***************************************************************************
