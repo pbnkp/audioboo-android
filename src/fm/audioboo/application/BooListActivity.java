@@ -25,6 +25,7 @@ import android.widget.Toast;
 
 import fm.audioboo.service.Constants;
 import fm.audioboo.widget.BooPlayerView;
+import fm.audioboo.service.BooPlayerClient;
 
 import android.util.Log;
 
@@ -173,7 +174,8 @@ public abstract class BooListActivity
     if (null != pv) {
       PlaybackEndListener listener = (PlaybackEndListener) pv.getPlaybackEndListener();
 
-      if (Constants.STATE_NONE == Globals.get().mPlayer.getState()) {
+      BooPlayerClient player = Globals.get().mPlayer;
+      if (null == player || Constants.STATE_NONE == player.getState()) {
         // Right, hide the player if it's still visible.
         // This is a bit tricky... the only place where we reliably remember
         // the view/id for unselecting an item is in the playback end listener.
