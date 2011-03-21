@@ -94,7 +94,7 @@ class ResponseParser
   private static final String USER_COUNTS_FOLLOWINGS  = "followings";
   private static final String USER_COUNTS_FAVORITES   = "favorites";
   private static final String USER_MESSAGING_ENABLED  = "messaging_enabled";
-  private static final String USER_FOLLOWING_ENABLED  = "folloowing_enabled";
+  private static final String USER_FOLLOWING_ENABLED  = "following_enabled";
 
   private static final String BOO_ID                  = "id";
   private static final String BOO_TITLE               = "title";
@@ -432,10 +432,14 @@ class ResponseParser
       result.mDescription = user.getString(USER_DESCRIPTION);
     }
     result.mIsMessageSender = isSender;
-    if (isSender && user.has(USER_MESSAGING_ENABLED)) {
+    if (user.has(USER_MESSAGING_ENABLED)) {
       result.mMessagingEnabled = user.getBoolean(USER_MESSAGING_ENABLED);
     }
+    else {
+      result.mMessagingEnabled = false;
+    }
     if (user.has(USER_FOLLOWING_ENABLED)) {
+      Log.d(LTAG, "Has following!");
       result.mFollowingEnabled = user.getBoolean(USER_FOLLOWING_ENABLED);
     }
     else {
