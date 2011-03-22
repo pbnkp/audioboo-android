@@ -270,7 +270,7 @@
   <string name="main_record">Record</string>
 
   <!--
-    InboxActivity
+    MessagesActivity
   -->
 
   <string name="inbox_title">Inbox</string>

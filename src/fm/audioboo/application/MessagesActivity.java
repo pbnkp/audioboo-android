@@ -30,15 +30,15 @@ import android.app.AlertDialog;
 import android.util.Log;
 
 /**
- * The InboxActivity messages addressed to the current user.
+ * The MessagesActivity messages addressed to the current user.
  **/
-public class InboxActivity extends BooListActivity
+public class MessagesActivity extends BooListActivity
 {
   /***************************************************************************
    * Private constants
    **/
   // Log ID
-  private static final String LTAG  = "InboxActivity";
+  private static final String LTAG  = "MessagesActivity";
 
   // Action identifiers -- must correspond to the indices of the array
   // "recent_boos_actions" in res/values/localized.xml

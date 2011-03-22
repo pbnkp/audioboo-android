@@ -57,7 +57,7 @@
         android:configChanges="orientation|keyboardHidden"
       />
 
-    <activity android:name=".InboxActivity"
+    <activity android:name=".MessagesActivity"
         android:configChanges="orientation|keyboardHidden"
       />
 
