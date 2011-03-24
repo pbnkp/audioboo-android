@@ -11,9 +11,9 @@
 
 package fm.audioboo.application;
 
-import android.widget.BaseAdapter;
+import android.widget.BaseExpandableListAdapter;
 
-import android.app.ListActivity;
+import android.app.ExpandableListActivity;
 
 import android.content.res.Resources;
 
@@ -33,6 +33,7 @@ import android.graphics.drawable.BitmapDrawable;
 import android.os.Handler;
 import android.os.Message;
 
+import java.util.List;
 import java.util.LinkedList;
 
 import java.lang.ref.WeakReference;
@@ -42,7 +43,7 @@ import android.util.Log;
 /**
  * Adapter for presenting a BooList in a ListView, Gallery or similar.
  **/
-public class BooListAdapter extends BaseAdapter
+public class BooListAdapter extends BaseExpandableListAdapter
 {
   /***************************************************************************
    * Private constants
@@ -50,43 +51,44 @@ public class BooListAdapter extends BaseAdapter
   // Log ID
   private static final String LTAG  = "BooListAdapter";
 
-
-  // Text view IDs in list items
-  private static final int TEXT_VIEW_IDS[] = {
-    R.id.boo_list_item_author,
-    R.id.boo_list_item_title,
-    R.id.boo_list_item_location,
-  };
-
-
-  // Color IDs for the above text view IDs for the regular, unselected state
-  private static final int TEXT_VIEW_COLORS_REGULAR[] = {
-    R.color.boo_list_author,
-    R.color.boo_list_title,
-    R.color.boo_list_location,
-  };
-
-  // Color IDs for the above text view IDs for the selected state
-  private static final int TEXT_VIEW_COLORS_SELECTED[] = {
-    R.color.boo_list_author_selected,
-    R.color.boo_list_title_selected,
-    R.color.boo_list_location_selected,
-  };
-
-  // Color IDs for the item background for the regular, unselected state
-  private static final int BACKGROUND_RESOURCE_REGULAR[] = {
-    R.drawable.boo_list_background,
-  };
-
-  // Color IDs for the item background for the selected state
-  private static final int BACKGROUND_RESOURCE_SELECTED[] = {
-    R.color.boo_list_background_active,
-  };
-
-
   // Item view types
-  private static final int VIEW_TYPE_BOO  = 0;
-  private static final int VIEW_TYPE_MORE = 1;
+  private static final int VIEW_TYPE_UNKNOWN  = -1;
+  private static final int VIEW_TYPE_BOO      = 0;
+  private static final int VIEW_TYPE_MORE     = 1;
+
+
+  /***************************************************************************
+   * Data source interface
+   **/
+  public static interface DataSource
+  {
+    /**
+     * Returns the number of groups in the data source.
+     **/
+    public int getGroupCount();
+
+    /**
+     * If this returns true, the Adapter hides the group view for this group.
+     **/
+    public boolean hideGroup(int group);
+
+    /**
+     * Retursn group data for the given group, or null if the group parameter
+     * was out of range.
+     **/
+    public List<Boo> getGroup(int group);
+
+    /**
+     * Return true if the given group paginates, false otherwise.
+     **/
+    public boolean doesPaginate(int group);
+
+    /**
+     * Returns the group label for the given group.
+     **/
+    public String getGroupLabel(int group);
+  }
+
 
 
   /***************************************************************************
@@ -158,56 +160,53 @@ public class BooListAdapter extends BaseAdapter
    * Data
    **/
   // Boo data
-  private BooList                     mBoos;
+  private WeakReference<DataSource>             mData;
 
-  // Layout for the individual boos, the "..." (more) view.
-  private int                         mBooLayoutId;
-  private int                         mMoreLayoutId = -1;
+  // Layouts.
+  private int[]                                 mLayouts;
 
   // Flag, for deciding whether the "more" view should be shown as loading or
   // not.
-  private boolean                     mLoading = false;
+  private boolean                               mLoading = false;
 
   // Calling Activity
-  private WeakReference<ListActivity> mActivity;
+  private WeakReference<ExpandableListActivity> mActivity;
 
   // Image dimensions. XXX The (reasonably safe) assumption is that in the view
   // this adapter fills, all Boo images are to be displayed at the same size.
-  private int                         mDimensions = -1;
+  private int                                   mDimensions = -1;
 
-  // State required for restoring the last selected view to it's original
-  // looks.
-  private View                        mLastView;
-  private int                         mLastId = -1;
-  private Boo                         mLastBoo;
+  // "Hidden" group view.
+  private View                                  mHiddenView;
+
+  // Flag indicating whether initial group expansion has occurred or not.
+  private boolean                               mInitialized = false;
 
   // Handler for disclosure clicks
-  private View.OnClickListener        mDisclosureListener;
+  private View.OnClickListener                  mDisclosureListener;
 
 
   /***************************************************************************
    * Implementation
    **/
-  public BooListAdapter(ListActivity activity, int booLayoutId, BooList boos)
+  /**
+   * The layouts array is expected to contain:
+   * - At index 0, the layout for boos.
+   * - At index 1, if the data source contains groups whose group view is not
+   *   to be hidden, the group view layout.
+   * - At index 2, if any of the groups in the data source paginate, the "more"
+   *   view layout.
+   * If the data source represents e.g. one paginating group with a hidden group
+   * view, the array must still be 3 in size, but index 1 will not be consulted.
+   **/
+  public BooListAdapter(ExpandableListActivity activity, DataSource data,
+      int[] layouts)
   {
     super();
 
-    mActivity = new WeakReference<ListActivity>(activity);
-    mBooLayoutId = booLayoutId;
-    mBoos = boos;
-  }
-
-
-
-  public BooListAdapter(ListActivity activity, int booLayoutId, BooList boos,
-      int moreLayoutId)
-  {
-    super();
-
-    mActivity = new WeakReference<ListActivity>(activity);
-    mBooLayoutId = booLayoutId;
-    mMoreLayoutId = moreLayoutId;
-    mBoos = boos;
+    mActivity = new WeakReference<ExpandableListActivity>(activity);
+    mData = new WeakReference<DataSource>(data);
+    mLayouts = layouts;
   }
 
 
@@ -219,29 +218,168 @@ public class BooListAdapter extends BaseAdapter
 
 
 
-  public View getView(int position, View convertView, ViewGroup parent)
+  /**
+   * Maps a single position (child-in-list) to a group/positon-in-group
+   * pair.
+   **/
+  public Pair<Integer, Integer> mapPosition(int position)
   {
-    ListActivity activity = mActivity.get();
+    DataSource data = mData.get();
+    if (null == data) {
+      return null;
+    }
+
+    int offset = 0;
+
+    for (int group = 0 ; group < data.getGroupCount() ; ++group) {
+      List<Boo> boos = data.getGroup(group);
+      int group_size = boos.size();
+
+      int first = offset + 1;
+      int last = first + group_size;
+      if (data.doesPaginate(group)) {
+        last += 1;
+      }
+
+      if (position >= first && position <= last) {
+        // Got the mapping!
+        return new Pair<Integer, Integer>(group, position - first);
+      }
+
+      // No mapping in this group; increase offset.
+      offset += last + 1;
+    }
+
+    // No mapping!
+    return null;
+  }
+
+
+
+  /**
+   * Maps a group/position-in-group pair to a single position.
+   **/
+  public int mapPosition(Pair<Integer, Integer> compound)
+  {
+    return mapPosition(compound.mFirst, compound.mSecond);
+  }
+
+  public int mapPosition(int group, int position)
+  {
+    DataSource data = mData.get();
+    if (null == data) {
+      return -1;
+    }
+
+    int offset = 0;
+
+    for (int g = 0 ; g < group ; ++g) {
+      List<Boo> boos = data.getGroup(g);
+      int group_size = boos.size();
+
+      offset += 1 + group_size;
+      if (data.doesPaginate(g)) {
+        offset += 1;
+      }
+    }
+
+    if (data.doesPaginate(group)) {
+      offset += 1;
+    }
+
+    offset += position;
+    return offset;
+  }
+
+
+
+  public View getGroupView(int group, boolean isExpanded, View convertView, ViewGroup parent)
+  {
+    ExpandableListActivity activity = mActivity.get();
     if (null == activity) {
       return null;
     }
 
+    DataSource data = mData.get();
+    if (null == data) {
+      return null;
+    }
+
+    // First things first: expand all groups, if this is the first request.
+    if (!mInitialized) {
+      mInitialized = true;
+      for (int i = 0 ; i < data.getGroupCount() ; ++i) {
+        activity.getExpandableListView().expandGroup(i);
+      }
+    }
+
+    // Log.d(LTAG, "wants group view for position: " + group + " - " + isExpanded);
+
+    // If the group is to be hidden, return the hidden view.
+    if (data.hideGroup(group)) {
+      // Return mHiddenView; it might need to be initialized first.
+      if (null == mHiddenView) {
+        mHiddenView = new View(activity);
+      }
+      return mHiddenView;
+    }
+
+    // Otherwise create/populate a proper group view.
+    View view = convertView;
+    if (null == view) {
+      LayoutInflater inflater = activity.getLayoutInflater();
+      view = inflater.inflate(mLayouts[1], null);
+    }
+
+    TextView text_view = (TextView) view.findViewById(R.id.group_label);
+    if (null != text_view) {
+      text_view.setText(data.getGroupLabel(group));
+    }
+
+    return view;
+  }
+
+
+
+  public View getChildView(int group, int position, boolean isLast,
+      View convertView, ViewGroup parent)
+  {
+    // Log.d(LTAG, "get child view: " + group + " / " + position);
+
+    ExpandableListActivity activity = mActivity.get();
+    if (null == activity) {
+      return null;
+    }
+
+    DataSource data = mData.get();
+    if (null == data) {
+      return null;
+    }
+
     // View type
-    int type = getItemViewType(position);
+    int type = getChildType(group, position);
+    if (VIEW_TYPE_UNKNOWN == type) {
+      Log.e(LTAG, "Unknown view type detected.");
+      return null;
+    }
+    // Log.d(LTAG, "type: " + type);
 
     // Create new view, if required.
     View view = convertView;
     if (null == view) {
       LayoutInflater inflater = activity.getLayoutInflater();
-      if (VIEW_TYPE_BOO == type) {
-        view = inflater.inflate(mBooLayoutId, null);
-      }
-      else {
-        if (mMoreLayoutId == -1) {
-          Log.e(LTAG, "No layout for the 'more' view provided...");
+      switch (type) {
+        case VIEW_TYPE_BOO:
+          view = inflater.inflate(mLayouts[0], null);
+          break;
+
+        case VIEW_TYPE_MORE:
+          view = inflater.inflate(mLayouts[2], null);
+          break;
+
+        default:
+          // XXX Unreachable.
           return null;
-        }
-        view = inflater.inflate(mMoreLayoutId, null);
       }
     }
 
@@ -252,18 +390,13 @@ public class BooListAdapter extends BaseAdapter
 
     // Set the view's tag to the Boo we want to display. This is for later
     // identification.
-    Boo boo = mBoos.mClips.get(position);
+    List<Boo> boos = data.getGroup(group);
+    if (position < 0 || position >= boos.size()) {
+      Log.e(LTAG, "Position " + position + " out of range for group " + group);
+      return null;
+    }
+    Boo boo = boos.get(position);
     view.setTag(boo);
-
-    // Make sure the view is properly selected/deselected
-    if (mLastId == position) {
-      drawViewAsHighlighted(view, position);
-      mLastView = view;
-      mLastBoo = boo;
-    }
-    else {
-      drawViewAsRegular(view, position);
-    }
 
     // Fill view with data.
     TextView text_view = (TextView) view.findViewById(R.id.boo_list_item_author);
@@ -272,7 +405,8 @@ public class BooListAdapter extends BaseAdapter
         text_view.setText(boo.mData.mUser.mUsername);
       }
       else {
-        text_view.setText("");
+        // FIXME?
+        text_view.setText(activity.getResources().getString(R.string.boo_unknown_author));
       }
     }
 
@@ -335,109 +469,39 @@ public class BooListAdapter extends BaseAdapter
 
 
 
-  public void markSelected(View view, int id)
+  public int getChildTypeCount()
   {
-    //Log.d(LTAG, "switch selected");
-
-    // Highlight the view that's just been selected.
-    drawViewAsHighlighted(view, id);
-
-    // If that was all we did, we would end up colouring all views in the
-    // same selected colour, so we also need to reset the previously
-    // selected view to it's previous colour.
-    //
-    // This turns out to be fairly hard, because views are re-used. We can only
-    // be certain that the last selected view needs to be re-coloured if it
-    // hasn't been re-used in the meantime.
-    //
-    // Since all cell views have a unique tag that corresponds to the Boo they're
-    // representing, all we need to do is remember the tag and the view
-    // separately. If the last view's current tag is identical to the one we
-    // remembered, then the view hasn't been re-used and needs to be coloured
-    // again.
-    if (mLastBoo != (Boo) view.getTag()) {
-      drawViewAsRegular(mLastView, mLastId);
+    DataSource data = mData.get();
+    if (null == data) {
+      return 0;
     }
 
-    // Now remember the currently selected view, it's id, and it's tag.
-    mLastView = view;
-    mLastId = id;
-    mLastBoo = (Boo) view.getTag();
-  }
-
-
-
-  public void unselect(View view, int id)
-  {
-    drawViewAsRegular(view, id);
-
-    mLastView = null;
-    mLastId = -1;
-    mLastBoo = null;
-  }
-
-
-
-  public void drawViewAsHighlighted(View view, int id)
-  {
-    if (null == view) {
-      return;
-    }
-
-    // Set view attributes
-    drawViewInternal(view, id, BACKGROUND_RESOURCE_SELECTED,
-        TEXT_VIEW_COLORS_SELECTED);
-  }
-
-
-
-  public void drawViewAsRegular(View view, int id)
-  {
-    if (null == view) {
-      return;
-    }
-
-    // Set view attributes
-    drawViewInternal(view, id, BACKGROUND_RESOURCE_REGULAR,
-        TEXT_VIEW_COLORS_REGULAR);
-  }
-
-
-
-  private void drawViewInternal(View view, int id, int[] backgrounds, int[] text_colors)
-  {
-    ListActivity activity = mActivity.get();
-    if (null == activity) {
-      return;
-    }
-
-    // First, set the background according to whether or not id points to an
-    // odd or even cell.
-    view.setBackgroundResource(backgrounds[id % backgrounds.length]);
-
-    // Next, iterate over the known text views, and set their colors.
-    Resources r = activity.getResources();
-    for (int i = 0 ; i < TEXT_VIEW_IDS.length ; ++i) {
-      int viewId = TEXT_VIEW_IDS[i];
-      TextView text_view = (TextView) view.findViewById(viewId);
-      if (null != text_view) {
-        text_view.setTextColor(r.getColorStateList(text_colors[i]));
+    int ret = 1;
+    for (int i = 0 ; i < data.getGroupCount() ; ++i) {
+      if (data.doesPaginate(i)) {
+        ret += 1;
+        break;
       }
     }
+
+    return ret;
   }
 
 
 
-  public int getViewTypeCount()
+  public int getChildType(int group, int position)
   {
-    return (mMoreLayoutId == -1 ? 1 : 2);
-  }
+    DataSource data = mData.get();
+    if (null == data) {
+      return VIEW_TYPE_UNKNOWN;
+    }
 
+    List<Boo> boos = data.getGroup(group);
+    if (null == boos) {
+      return VIEW_TYPE_UNKNOWN;
+    }
 
-
-  public int getItemViewType(int position)
-  {
-    if (position < mBoos.mClips.size()) {
+    if (!data.doesPaginate(group) || position < boos.size()) {
       return VIEW_TYPE_BOO;
     }
     return VIEW_TYPE_MORE;
@@ -445,26 +509,56 @@ public class BooListAdapter extends BaseAdapter
 
 
 
-  public int getCount()
+  public int getChildrenCount(int group)
   {
-    return (null == mBoos ? 0 : mBoos.mClips.size()) + (mMoreLayoutId == -1 ? 0 : 1);
+    DataSource data = mData.get();
+    if (null == data) {
+      return 0;
+    }
+
+    List<Boo> boos = data.getGroup(group);
+    if (null == boos) {
+      return 0;
+    }
+
+    int ret = boos.size();
+    if (data.doesPaginate(group)) {
+      ret += 1;
+    }
+
+    Log.d(LTAG, "child count for group " + group + ": " + ret);
+    return ret;
   }
 
 
 
-  public long getItemId(int position)
+  public long getChildId(int group, int position)
   {
-    return position;
+    Boo boo = (Boo) getChild(group, position);
+    if (null == boo || null == boo.mData) {
+      return -1;
+    }
+    return boo.mData.mId;
   }
 
 
 
-  public Object getItem(int position)
+  public Object getChild(int group, int position)
   {
-    if (position >= mBoos.mClips.size()) {
+    DataSource data = mData.get();
+    if (null == data) {
       return null;
     }
-    return mBoos.mClips.get(position);
+
+    List<Boo> boos = data.getGroup(group);
+    if (null == boos) {
+      return null;
+    }
+
+    if (position >= boos.size()) {
+      return null;
+    }
+    return boos.get(position);
   }
 
 
@@ -478,6 +572,9 @@ public class BooListAdapter extends BaseAdapter
 
   private void startHeavyLifting(int first, int count)
   {
+    // FIXME this is actually tricky, as it involves calculating offsets into groups.
+    return;
+/*
     // Log.d(LTAG, "Downloads for items from " + first + " to " + (first + count));
 
     // Prepare the list of uris to download.
@@ -523,14 +620,16 @@ public class BooListAdapter extends BaseAdapter
         }
       }));
     }
+    */
   }
 
 
 
   public void onCacheItemFetched(ImageCache.CacheItem item)
   {
+    /*
     // Log.d(LTAG, "got results for : " + item.mImageUri);
-    ListActivity activity = mActivity.get();
+    ExpandableListActivity activity = mActivity.get();
     if (null == activity) {
       return;
     }
@@ -539,17 +638,17 @@ public class BooListAdapter extends BaseAdapter
 
     // Right, we got an image. Now we just need to figure out the right view
     // to go with it.
-    View item_view = activity.getListView().getChildAt(baton.viewIndex);
+    View item_view = activity.getExpandableListView().getChildAt(baton.viewIndex);
     if (null == item_view) {
       return;
     }
 
     // Make sure that the item for which the request was scheduled and the
     // item we're displaying currently are the same. That's what we set the
-    // view's tag for in getView().
+    // view's tag for in getChildView().
     Boo expected_boo = mBoos.mClips.get(baton.itemIndex);
     Boo current_boo = (Boo) item_view.getTag();
-    if (expected_boo.mData.mId != current_boo.mData.mId) {
+    if (null != current_boo && expected_boo.mData.mId != current_boo.mData.mId) {
       // There's been a race between cancelling downloads and sending the
       // message with the resulting bitmap.
       return;
@@ -562,6 +661,7 @@ public class BooListAdapter extends BaseAdapter
     }
 
     image_view.setImageDrawable(new BitmapDrawable(item.mBitmap));
+    */
   }
 
 
@@ -616,5 +716,69 @@ public class BooListAdapter extends BaseAdapter
     if (null != swap) {
       swap.setVisibility(mLoading ? View.VISIBLE : View.GONE);
     }
+  }
+
+
+
+  public boolean isChildSelectable(int groupPosition, int childPosition)
+  {
+    // By default, all children are selectable.
+    return true;
+  }
+
+
+
+  public boolean hasStableIds()
+  {
+    // By default, IDs are stable.
+    return true;
+  }
+
+
+
+  public long getGroupId(int group)
+  {
+    // Make things simple: group index and ID are the same.
+    return group;
+  }
+
+
+
+  public Object getGroup(int group)
+  {
+    DataSource data = mData.get();
+    if (null == data) {
+      return null;
+    }
+    return data.getGroup(group);
+  }
+
+
+
+  public int getGroupCount()
+  {
+    DataSource data = mData.get();
+    if (null == data) {
+      return 0;
+    }
+    return data.getGroupCount();
+  }
+
+
+
+  public void onGroupCollapsed(int group)
+  {
+    // FIXME
+    super.onGroupCollapsed(group);
+    Log.d(LTAG, "group collapsed: " + group);
+  }
+
+
+
+  public void onGroupExpanded(int group)
+  {
+    // FIXME
+    super.onGroupExpanded(group);
+    Log.d(LTAG, "group expanded: " + group);
   }
 }

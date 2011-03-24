@@ -9,7 +9,7 @@
  **/
 package fm.audioboo.application;
 
-import android.app.ListActivity;
+import android.app.ExpandableListActivity;
 
 import android.os.Bundle;
 import android.os.Parcelable;
@@ -19,12 +19,14 @@ import android.content.res.Configuration;
 
 import android.view.View;
 
-import android.widget.AdapterView;
-import android.widget.ListView;
+import android.widget.ExpandableListView;
 import android.widget.Toast;
+
+import java.util.List;
 
 import fm.audioboo.service.Constants;
 import fm.audioboo.widget.BooPlayerView;
+
 import fm.audioboo.service.BooPlayerClient;
 
 import android.util.Log;
@@ -33,8 +35,9 @@ import android.util.Log;
  * Base for lists of Boos, such as BrowseActivity, MessagesActivity, etc.
  **/
 public abstract class BooListActivity
-       extends ListActivity
-       implements BooListPaginator.Callback
+       extends ExpandableListActivity
+       implements BooListPaginator.Callback,
+                  BooListPaginator.PaginatorDataSource
 {
   /***************************************************************************
    * Private constants
@@ -134,10 +137,10 @@ public abstract class BooListActivity
 
     setContentView(getViewId(VIEW_ID_LAYOUT));
     View v = findViewById(getViewId(VIEW_ID_EMPTY_VIEW));
-    getListView().setEmptyView(v);
+    getExpandableListView().setEmptyView(v);
 
     // Initialize paginator
-    mPaginator = new BooListPaginator(getInitAPI(), this, this);
+    mPaginator = new BooListPaginator(getInitAPI(), this, this, this);
     mPaginator.setDisclosureListener(new View.OnClickListener() {
       public void onClick(View v)
       {
@@ -165,7 +168,7 @@ public abstract class BooListActivity
     //Log.d(LTAG, "Resume");
 
     // Load boos, but only if that hasn't happened yet..
-    if (null == mPaginator.getList()) {
+    if (null == mPaginator.getPaginatedList()) {
       refresh();
     }
 
@@ -236,10 +239,6 @@ public abstract class BooListActivity
       return;
     }
 
-    if (View.VISIBLE == player.getVisibility()) {
-      return;
-    }
-
     player.setVisibility(View.VISIBLE);
   }
 
@@ -252,24 +251,27 @@ public abstract class BooListActivity
       return;
     }
 
-    if (View.GONE == player.getVisibility()) {
-      return;
-    }
-
     player.setVisibility(View.GONE);
   }
 
 
 
-  private void onItemSelected(View view, int id)
+  private void onItemSelected(View view, int group, int position)
   {
-    // First, deal with the visual stuff. It's complex enough for it's own
-    // function.
-    mPaginator.getAdapter().markSelected(view, id);
+    // The data source knows what group content exists, regardless of whether
+    // we've got a paginated group or not.
+    List<Boo> boos = mPaginator.getGroup(group);
+    if (null == boos) {
+      Log.e(LTAG, "No entries for group: " + group);
+      return;
+    }
 
-    // Next, we'll need to kill the audio player and restart it, but only if
-    // it's a different view that's been selected.
-    Boo boo = mPaginator.getList().mClips.get(id);
+    if (position < 0 || position >= boos.size()) {
+      Log.e(LTAG, "Position " + position + " exceeds size of group " + group);
+      return;
+    }
+
+    final Boo boo = boos.get(position);
 
     // Fade in player view
     showPlayer();
@@ -277,7 +279,7 @@ public abstract class BooListActivity
     // Start playback
     final BooPlayerView player = (BooPlayerView) findViewById(getViewId(VIEW_ID_PLAYER));
     if (null != player) {
-      player.setPlaybackEndListener(new PlaybackEndListener(view, id));
+      player.setPlaybackEndListener(new PlaybackEndListener(view, boo.mData.mId));
       player.play(boo);
     }
   }
@@ -286,12 +288,6 @@ public abstract class BooListActivity
 
   private void onItemUnselected(View view, int id)
   {
-    // And also switch the view to unselected.
-    BooListAdapter adapter = mPaginator.getAdapter();
-    if (null != adapter) {
-      adapter.unselect(view, id);
-    }
-
     // Fade out player view
     hidePlayer();
 
@@ -307,8 +303,9 @@ public abstract class BooListActivity
   private void setPageLoading(boolean loading)
   {
     // Find out which view the progress view is, and switch it to "loading".
-    ListView lv = getListView();
-    int pos = mPaginator.getList().mClips.size();
+    ExpandableListView lv = getExpandableListView();
+    int pos = mPaginator.getAdapter().mapPosition(paginatedGroup(),
+        mPaginator.getPaginatedList().mClips.size());
     pos = pos - lv.getFirstVisiblePosition();
 
     if (pos < 0 || pos >= lv.getChildCount()) {
@@ -329,6 +326,38 @@ public abstract class BooListActivity
   }
 
 
+  /***************************************************************************
+   * BooListPaginator.PaginatorDataSource implementation
+   **/
+  public int getGroupCount()
+  {
+    // FIXME
+    return 1;
+  }
+
+
+
+  public int paginatedGroup()
+  {
+    // FIXME
+    return 0;
+  }
+
+
+
+  public List<Boo> getGroup(int group)
+  {
+    // FIXME
+    return null;
+  }
+
+
+
+  public String getGroupLabel(int group)
+  {
+    // FIXME
+    return "asdf";
+  }
 
 
   /***************************************************************************
@@ -392,15 +421,14 @@ public abstract class BooListActivity
 
 
 
-  public void onItemClick(AdapterView<?> parent, View view, int position, long id)
+  public void onItemClick(ExpandableListView parent, View view, int group, int position, long id)
   {
-    // Use id rather than position, because of (future?) filtering.
-    onItemSelected(view, (int) id);
+    onItemSelected(view, group, position);
   }
 
 
 
-  public boolean onItemLongClick(AdapterView<?> parent, View view, int position, long id)
+  public boolean onItemLongClick(ExpandableListView parent, View view, int group, int position, long id)
   {
     onDisclosureClicked((Boo) view.getTag());
     return true;

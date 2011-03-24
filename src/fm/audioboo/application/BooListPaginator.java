@@ -13,13 +13,15 @@ package fm.audioboo.application;
 import android.os.Handler;
 import android.os.Message;
 
-import android.app.ListActivity;
+import android.app.ExpandableListActivity;
 
 import android.view.View;
 
 import android.widget.AdapterView;
+import android.widget.ExpandableListView;
 
 import java.util.Date;
+import java.util.List;
 
 import java.lang.ref.WeakReference;
 
@@ -27,11 +29,11 @@ import android.util.Log;
 
 /**
  * Holds a BooList, but also manages pagination. The class pretty much creates
- * a re-usable bridge between a ListActivity displaying a BooList, the
+ * a re-usable bridge between a ExpandableListActivity displaying a BooList, the
  * BooListAdapter required to do so, and handles API calls for fetching the
  * data.
  **/
-public class BooListPaginator
+public class BooListPaginator implements BooListAdapter.DataSource
 {
   /***************************************************************************
    * Private constants
@@ -66,39 +68,81 @@ public class BooListPaginator
     public void onError(int code, API.APIException exception);
 
     /**
-     * Also delegates onItemClick() from the ListActivity's ListView.
+     * Also delegates onItemClick() from the ExpandableListActivity's ListView.
      **/
-    public void onItemClick(AdapterView<?> parent, View view, int position, long id);
+    public void onItemClick(ExpandableListView parent, View view, int group,
+        int position, long id);
 
     /**
      * Delegate long clicks, too
      **/
-    public boolean onItemLongClick(AdapterView<?> parent, View view, int position, long id);
+    public boolean onItemLongClick(ExpandableListView parent, View view,
+        int group, int position, long id);
   };
+
+
+  /***************************************************************************
+   * Result callback interface.
+   **/
+  /**
+   * Simplification of the BooListAdapter.DataSource concept: just returns
+   * static data.
+   **/
+  public static interface PaginatorDataSource
+  {
+    /**
+     * Returns the number of groups in the data source.
+     **/
+    public int getGroupCount();
+
+    /**
+     * Returns the group ID that's *not* served by this source, by a strange
+     * twist of logic. The Paginator needs to know where it has to insert its
+     * paginated data, after all.
+     **/
+    public int paginatedGroup();
+
+    /**
+     * Returns data for the given group, or null if the group ID provided is
+     * either the same as paginatedGroup() returns, or outside the range of
+     * 0..getGroupCount().
+     **/
+    public List<Boo> getGroup(int group);
+
+    /**
+     * Returns the group label.
+     **/
+    public String getGroupLabel(int group);
+  }
+
 
 
   /***************************************************************************
    * Private data
    **/
   // Notification interface
-  private Callback                      mCallback;
+  private Callback                              mCallback;
 
   // List related data
-  private int                           mBooType;
-  private BooList                       mBoos;
+  private int                                   mBooType;
+  private BooList                               mBoos;
+  private PaginatorDataSource                   mData;
 
   // Activity/Adapter
-  private WeakReference<ListActivity>   mActivity;
-  private BooListAdapter                mAdapter;
-  private BooListAdapter.ScrollListener mScrollListener;
-  private View.OnClickListener          mDisclosureListener;
+  private WeakReference<ExpandableListActivity> mActivity;
+  private BooListAdapter                        mAdapter;
+  private BooListAdapter.ScrollListener         mScrollListener;
+  private View.OnClickListener                  mDisclosureListener;
+
+  // Ugly hack: prevent long lciks from also registering as clicks
+  private Pair<Integer, Integer>                mLastLongClick = null;
 
   // Request/pagination related data
-  private int                           mPage;
-  private Date                          mTimestamp;
-  private boolean                       mRequesting = false;
+  private int                                   mPage;
+  private Date                                  mTimestamp;
+  private boolean                               mRequesting = false;
 
-  private Handler                       mHandler = new Handler(new Handler.Callback() {
+  private Handler                               mHandler = new Handler(new Handler.Callback() {
       public boolean handleMessage(Message msg)
       {
         mRequesting = false;
@@ -124,42 +168,79 @@ public class BooListPaginator
   /***************************************************************************
    * Implementation
    **/
-  public BooListPaginator(int booType, ListActivity activity, Callback callback)
+  public BooListPaginator(int booType, ExpandableListActivity activity,
+      PaginatorDataSource data, Callback callback)
   {
     // Initialize
-    mActivity = new WeakReference<ListActivity>(activity);
+    mActivity = new WeakReference<ExpandableListActivity>(activity);
+    mData = data;
     mCallback = callback;
     reset(booType);
 
     // Capture clicks on the "more" item.
-    activity.getListView().setOnItemClickListener(new AdapterView.OnItemClickListener() {
-      public void onItemClick(AdapterView<?> parent, View view, int position, long id)
+    activity.getExpandableListView().setOnChildClickListener(new ExpandableListView.OnChildClickListener() {
+      public boolean onChildClick(ExpandableListView parent, View view, int group, int position, long id)
       {
-        if (position >= mBoos.mClips.size()) {
-          if (mRequesting) {
-            return;
-          }
+        if (null != mLastLongClick && mLastLongClick.mFirst == group
+            && mLastLongClick.mSecond == position) {
+          mLastLongClick = null;
+          return true;
+        }
 
-          nextPage();
+        if (group > mData.getGroupCount()) {
+          return false;
+        }
+
+        // Log.d(LTAG, "click: " + group + " / " + position);
+
+        if (group == mData.paginatedGroup()) {
+          // We're either asked for more data or for dispatching a click event.
+          if (position >= mBoos.mClips.size()) {
+            if (mRequesting) {
+              return true;
+            }
+
+            nextPage();
+          }
+          else {
+            if (null != mCallback) {
+              mCallback.onItemClick(parent, view, group, position, id);
+            }
+          }
         }
         else {
+          // For non-paginated groups, we're always asked for a click event
           if (null != mCallback) {
-            mCallback.onItemClick(parent, view, position, id);
+            mCallback.onItemClick(parent, view, group, position, id);
           }
         }
+
+        return true;
       }
     });
 
     // Also capture long clicks
-    activity.getListView().setOnItemLongClickListener(new AdapterView.OnItemLongClickListener() {
+    activity.getExpandableListView().setOnItemLongClickListener(new AdapterView.OnItemLongClickListener() {
       public boolean onItemLongClick(AdapterView<?> parent, View view, int position, long id)
       {
-        if (position >= mBoos.mClips.size()) {
+        // Unfortunately there is no long click listener specific to
+        // ExpandableListView, so we have to map a single position back to a
+        // group/position-within-group.
+        Pair<Integer, Integer> mapped = mAdapter.mapPosition(position);
+        mLastLongClick = mapped;
+
+        // Log.d(LTAG, "long click: " + mapped.mFirst + " / " + mapped.mSecond);
+
+        // For a paginated group, the "more" view exists and should be ignored
+        if (mapped.mFirst == mData.paginatedGroup()
+            && mapped.mSecond >= mBoos.mClips.size())
+        {
           return true;
         }
 
+        // Dispatch click event.
         if (null != mCallback) {
-          return mCallback.onItemLongClick(parent, view, position, id);
+          return mCallback.onItemLongClick((ExpandableListView) parent, view, mapped.mFirst, mapped.mSecond, id);
         }
 
         return false;
@@ -181,7 +262,7 @@ public class BooListPaginator
 
 
 
-  public BooList getList()
+  public BooList getPaginatedList()
   {
     return mBoos;
   }
@@ -265,7 +346,7 @@ public class BooListPaginator
 
   private void onReceiveBoos(BooList boos)
   {
-    ListActivity activity = mActivity.get();
+    ExpandableListActivity activity = mActivity.get();
     if (null == activity) {
       Log.e(LTAG, "Activity is dead, discarding results!");
       return;
@@ -286,9 +367,14 @@ public class BooListPaginator
     boolean firstPage = false;
     if (null == mAdapter) {
       firstPage = true;
-      mAdapter = new BooListAdapter(activity, R.layout.boo_list_item, mBoos, R.layout.boo_list_more);
+      mAdapter = new BooListAdapter(activity, this, new int[] {
+            R.layout.boo_list_item,
+            R.layout.boo_list_group,
+            R.layout.boo_list_more,
+          });
       mAdapter.setDisclosureListener(mDisclosureListener);
-      activity.getListView().setOnScrollListener(new BooListAdapter.ScrollListener(mAdapter));
+      activity.getExpandableListView().setAdapter(mAdapter);
+      activity.getExpandableListView().setOnScrollListener(new BooListAdapter.ScrollListener(mAdapter));
     }
     else {
       mAdapter.notifyDataSetChanged();
@@ -298,5 +384,50 @@ public class BooListPaginator
     if (null != mCallback) {
       mCallback.onResults(firstPage);
     }
+  }
+
+
+  /***************************************************************************
+   * BooListAdapter.DataSource implementation
+   **/
+  public int getGroupCount()
+  {
+    return mData.getGroupCount();
+  }
+
+
+
+  public boolean hideGroup(int group)
+  {
+    // XXX This could be massively more sophisticated, but we're using things
+    //     this way only. Ah, well.
+    if (1 == mData.getGroupCount()) {
+      return true;
+    }
+    return false;
+  }
+
+
+
+  public List<Boo> getGroup(int group)
+  {
+    if (group == mData.paginatedGroup()) {
+      return mBoos.mClips;
+    }
+    return mData.getGroup(group);
+  }
+
+
+
+  public boolean doesPaginate(int group)
+  {
+    return (group == mData.paginatedGroup());
+  }
+
+
+
+  public String getGroupLabel(int group)
+  {
+    return mData.getGroupLabel(group);
   }
 }
