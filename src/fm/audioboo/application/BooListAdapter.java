@@ -526,7 +526,7 @@ public class BooListAdapter extends BaseExpandableListAdapter
       ret += 1;
     }
 
-    Log.d(LTAG, "child count for group " + group + ": " + ret);
+    // Log.d(LTAG, "child count for group " + group + ": " + ret);
     return ret;
   }
 
@@ -572,7 +572,7 @@ public class BooListAdapter extends BaseExpandableListAdapter
 
   private void startHeavyLifting(int first, int count)
   {
-    Log.d(LTAG, "Downloads for items from " + first + " to " + (first + count));
+    // Log.d(LTAG, "Downloads for items from " + first + " to " + (first + count));
 
     DataSource data = mData.get();
     if (null == data) {
@@ -780,23 +780,5 @@ public class BooListAdapter extends BaseExpandableListAdapter
       return 0;
     }
     return data.getGroupCount();
-  }
-
-
-
-  public void onGroupCollapsed(int group)
-  {
-    // FIXME
-    super.onGroupCollapsed(group);
-    Log.d(LTAG, "group collapsed: " + group);
-  }
-
-
-
-  public void onGroupExpanded(int group)
-  {
-    // FIXME
-    super.onGroupExpanded(group);
-    Log.d(LTAG, "group expanded: " + group);
   }
 }
