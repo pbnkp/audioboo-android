@@ -276,6 +276,11 @@
   <string name="inbox_title">Inbox</string>
 
   <string name="inbox_menu_refresh">Refresh</string>
+  <string name="inbox_menu_outbox">Outbox</string>
+  <string name="inbox_menu_inbox">Inbox</string>
+
+  <string name="inbox_outbox">Outbox</string>
+  <string name="inbox_sent">Sent Messages</string>
 
   <!--
     Placeholder strings

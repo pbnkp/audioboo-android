@@ -233,6 +233,10 @@ public class BooListAdapter extends BaseExpandableListAdapter
 
     for (int group = 0 ; group < data.getGroupCount() ; ++group) {
       List<Boo> boos = data.getGroup(group);
+      if (null == boos) {
+        Log.e(LTAG, "No boos for a group... must skip calculation, I suppose.");
+        continue;
+      }
       int group_size = boos.size();
 
       int first = offset + 1;

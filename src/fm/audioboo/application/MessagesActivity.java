@@ -28,6 +28,7 @@ import android.app.Dialog;
 import android.app.AlertDialog;
 
 import java.util.List;
+import java.util.LinkedList; //FIXME
 
 import android.util.Log;
 
@@ -45,6 +46,7 @@ public class MessagesActivity extends BooListActivity
   // Action identifiers -- must correspond to the indices of the array
   // "recent_boos_actions" in res/values/localized.xml
   private static final int  ACTION_REFRESH  = 0;
+  private static final int  ACTION_SWITCH   = 1;
 
   // Dialog IDs
   private static final int  DIALOG_ERROR    = Globals.DIALOG_ERROR;
@@ -62,6 +64,7 @@ public class MessagesActivity extends BooListActivity
 
   // Display mode
   private int               mDisplayMode = DISPLAY_MODE_INBOX;
+  private int               mApiType = getInitAPI();
 
 
   /***************************************************************************
@@ -135,6 +138,27 @@ public class MessagesActivity extends BooListActivity
   {
     menu.add(0, ACTION_REFRESH, 0, getResources().getString(R.string.inbox_menu_refresh))
       .setIcon(R.drawable.ic_menu_refresh);
+    menu.add(1, ACTION_SWITCH, 1, getResources().getString(R.string.inbox_menu_outbox))
+      .setIcon(R.drawable.ic_menu_upload);
+    return true;
+  }
+
+
+
+  @Override
+  public boolean onPrepareOptionsMenu(Menu menu)
+  {
+    MenuItem item = menu.getItem(1);
+
+    if (DISPLAY_MODE_INBOX == mDisplayMode) {
+      item.setTitle(R.string.inbox_menu_outbox);
+      item.setIcon(R.drawable.ic_menu_upload);
+    }
+    else {
+      item.setTitle(R.string.inbox_menu_inbox);
+      item.setIcon(R.drawable.ic_menu_archive);
+    }
+
     return true;
   }
 
@@ -148,6 +172,17 @@ public class MessagesActivity extends BooListActivity
         refresh();
         break;
 
+
+      case ACTION_SWITCH:
+        if (DISPLAY_MODE_INBOX == mDisplayMode) {
+          mDisplayMode = DISPLAY_MODE_OUTBOX;
+          refresh(API.BOOS_INBOX); // FIXME should be OUTBOX
+        }
+        else {
+          mDisplayMode = DISPLAY_MODE_INBOX;
+          refresh(API.BOOS_INBOX);
+        }
+        break;
 
       default:
         Toast.makeText(this, "Unreachable line reached.", Toast.LENGTH_LONG).show();
@@ -222,7 +257,7 @@ public class MessagesActivity extends BooListActivity
 
       case DISPLAY_MODE_OUTBOX:
         // FIXME
-        return null;
+        return new LinkedList<Boo>();
 
       default:
         Log.e(LTAG, "unreachable line reached.");
@@ -239,8 +274,10 @@ public class MessagesActivity extends BooListActivity
         return "";
 
       case DISPLAY_MODE_OUTBOX:
-        // FIXME
-        return null;
+        if (0 == group) {
+          return getResources().getString(R.string.inbox_outbox);
+        }
+        return getResources().getString(R.string.inbox_sent);
 
       default:
         Log.e(LTAG, "unreachable line reached.");
