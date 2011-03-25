@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+ This file is part of AudioBoo, an android program for audio blogging.
+ Copyright (C) 2011 AudioBoo Ltd.
+ All rights reserved.
+
+ Author: Jens Finkhaeuser <jens@finkhaeuser.de>
+
+ $Id$
+-->
+
+<selector xmlns:android="http://schemas.android.com/apk/res/android">
+  <item android:state_expanded="true"
+        android:drawable="@drawable/group_icon_maximized" />
+  <item android:drawable="@drawable/group_icon_minimized" />
+</selector>

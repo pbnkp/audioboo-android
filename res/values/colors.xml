@@ -35,6 +35,7 @@
   -->
 
   <color name="text_shadow">@color/bb_black_80</color>
+  <color name="group_label">@color/bb_black_80</color>
 
   <!--
     Colors for the lists of boos. Also see res/color
