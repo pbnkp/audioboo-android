@@ -149,7 +149,7 @@ public abstract class BooListActivity
     });
 
     // Initialize "retry" button on list empty vew
-    v = findViewById(R.id.browse_boos_retry);
+    v = findViewById(getViewId(VIEW_ID_RETRY));
     if (null != v) {
       v.setOnClickListener(new View.OnClickListener() {
           public void onClick(View v) {
