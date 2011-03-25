@@ -439,7 +439,6 @@ class ResponseParser
       result.mMessagingEnabled = false;
     }
     if (user.has(USER_FOLLOWING_ENABLED)) {
-      Log.d(LTAG, "Has following!");
       result.mFollowingEnabled = user.getBoolean(USER_FOLLOWING_ENABLED);
     }
     else {
