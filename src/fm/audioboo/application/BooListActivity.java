@@ -326,39 +326,6 @@ public abstract class BooListActivity
   }
 
 
-  /***************************************************************************
-   * BooListPaginator.PaginatorDataSource implementation
-   **/
-  public int getGroupCount()
-  {
-    // FIXME
-    return 1;
-  }
-
-
-
-  public int paginatedGroup()
-  {
-    // FIXME
-    return 0;
-  }
-
-
-
-  public List<Boo> getGroup(int group)
-  {
-    // FIXME
-    return null;
-  }
-
-
-
-  public String getGroupLabel(int group)
-  {
-    // FIXME
-    return "asdf";
-  }
-
 
   /***************************************************************************
    * BooListPaginator.Callback implementation

@@ -27,6 +27,8 @@ import android.content.DialogInterface;
 import android.app.Dialog;
 import android.app.AlertDialog;
 
+import java.util.List;
+
 import android.util.Log;
 
 /**
@@ -247,5 +249,40 @@ public class BrowseActivity extends BooListActivity
         list.setAdapter(new ArrayAdapter<CharSequence>(this,
             android.R.layout.select_dialog_item, android.R.id.text1, opts));
     }
+  }
+
+
+
+  /***************************************************************************
+   * BooListPaginator.PaginatorDataSource implementation
+   **/
+  public int getGroupCount()
+  {
+    // Always the same
+    return 1;
+  }
+
+
+
+  public int paginatedGroup()
+  {
+    // Since there's only one group and it's paginated...
+    return 0;
+  }
+
+
+
+  public List<Boo> getGroup(int group)
+  {
+    // Unused.
+    return null;
+  }
+
+
+
+  public String getGroupLabel(int group)
+  {
+    // Unused.
+    return null;
   }
 }

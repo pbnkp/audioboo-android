@@ -27,6 +27,8 @@ import android.content.DialogInterface;
 import android.app.Dialog;
 import android.app.AlertDialog;
 
+import java.util.List;
+
 import android.util.Log;
 
 /**
@@ -47,12 +49,19 @@ public class MessagesActivity extends BooListActivity
   // Dialog IDs
   private static final int  DIALOG_ERROR    = Globals.DIALOG_ERROR;
 
+  // Display modes
+  private static final int DISPLAY_MODE_INBOX   = 0;
+  private static final int DISPLAY_MODE_OUTBOX  = 1;
+
   /***************************************************************************
    * Data members
    **/
   // Last error information - used and cleared in onCreateDialog
   private int               mErrorCode = -1;
   private API.APIException  mException;
+
+  // Display mode
+  private int               mDisplayMode = DISPLAY_MODE_INBOX;
 
 
   /***************************************************************************
@@ -164,5 +173,78 @@ public class MessagesActivity extends BooListActivity
     }
 
     return dialog;
+  }
+
+
+
+  /***************************************************************************
+   * BooListPaginator.PaginatorDataSource implementation
+   **/
+  public int getGroupCount()
+  {
+    switch (mDisplayMode) {
+      case DISPLAY_MODE_INBOX:
+        return 1;
+
+      case DISPLAY_MODE_OUTBOX:
+        return 2;
+
+      default:
+        Log.e(LTAG, "unreachable line reached.");
+        return 0;
+    }
+  }
+
+
+
+  public int paginatedGroup()
+  {
+    switch (mDisplayMode) {
+      case DISPLAY_MODE_INBOX:
+        return 0;
+
+      case DISPLAY_MODE_OUTBOX:
+        return 1;
+
+      default:
+        Log.e(LTAG, "unreachable line reached.");
+        return 0;
+    }
+  }
+
+
+
+  public List<Boo> getGroup(int group)
+  {
+    switch (mDisplayMode) {
+      case DISPLAY_MODE_INBOX:
+        return null;
+
+      case DISPLAY_MODE_OUTBOX:
+        // FIXME
+        return null;
+
+      default:
+        Log.e(LTAG, "unreachable line reached.");
+        return null;
+    }
+  }
+
+
+
+  public String getGroupLabel(int group)
+  {
+    switch (mDisplayMode) {
+      case DISPLAY_MODE_INBOX:
+        return "";
+
+      case DISPLAY_MODE_OUTBOX:
+        // FIXME
+        return null;
+
+      default:
+        Log.e(LTAG, "unreachable line reached.");
+        return null;
+    }
   }
 }
