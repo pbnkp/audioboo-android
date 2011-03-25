@@ -144,10 +144,10 @@ public class BooListAdapter extends BaseExpandableListAdapter
    **/
   private class Baton
   {
-    public int itemIndex;
-    public int viewIndex;
+    public Pair<Integer, Integer> itemIndex;
+    public int                    viewIndex;
 
-    Baton(int _itemIndex, int _viewIndex)
+    Baton(Pair<Integer, Integer> _itemIndex, int _viewIndex)
     {
       itemIndex = _itemIndex;
       viewIndex = _viewIndex;
@@ -572,20 +572,32 @@ public class BooListAdapter extends BaseExpandableListAdapter
 
   private void startHeavyLifting(int first, int count)
   {
-    // FIXME this is actually tricky, as it involves calculating offsets into groups.
-    return;
-/*
-    // Log.d(LTAG, "Downloads for items from " + first + " to " + (first + count));
+    Log.d(LTAG, "Downloads for items from " + first + " to " + (first + count));
+
+    DataSource data = mData.get();
+    if (null == data) {
+      return;
+    }
 
     // Prepare the list of uris to download.
     LinkedList<ImageCache.CacheItem> uris = new LinkedList<ImageCache.CacheItem>();
     for (int i = 0 ; i < count ; ++i) {
       int index = first + i;
-      if (index >= mBoos.mClips.size()) {
-        break;
+      Pair<Integer, Integer> mapped = mapPosition(index);
+      if (null == mapped) {
+        continue;
       }
 
-      Boo boo = mBoos.mClips.get(index);
+      List<Boo> boos = data.getGroup(mapped.mFirst);
+      if (null == boos) {
+        continue;
+      }
+
+      if (mapped.mSecond < 0 || mapped.mSecond >= boos.size()) {
+        continue;
+      }
+
+      Boo boo = boos.get(mapped.mSecond);
       Pair<String, Uri> uri = getDisplayUrl(boo);
 
       if (null == uri) {
@@ -593,7 +605,7 @@ public class BooListAdapter extends BaseExpandableListAdapter
       }
 
       uris.add(new ImageCache.CacheItem(uri.mSecond, mDimensions,
-            new Baton(index, i), uri.mFirst));
+            new Baton(mapped, i), uri.mFirst));
     }
 
     if (0 < uris.size()) {
@@ -620,17 +632,20 @@ public class BooListAdapter extends BaseExpandableListAdapter
         }
       }));
     }
-    */
   }
 
 
 
   public void onCacheItemFetched(ImageCache.CacheItem item)
   {
-    /*
     // Log.d(LTAG, "got results for : " + item.mImageUri);
     ExpandableListActivity activity = mActivity.get();
     if (null == activity) {
+      return;
+    }
+
+    DataSource data = mData.get();
+    if (null == data) {
       return;
     }
 
@@ -646,7 +661,11 @@ public class BooListAdapter extends BaseExpandableListAdapter
     // Make sure that the item for which the request was scheduled and the
     // item we're displaying currently are the same. That's what we set the
     // view's tag for in getChildView().
-    Boo expected_boo = mBoos.mClips.get(baton.itemIndex);
+    List<Boo> boos = data.getGroup(baton.itemIndex.mFirst);
+    if (null == boos) {
+      return;
+    }
+    Boo expected_boo = boos.get(baton.itemIndex.mSecond);
     Boo current_boo = (Boo) item_view.getTag();
     if (null != current_boo && expected_boo.mData.mId != current_boo.mData.mId) {
       // There's been a race between cancelling downloads and sending the
@@ -661,7 +680,6 @@ public class BooListAdapter extends BaseExpandableListAdapter
     }
 
     image_view.setImageDrawable(new BitmapDrawable(item.mBitmap));
-    */
   }
 
 
