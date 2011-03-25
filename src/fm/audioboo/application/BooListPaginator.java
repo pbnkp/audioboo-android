@@ -227,6 +227,9 @@ public class BooListPaginator implements BooListAdapter.DataSource
         // ExpandableListView, so we have to map a single position back to a
         // group/position-within-group.
         Pair<Integer, Integer> mapped = mAdapter.mapPosition(position);
+        if (null == mapped) {
+          return false;
+        }
         mLastLongClick = mapped;
 
         // Log.d(LTAG, "long click: " + mapped.mFirst + " / " + mapped.mSecond);

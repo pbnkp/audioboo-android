@@ -320,6 +320,10 @@ public abstract class BooListActivity
 
   public void onDisclosureClicked(Boo boo)
   {
+    if (null == boo || null == boo.mData) {
+      // Silently ignore clicks on empty fields.
+      return;
+    }
     Intent i = new Intent(this, BooDetailsActivity.class);
     i.putExtra(BooDetailsActivity.EXTRA_BOO_DATA, (Parcelable) boo.mData);
     startActivity(i);
