@@ -28,7 +28,27 @@
   <color name="bb_deep_pink_bright">#ffb40077</color>
   <color name="bb_deep_pink_dark">#ff93004e</color>
 
+  <color name="bb_dark_blue_dark">#ff2d383b</color>
+  <color name="bb_dark_blue_medium">#ff4b566b</color>
+
   <!--
+  <color name="bb_palette_near_black">#ff050606</color>
+  <color name="bb_palette_">#ff141b1e</color>
+  <color name="bb_palette_">#ff040407</color>
+  <color name="bb_palette_">#ff24485f</color>
+  <color name="bb_palette_">#ff1a3153</color>
+  <color name="bb_palette_">#ffb6b6b6</color>
+  <color name="bb_palette_">#ffe3e4e5</color>
+  <color name="bb_palette_">#ff363636</color>
+  <color name="bb_palette_">#ff070707</color>
+  <color name="bb_palette_">#ff0f0f13</color>
+  <color name="bb_palette_">#ff1e1e26</color>
+  <color name="bb_palette_">#ffedc9e0</color>
+  <color name="bb_palette_">#ffb5167a</color>
+  <color name="bb_palette_">#ff001526</color>
+  <color name="bb_palette_">#ff002a4b</color>
+  <color name="bb_palette_">#00000912</color>
+
   <color name="bb_front_page_author">#ffba337f</color>
   <color name="bb_front_page_title">#ffbcb5b4</color>
   <color name="bb_front_page_location">#ff6c5869</color>

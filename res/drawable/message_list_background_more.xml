@@ -11,13 +11,13 @@
 -->
 <selector xmlns:android="http://schemas.android.com/apk/res/android">
   <!-- Selected via trackball -->
-  <item android:drawable="@color/bb_deep_blue_dark"
+  <item android:drawable="@color/bb_dark_blue_dark"
       android:state_selected="true"
       android:state_pressed="false"
     />
 
   <!-- Pressed via screen or trackball -->
-  <item android:drawable="@color/bb_deep_blue_bright"
+  <item android:drawable="@color/bb_dark_blue_medium"
       android:state_pressed="true"
     />
 
