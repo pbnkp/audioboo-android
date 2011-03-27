@@ -28,7 +28,6 @@ import android.app.Dialog;
 import android.app.AlertDialog;
 
 import java.util.List;
-import java.util.LinkedList; //FIXME
 
 import android.util.Log;
 
@@ -256,8 +255,11 @@ public class MessagesActivity extends BooListActivity
         return null;
 
       case DISPLAY_MODE_OUTBOX:
-        // FIXME
-        return new LinkedList<Boo>();
+        if (group == paginatedGroup()) {
+          Log.e(LTAG, "Wait, what? We can't source the paginated group here.");
+          return null;
+        }
+        return Globals.get().getBooManager().getMessageUploads();
 
       default:
         Log.e(LTAG, "unreachable line reached.");
