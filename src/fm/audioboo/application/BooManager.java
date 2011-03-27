@@ -75,7 +75,9 @@ public class BooManager
   // Preferred path for creating new Boos; an index into mPaths
   private int           mCreateIndex;
   // Boos found.
-  private List<Boo>     mBooList;
+  private List<Boo>     mDrafts;
+  private List<Boo>     mBooUploads;
+  private List<Boo>     mMessageUploads;
 
 
 
@@ -109,21 +111,35 @@ public class BooManager
 
 
 
-  public List<Boo> getBoos()
+  public List<Boo> getDrafts()
   {
-    return mBooList;
+    return mDrafts;
   }
 
 
 
-  public Boo getLatestBoo()
+  public List<Boo> getBooUploads()
   {
-    if (null == mBooList) {
+    return mBooUploads;
+  }
+
+
+
+  public List<Boo> getMessageUploads()
+  {
+    return mMessageUploads;
+  }
+
+
+
+  public Boo getLatestDraft()
+  {
+    if (null == mDrafts) {
       return null;
     }
 
     Boo latest = null;
-    for (Boo b : mBooList) {
+    for (Boo b : mDrafts) {
       if (null == latest) {
         latest = b;
         continue;
@@ -263,7 +279,10 @@ public class BooManager
 
   public void rebuildIndex()
   {
-    List<Boo> boos = new LinkedList<Boo>();
+    List<Boo> drafts = new LinkedList<Boo>();
+    List<Boo> booUploads = new LinkedList<Boo>();
+    List<Boo> messageUploads = new LinkedList<Boo>();
+
     BooFileFilter filter = new BooFileFilter();
 
     for (String path : mPaths) {
@@ -303,15 +322,27 @@ public class BooManager
           continue;
         }
 
-        boos.add(b);
+        if (null == b.mData.mUploadInfo) {
+          drafts.add(b);
+        }
+        else {
+          if (b.mData.mIsMessage) {
+            messageUploads.add(b);
+          }
+          else {
+            booUploads.add(b);
+          }
+        }
       }
     }
 
-    if (0 == boos.size()) {
+    if (0 == drafts.size()) {
       Log.w(LTAG, "No Boos found!");
     }
 
-    mBooList = boos;
+    mDrafts = drafts;
+    mMessageUploads = messageUploads;
+    mBooUploads = booUploads;
   }
 
 

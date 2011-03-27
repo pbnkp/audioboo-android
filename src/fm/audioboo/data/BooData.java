@@ -146,6 +146,9 @@ public class BooData implements Parcelable, Serializable
   public int                    mPlays;
   public int                    mComments;
 
+  // Only set if this Boo is in the upload queue
+  public UploadInfo             mUploadInfo;
+
 
   /***************************************************************************
    * Implementation

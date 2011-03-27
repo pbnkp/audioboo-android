@@ -185,13 +185,13 @@ public class RecordActivity extends Activity
     // If no Boo exists, this might be the first start of the Activity. We're
     // best served if we just grab the latest Boo, if any.
     if (null == mBoo) {
-      mBoo = Globals.get().getBooManager().getLatestBoo();
+      mBoo = Globals.get().getBooManager().getLatestDraft();
     }
     else {
       // If on the other hand we have a boo, we'll try to reload it. If that fails,
       // we still need to reset the boo.
       if (!mBoo.reload()) {
-        mBoo = Globals.get().getBooManager().getLatestBoo();
+        mBoo = Globals.get().getBooManager().getLatestDraft();
       }
     }
 
