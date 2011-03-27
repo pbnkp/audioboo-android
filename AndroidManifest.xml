@@ -61,6 +61,10 @@
         android:configChanges="orientation|keyboardHidden"
       />
 
+    <activity android:name=".MyBoosActivity"
+        android:configChanges="orientation|keyboardHidden"
+      />
+
     <activity android:name=".RecordActivity"
         android:screenOrientation="portrait"
         android:configChanges="orientation|keyboardHidden"

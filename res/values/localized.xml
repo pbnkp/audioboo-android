@@ -329,4 +329,11 @@
   <string name="contact_label_followings">following</string>
   <string name="contact_label_followers">followers</string>
 
+  <!-- My boos -->
+  <string name="my_boos_title">My Boos</string>
+
+  <string name="my_uploads">Uploads</string>
+  <string name="my_drafts">Drafts</string>
+  <string name="my_boos">My Boos</string>
+
 </resources>

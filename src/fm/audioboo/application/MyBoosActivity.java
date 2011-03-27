@@ -32,28 +32,24 @@ import java.util.List;
 import android.util.Log;
 
 /**
- * The MessagesActivity shows messages (boos with a sender and addressee) that
- * the user has sent, received or is uploading.
+ * The MyBoosActivity shows any non-message boos that the user has crated, is
+ * in the process of creating, or is uploading.
  **/
-public class MessagesActivity extends BooListActivity
+public class MyBoosActivity extends BooListActivity
 {
   /***************************************************************************
    * Private constants
    **/
   // Log ID
-  private static final String LTAG  = "MessagesActivity";
+  private static final String LTAG  = "MyBoosActivity";
 
   // Action identifiers -- must correspond to the indices of the array
   // "recent_boos_actions" in res/values/localized.xml
   private static final int  ACTION_REFRESH  = 0;
-  private static final int  ACTION_SWITCH   = 1;
 
   // Dialog IDs
   private static final int  DIALOG_ERROR    = Globals.DIALOG_ERROR;
 
-  // Display modes
-  private static final int DISPLAY_MODE_INBOX   = 0;
-  private static final int DISPLAY_MODE_OUTBOX  = 1;
 
   /***************************************************************************
    * Data members
@@ -62,24 +58,20 @@ public class MessagesActivity extends BooListActivity
   private int               mErrorCode = -1;
   private API.APIException  mException;
 
-  // Display mode
-  private int               mDisplayMode = DISPLAY_MODE_INBOX;
-  private int               mApiType = getInitAPI();
-
 
   /***************************************************************************
    * BooListActivity implementation
    **/
   public int getInitAPI()
   {
-    return API.BOOS_INBOX;
+    return API.BOOS_MINE;
   }
 
 
 
   public String getTitleString(int api)
   {
-    return getResources().getString(R.string.inbox_title);
+    return getResources().getString(R.string.my_boos_title);
   }
 
 
@@ -113,27 +105,6 @@ public class MessagesActivity extends BooListActivity
   {
     menu.add(0, ACTION_REFRESH, 0, getResources().getString(R.string.inbox_menu_refresh))
       .setIcon(R.drawable.ic_menu_refresh);
-    menu.add(1, ACTION_SWITCH, 1, getResources().getString(R.string.inbox_menu_outbox))
-      .setIcon(R.drawable.ic_menu_upload);
-    return true;
-  }
-
-
-
-  @Override
-  public boolean onPrepareOptionsMenu(Menu menu)
-  {
-    MenuItem item = menu.getItem(1);
-
-    if (DISPLAY_MODE_INBOX == mDisplayMode) {
-      item.setTitle(R.string.inbox_menu_outbox);
-      item.setIcon(R.drawable.ic_menu_upload);
-    }
-    else {
-      item.setTitle(R.string.inbox_menu_inbox);
-      item.setIcon(R.drawable.ic_menu_archive);
-    }
-
     return true;
   }
 
@@ -145,18 +116,6 @@ public class MessagesActivity extends BooListActivity
     switch (item.getItemId()) {
       case ACTION_REFRESH:
         refresh();
-        break;
-
-
-      case ACTION_SWITCH:
-        if (DISPLAY_MODE_INBOX == mDisplayMode) {
-          mDisplayMode = DISPLAY_MODE_OUTBOX;
-          refresh(API.BOOS_INBOX); // FIXME should be OUTBOX
-        }
-        else {
-          mDisplayMode = DISPLAY_MODE_INBOX;
-          refresh(API.BOOS_INBOX);
-        }
         break;
 
       default:
@@ -192,50 +151,32 @@ public class MessagesActivity extends BooListActivity
    **/
   public int getGroupCount()
   {
-    switch (mDisplayMode) {
-      case DISPLAY_MODE_INBOX:
-        return 1;
-
-      case DISPLAY_MODE_OUTBOX:
-        return 2;
-
-      default:
-        Log.e(LTAG, "unreachable line reached.");
-        return 0;
-    }
+    return 3;
   }
 
 
 
   public int paginatedGroup()
   {
-    switch (mDisplayMode) {
-      case DISPLAY_MODE_INBOX:
-        return 0;
-
-      case DISPLAY_MODE_OUTBOX:
-        return 1;
-
-      default:
-        Log.e(LTAG, "unreachable line reached.");
-        return 0;
-    }
+    // Last group is paginated.
+    return getGroupCount() - 1;
   }
 
 
 
   public List<Boo> getGroup(int group)
   {
-    switch (mDisplayMode) {
-      case DISPLAY_MODE_INBOX:
-        return null;
+    // The order of groups is "uploads", "drafts", "my boos"
+    switch (group) {
+      case 0:
+        return Globals.get().getBooManager().getBooUploads();
 
-      case DISPLAY_MODE_OUTBOX:
-        if (group == paginatedGroup()) {
-          Log.e(LTAG, "Wait, what? We can't source the paginated group here.");
-          return null;
-        }
-        return Globals.get().getBooManager().getMessageUploads();
+      case 1:
+        return Globals.get().getBooManager().getDrafts();
+
+      case 2:
+        Log.e(LTAG, "Can't return the paginated group here.");
+        return null;
 
       default:
         Log.e(LTAG, "unreachable line reached.");
@@ -247,15 +188,15 @@ public class MessagesActivity extends BooListActivity
 
   public String getGroupLabel(int group)
   {
-    switch (mDisplayMode) {
-      case DISPLAY_MODE_INBOX:
-        return "";
+    switch (group) {
+      case 0:
+        return getResources().getString(R.string.my_uploads);
 
-      case DISPLAY_MODE_OUTBOX:
-        if (0 == group) {
-          return getResources().getString(R.string.inbox_outbox);
-        }
-        return getResources().getString(R.string.inbox_sent);
+      case 1:
+        return getResources().getString(R.string.my_drafts);
+
+      case 2:
+        return getResources().getString(R.string.my_boos);
 
       default:
         Log.e(LTAG, "unreachable line reached.");

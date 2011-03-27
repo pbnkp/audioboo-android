@@ -26,7 +26,7 @@
   <string-array name="main_menu_actions">
     <item>fm.audioboo.application.AccountActivity</item>
     <item>fm.audioboo.application.BrowseActivity</item>
-    <item></item>
+    <item>fm.audioboo.application.MyBoosActivity</item>
     <item>fm.audioboo.application.MessagesActivity</item>
     <item>fm.audioboo.application.ContactsListActivity</item>
   </string-array>
