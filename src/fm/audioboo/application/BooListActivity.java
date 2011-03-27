@@ -98,24 +98,6 @@ public abstract class BooListActivity
    * Subclass interface - you should also overload onError()
    **/
   /**
-   * Public constants, that are passed to getViewId()
-   **/
-  public static final int VIEW_ID_NONE              = -1;
-  public static final int VIEW_ID_LAYOUT            = 0;
-  public static final int VIEW_ID_EMPTY_VIEW        = 1;
-  public static final int VIEW_ID_PLAYER            = 2;
-  public static final int VIEW_ID_PLAYER_CONTAINER  = 3;
-  public static final int VIEW_ID_LOADING           = 4;
-  public static final int VIEW_ID_RETRY             = 5;
-
-  /**
-   * Get View identifier for the specified View constant. Return VIEW_ID_NONE
-   * if not supported.
-   **/
-  public abstract int getViewId(int viewSpec);
-
-
-  /**
    * Retrieve the API call to populate the view when starting up the Activity.
    **/
   public abstract int getInitAPI();
@@ -135,8 +117,8 @@ public abstract class BooListActivity
   {
     super.onCreate(savedInstanceState);
 
-    setContentView(getViewId(VIEW_ID_LAYOUT));
-    View v = findViewById(getViewId(VIEW_ID_EMPTY_VIEW));
+    setContentView(R.layout.boo_list);
+    View v = findViewById(R.id.boo_list_empty);
     getExpandableListView().setEmptyView(v);
 
     // Initialize paginator
@@ -149,7 +131,7 @@ public abstract class BooListActivity
     });
 
     // Initialize "retry" button on list empty vew
-    v = findViewById(getViewId(VIEW_ID_RETRY));
+    v = findViewById(R.id.boo_list_retry);
     if (null != v) {
       v.setOnClickListener(new View.OnClickListener() {
           public void onClick(View v) {
@@ -173,7 +155,7 @@ public abstract class BooListActivity
     }
 
     // Also initialize the player view
-    BooPlayerView pv = (BooPlayerView) findViewById(getViewId(VIEW_ID_PLAYER));
+    BooPlayerView pv = (BooPlayerView) findViewById(R.id.boo_list_player);
     if (null != pv) {
       PlaybackEndListener listener = (PlaybackEndListener) pv.getPlaybackEndListener();
 
@@ -234,7 +216,7 @@ public abstract class BooListActivity
 
   private void showPlayer()
   {
-    final View player = findViewById(getViewId(VIEW_ID_PLAYER_CONTAINER));
+    final View player = findViewById(R.id.boo_list_player_container);
     if (null == player) {
       return;
     }
@@ -246,7 +228,7 @@ public abstract class BooListActivity
 
   private void hidePlayer()
   {
-    final View player = findViewById(getViewId(VIEW_ID_PLAYER_CONTAINER));
+    final View player = findViewById(R.id.boo_list_player_container);
     if (null == player) {
       return;
     }
@@ -277,7 +259,7 @@ public abstract class BooListActivity
     showPlayer();
 
     // Start playback
-    final BooPlayerView player = (BooPlayerView) findViewById(getViewId(VIEW_ID_PLAYER));
+    final BooPlayerView player = (BooPlayerView) findViewById(R.id.boo_list_player);
     if (null != player) {
       player.setPlaybackEndListener(new PlaybackEndListener(view, boo.mData.mId));
       player.play(boo);
@@ -292,7 +274,7 @@ public abstract class BooListActivity
     hidePlayer();
 
     // Stop playback
-    final BooPlayerView player = (BooPlayerView) findViewById(getViewId(VIEW_ID_PLAYER));
+    final BooPlayerView player = (BooPlayerView) findViewById(R.id.boo_list_player);
     if (null != player) {
       player.stop();
     }
@@ -340,11 +322,11 @@ public abstract class BooListActivity
       // Replace the list view with a loading screen.
       setListAdapter(null);
 
-      View view = findViewById(getViewId(VIEW_ID_LOADING));
+      View view = findViewById(R.id.boo_list_progress);
       if (null != view) {
         view.setVisibility(View.VISIBLE);
       }
-      view = findViewById(getViewId(VIEW_ID_RETRY));
+      view = findViewById(R.id.boo_list_retry);
       if (null != view) {
         view.setVisibility(View.GONE);
       }
@@ -374,11 +356,11 @@ public abstract class BooListActivity
     // Also reset view.
     setListAdapter(null);
 
-    View view = findViewById(getViewId(VIEW_ID_LOADING));
+    View view = findViewById(R.id.boo_list_progress);
     if (null != view) {
       view.setVisibility(View.GONE);
     }
-    view = findViewById(getViewId(VIEW_ID_RETRY));
+    view = findViewById(R.id.boo_list_retry);
     if (null != view) {
       view.setVisibility(View.VISIBLE);
     }

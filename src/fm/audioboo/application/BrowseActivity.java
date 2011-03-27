@@ -68,34 +68,6 @@ public class BrowseActivity extends BooListActivity
   /***************************************************************************
    * BooListActivity implementation
    **/
-  public int getViewId(int viewSpec)
-  {
-    switch (viewSpec) {
-      case VIEW_ID_LAYOUT:
-        return R.layout.browse_boos;
-
-      case VIEW_ID_EMPTY_VIEW:
-        return R.id.browse_boos_empty;
-
-      case VIEW_ID_PLAYER:
-        return R.id.browse_boos_player;
-
-      case VIEW_ID_PLAYER_CONTAINER:
-        return R.id.browse_boos_player_container;
-
-      case VIEW_ID_LOADING:
-        return R.id.browse_boos_progress;
-
-      case VIEW_ID_RETRY:
-        return R.id.browse_boos_retry;
-
-      default:
-        return VIEW_ID_NONE;
-    }
-  }
-
-
-
   public int getInitAPI()
   {
     return API.BOOS_FEATURED;

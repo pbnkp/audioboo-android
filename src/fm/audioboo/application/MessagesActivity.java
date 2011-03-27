@@ -69,31 +69,6 @@ public class MessagesActivity extends BooListActivity
   /***************************************************************************
    * BooListActivity implementation
    **/
-  public int getViewId(int viewSpec)
-  {
-    switch (viewSpec) {
-      case VIEW_ID_LAYOUT:
-        return R.layout.inbox;
-
-      case VIEW_ID_EMPTY_VIEW:
-        return R.id.inbox_empty;
-
-      case VIEW_ID_PLAYER:
-        return R.id.inbox_player;
-
-      case VIEW_ID_LOADING:
-        return R.id.inbox_progress;
-
-      case VIEW_ID_RETRY:
-        return R.id.inbox_retry;
-
-      default:
-        return VIEW_ID_NONE;
-    }
-  }
-
-
-
   public int getInitAPI()
   {
     return API.BOOS_INBOX;

@@ -1,16 +1,18 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
  This file is part of AudioBoo, an android program for audio blogging.
- Copyright (C) 2011 AudiBoo Ltd.
+ Copyright (C) 2009 BestBefore Media Ltd.
+ Copyright (C) 2010,2011 AudioBoo Ltd.
  All rights reserved.
 
  Author: Jens Finkhaeuser <jens@finkhaeuser.de>
 
  $Id$
 -->
-<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="fill_parent"
     android:layout_height="fill_parent"
+    android:orientation="vertical"
   >
   <!-- List view -->
   <ExpandableListView android:id="@android:id/list"
@@ -27,9 +29,10 @@
 
 
   <!-- Empty list view -->
-  <RelativeLayout android:id="@+id/inbox_empty"
+  <RelativeLayout android:id="@+id/boo_list_empty"
       android:layout_width="fill_parent"
       android:layout_height="fill_parent"
+      android:layout_weight="1"
     >
     <LinearLayout
         android:orientation="vertical"
@@ -44,20 +47,21 @@
           android:layout_height="60dp"
           android:gravity="center"
         >
-        <ProgressBar android:id="@+id/inbox_progress"
+        <ProgressBar android:id="@+id/boo_list_progress"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:max="10000"
             style="android:progressBarStyleSmall"
           />
 
-        <Button android:id="@+id/inbox_retry"
+        <Button android:id="@+id/boo_list_retry"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:paddingLeft="15dp"
             android:paddingRight="15dp"
-            android:text="Retry"
+            android:text="@string/browse_retry"
             android:visibility="gone"
+            android:background="@drawable/btn_default"
           />
       </RelativeLayout>
 
@@ -70,9 +74,8 @@
     </LinearLayout>
 
     <!-- Hint -->
-    <!-- FIXME -->
     <TextView
-        android:id="@+id/inbox_hint"
+        android:id="@+id/boo_list_hint"
         android:layout_width="fill_parent"
         android:layout_height="120dp"
         android:layout_marginLeft="15dp"
@@ -94,11 +97,28 @@
   </RelativeLayout>
 
   <!-- Player view -->
-  <fm.audioboo.widget.BooPlayerView
-      android:id="@+id/inbox_player"
+  <LinearLayout
+      android:id="@+id/boo_list_player_container"
       android:layout_width="fill_parent"
       android:layout_height="wrap_content"
       android:layout_alignParentBottom="true"
       android:visibility="gone"
-    />
-</RelativeLayout>
+      android:orientation="vertical"
+      android:background="@color/boo_player_background"
+    >
+    <!-- Separator -->
+    <ImageView
+        android:src="@android:drawable/divider_horizontal_dark"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:scaleType="fitXY"
+      />
+
+    <!-- Player -->
+    <fm.audioboo.widget.BooPlayerView
+        android:id="@+id/boo_list_player"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+      />
+  </LinearLayout>
+</LinearLayout>
