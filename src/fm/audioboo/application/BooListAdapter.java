@@ -16,6 +16,7 @@ import android.widget.BaseExpandableListAdapter;
 import android.app.ExpandableListActivity;
 
 import android.content.res.Resources;
+import android.content.res.ColorStateList;
 
 import android.view.View;
 import android.view.ViewGroup;
@@ -60,6 +61,11 @@ public class BooListAdapter extends BaseExpandableListAdapter
   public static final int VIEW_TYPE_BOO       = 0;
   public static final int VIEW_TYPE_MORE      = 1;
 
+  // List item elements
+  public static final int ELEMENT_AUTHOR      = 0;
+  public static final int ELEMENT_TITLE       = 1;
+  public static final int ELEMENT_LOCATION    = 2;
+
 
   /***************************************************************************
    * Data source interface
@@ -96,6 +102,11 @@ public class BooListAdapter extends BaseExpandableListAdapter
      * Returns the background resource for the given view type.
      **/
     public int getBackgroundResource(int viewType);
+
+    /**
+     * Returns the state drawable resource for coloring text elements.
+     **/
+    public int getElementColor(int element);
   }
 
 
@@ -420,6 +431,8 @@ public class BooListAdapter extends BaseExpandableListAdapter
     // Fill view with data.
     TextView text_view = (TextView) view.findViewById(R.id.boo_list_item_author);
     if (null != text_view) {
+      setTextColor(activity, data, text_view, ELEMENT_AUTHOR);
+
       if (null != boo.mData.mUser && null != boo.mData.mUser.mUsername) {
         text_view.setText(boo.mData.mUser.mUsername);
       }
@@ -431,11 +444,15 @@ public class BooListAdapter extends BaseExpandableListAdapter
 
     text_view = (TextView) view.findViewById(R.id.boo_list_item_title);
     if (null != text_view) {
+      setTextColor(activity, data, text_view, ELEMENT_TITLE);
+
       text_view.setText(null != boo.mData.mTitle ? boo.mData.mTitle : "");
     }
 
     text_view = (TextView) view.findViewById(R.id.boo_list_item_location);
     if (null != text_view) {
+      setTextColor(activity, data, text_view, ELEMENT_LOCATION);
+
       if (null != boo.mData.mLocation && null != boo.mData.mLocation.mDescription) {
         text_view.setText(boo.mData.mLocation.mDescription);
       }
@@ -578,6 +595,17 @@ public class BooListAdapter extends BaseExpandableListAdapter
       return null;
     }
     return boos.get(position);
+  }
+
+
+
+  private void setTextColor(ExpandableListActivity activity, DataSource data, TextView text_view, int element)
+  {
+    int colorId = data.getElementColor(element);
+    if (-1 != colorId) {
+      ColorStateList color = activity.getResources().getColorStateList(colorId);
+      text_view.setTextColor(color);
+    }
   }
 
 

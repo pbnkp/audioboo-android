@@ -273,4 +273,23 @@ public class BrowseActivity extends BooListActivity
         return -1;
     }
   }
+
+
+
+  public int getElementColor(int element)
+  {
+    switch (element) {
+      case BooListAdapter.ELEMENT_AUTHOR:
+        return R.color.boo_list_author;
+
+      case BooListAdapter.ELEMENT_TITLE:
+        return R.color.boo_list_title;
+
+      case BooListAdapter.ELEMENT_LOCATION:
+        return R.color.boo_list_location;
+
+      default:
+        return -1;
+    }
+  }
 }

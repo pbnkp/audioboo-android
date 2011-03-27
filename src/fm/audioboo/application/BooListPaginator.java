@@ -118,6 +118,11 @@ public class BooListPaginator implements BooListAdapter.DataSource
      * Returns the background resource for the given view type.
      **/
     public int getBackgroundResource(int viewType);
+
+    /**
+     * Returns the state drawable resource for coloring text elements.
+     **/
+    public int getElementColor(int element);
   }
 
 
@@ -444,5 +449,12 @@ public class BooListPaginator implements BooListAdapter.DataSource
   public int getBackgroundResource(int viewType)
   {
     return mData.getBackgroundResource(viewType);
+  }
+
+
+
+  public int getElementColor(int element)
+  {
+    return mData.getElementColor(element);
   }
 }

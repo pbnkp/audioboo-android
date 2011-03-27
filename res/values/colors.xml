@@ -33,9 +33,9 @@
 
   <!--
   <color name="bb_palette_near_black">#ff050606</color>
+  <color name="bb_palette_">#ff24485f</color>
   <color name="bb_palette_">#ff141b1e</color>
   <color name="bb_palette_">#ff040407</color>
-  <color name="bb_palette_">#ff24485f</color>
   <color name="bb_palette_">#ff1a3153</color>
   <color name="bb_palette_">#ffb6b6b6</color>
   <color name="bb_palette_">#ffe3e4e5</color>
@@ -60,11 +60,6 @@
   <!--
     Colors for the lists of boos. Also see res/color
   -->
-  <color name="boo_list_author_selected">@color/bb_white_80</color> <!-- 12 -->
-  <color name="boo_list_title_selected">@android:color/white</color> <!-- 16 -->
-  <color name="boo_list_location_selected">@color/bb_white_69</color>
-
-  <color name="boo_list_background_active">@color/bb_deep_pink_dark</color>
   <color name="boo_list_image_background">#a1a7b2</color>
 
   <!--
