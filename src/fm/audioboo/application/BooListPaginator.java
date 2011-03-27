@@ -113,6 +113,11 @@ public class BooListPaginator implements BooListAdapter.DataSource
      * Returns the group label.
      **/
     public String getGroupLabel(int group);
+
+    /**
+     * Returns the background resource for the given view type.
+     **/
+    public int getBackgroundResource(int viewType);
   }
 
 
@@ -432,5 +437,12 @@ public class BooListPaginator implements BooListAdapter.DataSource
   public String getGroupLabel(int group)
   {
     return mData.getGroupLabel(group);
+  }
+
+
+
+  public int getBackgroundResource(int viewType)
+  {
+    return mData.getBackgroundResource(viewType);
   }
 }

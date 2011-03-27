@@ -257,4 +257,20 @@ public class BrowseActivity extends BooListActivity
     // Unused.
     return null;
   }
+
+
+
+  public int getBackgroundResource(int viewType)
+  {
+    switch (viewType) {
+      case BooListAdapter.VIEW_TYPE_BOO:
+        return R.drawable.boo_list_background;
+
+      case BooListAdapter.VIEW_TYPE_MORE:
+        return R.drawable.boo_list_background_more;
+
+      default:
+        return -1;
+    }
+  }
 }

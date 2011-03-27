@@ -51,10 +51,14 @@ public class BooListAdapter extends BaseExpandableListAdapter
   // Log ID
   private static final String LTAG  = "BooListAdapter";
 
+
+  /***************************************************************************
+   * Public constants
+   **/
   // Item view types
-  private static final int VIEW_TYPE_UNKNOWN  = -1;
-  private static final int VIEW_TYPE_BOO      = 0;
-  private static final int VIEW_TYPE_MORE     = 1;
+  public static final int VIEW_TYPE_UNKNOWN   = -1;
+  public static final int VIEW_TYPE_BOO       = 0;
+  public static final int VIEW_TYPE_MORE      = 1;
 
 
   /***************************************************************************
@@ -87,6 +91,11 @@ public class BooListAdapter extends BaseExpandableListAdapter
      * Returns the group label for the given group.
      **/
     public String getGroupLabel(int group);
+
+    /**
+     * Returns the background resource for the given view type.
+     **/
+    public int getBackgroundResource(int viewType);
   }
 
 
@@ -401,6 +410,12 @@ public class BooListAdapter extends BaseExpandableListAdapter
     }
     Boo boo = boos.get(position);
     view.setTag(boo);
+
+    // Select the view's background.
+    int bgId = data.getBackgroundResource(VIEW_TYPE_BOO);
+    if (-1 != bgId) {
+      view.setBackgroundResource(bgId);
+    }
 
     // Fill view with data.
     TextView text_view = (TextView) view.findViewById(R.id.boo_list_item_author);
@@ -729,6 +744,18 @@ public class BooListAdapter extends BaseExpandableListAdapter
 
   public void prepareMoreView(View view)
   {
+    DataSource data = mData.get();
+    if (null == data) {
+      return;
+    }
+
+    // Select the view's background.
+    int bgId = data.getBackgroundResource(VIEW_TYPE_MORE);
+    if (-1 != bgId) {
+      view.setBackgroundResource(bgId);
+    }
+
+    // Show progress/dots
     View swap = view.findViewById(R.id.boo_list_more_dots);
     if (null != swap) {
       swap.setVisibility(mLoading ? View.GONE : View.VISIBLE);

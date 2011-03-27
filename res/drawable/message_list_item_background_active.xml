@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+ This file is part of AudioBoo, an android program for audio blogging.
+ Copyright (C) 2011 AudioBoo Ltd.
+ All rights reserved.
+
+ Author: Jens Finkhaeuser <jens@finkhaeuser.de>
+
+ $Id$
+-->
+<shape
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="rectangle"
+  >
+  <gradient
+      android:angle="90"
+      android:startColor="@color/bb_deep_blue_bright"
+      android:endColor="@color/bb_deep_blue_dark"
+      android:type="linear"
+    />
+</shape>
