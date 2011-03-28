@@ -390,6 +390,7 @@ public class BooListPaginator implements BooListAdapter.DataSource
             R.layout.boo_list_item,
             R.layout.boo_list_group,
             R.layout.boo_list_more,
+            R.layout.boo_list_upload,
           });
       mAdapter.setDisclosureListener(mDisclosureListener);
       activity.getExpandableListView().setAdapter(mAdapter);
