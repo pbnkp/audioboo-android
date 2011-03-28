@@ -36,18 +36,11 @@
     <fm.audioboo.widget.SpectralView android:id="@+id/record_spectral_view"
         android:layout_width="fill_parent"
         android:layout_height="fill_parent"
-        android:background="@drawable/spectral_view_background"
-        audioboo:inactiveDrawable="@drawable/spectral_view_inactive"
-        audioboo:inactiveTintColor="#bf3b3b3b"
+        android:background="@color/record_grid_background"
         audioboo:numberOfBars="9"
-        audioboo:frameDrawable="@drawable/spectral_view_frame"
-        audioboo:evenBarDrawable="@drawable/spectral_view_even_bar"
-        audioboo:oddBarDrawable="@drawable/spectral_view_odd_bar"
-        audioboo:barPaddingLeft="5dp"
-        audioboo:barPaddingRight="3dp"
-        audioboo:barPaddingTop="3dp"
-        audioboo:barPaddingBottom="3dp"
-        audioboo:gridColor="#cc3b3b3b"
+        audioboo:barDrawable="@color/record_grid_bar"
+        audioboo:gridColor="@color/record_grid_color"
+        audioboo:gridSpacing="4dp"
       />
   </LinearLayout>
 
