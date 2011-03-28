@@ -257,39 +257,4 @@ public class BrowseActivity extends BooListActivity
     // Unused.
     return null;
   }
-
-
-
-  public int getBackgroundResource(int viewType)
-  {
-    switch (viewType) {
-      case BooListAdapter.VIEW_TYPE_BOO:
-        return R.drawable.boo_list_background;
-
-      case BooListAdapter.VIEW_TYPE_MORE:
-        return R.drawable.boo_list_background_more;
-
-      default:
-        return -1;
-    }
-  }
-
-
-
-  public int getElementColor(int element)
-  {
-    switch (element) {
-      case BooListAdapter.ELEMENT_AUTHOR:
-        return R.color.boo_list_author;
-
-      case BooListAdapter.ELEMENT_TITLE:
-        return R.color.boo_list_title;
-
-      case BooListAdapter.ELEMENT_LOCATION:
-        return R.color.boo_list_location;
-
-      default:
-        return -1;
-    }
-  }
 }

@@ -265,6 +265,7 @@ public class MessagesActivity extends BooListActivity
 
 
 
+  @Override
   public int getBackgroundResource(int viewType)
   {
     switch (viewType) {
@@ -281,6 +282,7 @@ public class MessagesActivity extends BooListActivity
 
 
 
+  @Override
   public int getElementColor(int element)
   {
     switch (element) {
