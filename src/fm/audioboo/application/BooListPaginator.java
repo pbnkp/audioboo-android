@@ -123,6 +123,12 @@ public class BooListPaginator implements BooListAdapter.DataSource
      * Returns the state drawable resource for coloring text elements.
      **/
     public int getElementColor(int element);
+
+    /**
+     * Return the view type for a given group. Usually expected to be
+     * VIEW_TYPE_BOO; perhaps VIEW_TYPE_UPLOAD.
+     **/
+    public int getGroupType(int group);
   }
 
 
@@ -456,5 +462,12 @@ public class BooListPaginator implements BooListAdapter.DataSource
   public int getElementColor(int element)
   {
     return mData.getElementColor(element);
+  }
+
+
+
+  public int getGroupType(int group)
+  {
+    return mData.getGroupType(group);
   }
 }

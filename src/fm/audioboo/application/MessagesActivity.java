@@ -299,4 +299,26 @@ public class MessagesActivity extends BooListActivity
         return -1;
     }
   }
+
+
+
+  @Override
+  public int getGroupType(int group)
+  {
+    if (DISPLAY_MODE_INBOX == mDisplayMode) {
+      return BooListAdapter.VIEW_TYPE_BOO;
+    }
+
+    switch (group) {
+      case 0:
+        return BooListAdapter.VIEW_TYPE_UPLOAD;
+
+      case 1:
+        return BooListAdapter.VIEW_TYPE_BOO;
+
+      default:
+        Log.e(LTAG, "unreachable line reached.");
+        return -1;
+    }
+  }
 }

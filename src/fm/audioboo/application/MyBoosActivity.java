@@ -223,4 +223,23 @@ public class MyBoosActivity extends BooListActivity
         return null;
     }
   }
+
+
+
+  @Override
+  public int getGroupType(int group)
+  {
+    switch (group) {
+      case 0:
+        return BooListAdapter.VIEW_TYPE_UPLOAD;
+
+      case 1:
+      case 2:
+        return BooListAdapter.VIEW_TYPE_BOO;
+
+      default:
+        Log.e(LTAG, "unreachable line reached.");
+        return -1;
+    }
+  }
 }

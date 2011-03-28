@@ -435,4 +435,11 @@ public abstract class BooListActivity
         return -1;
     }
   }
+
+
+
+  public int getGroupType(int group)
+  {
+    return BooListAdapter.VIEW_TYPE_BOO;
+  }
 }

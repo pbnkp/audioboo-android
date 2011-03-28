@@ -60,6 +60,7 @@ public class BooListAdapter extends BaseExpandableListAdapter
   public static final int VIEW_TYPE_UNKNOWN   = -1;
   public static final int VIEW_TYPE_BOO       = 0;
   public static final int VIEW_TYPE_MORE      = 1;
+  public static final int VIEW_TYPE_UPLOAD    = 2;
 
   // List item elements
   public static final int ELEMENT_AUTHOR      = 0;
@@ -107,6 +108,12 @@ public class BooListAdapter extends BaseExpandableListAdapter
      * Returns the state drawable resource for coloring text elements.
      **/
     public int getElementColor(int element);
+
+    /**
+     * Return the view type for a given group. Usually expected to be
+     * VIEW_TYPE_BOO; perhaps VIEW_TYPE_UPLOAD.
+     **/
+    public int getGroupType(int group);
   }
 
 
@@ -401,103 +408,38 @@ public class BooListAdapter extends BaseExpandableListAdapter
           view = inflater.inflate(mLayouts[2], null);
           break;
 
+        case VIEW_TYPE_UPLOAD:
+          view = inflater.inflate(mLayouts[3], null);
+          break;
+
         default:
           // XXX Unreachable.
           return null;
       }
     }
 
-    if (VIEW_TYPE_MORE == type) {
-      prepareMoreView(view);
-      return view;
+
+    boolean ret = false;
+    switch (type) {
+      case VIEW_TYPE_BOO:
+        ret = prepareBooView(activity, data, group, position, view);
+        break;
+
+      case VIEW_TYPE_MORE:
+        ret = prepareMoreView(activity, data, view);
+        break;
+
+      case VIEW_TYPE_UPLOAD:
+        ret = prepareUploadView(activity, data, view);
+        break;
+
+      default:
+        // XXX Unreachable.
+        return null;
     }
 
-    // Set the view's tag to the Boo we want to display. This is for later
-    // identification.
-    List<Boo> boos = data.getGroup(group);
-    if (position < 0 || position >= boos.size()) {
-      Log.e(LTAG, "Position " + position + " out of range for group " + group);
+    if (!ret) {
       return null;
-    }
-    Boo boo = boos.get(position);
-    view.setTag(boo);
-
-    // Select the view's background.
-    int bgId = data.getBackgroundResource(VIEW_TYPE_BOO);
-    if (-1 != bgId) {
-      view.setBackgroundResource(bgId);
-    }
-
-    // Fill view with data.
-    TextView text_view = (TextView) view.findViewById(R.id.boo_list_item_author);
-    if (null != text_view) {
-      setTextColor(activity, data, text_view, ELEMENT_AUTHOR);
-
-      if (null != boo.mData.mUser && null != boo.mData.mUser.mUsername) {
-        text_view.setText(boo.mData.mUser.mUsername);
-      }
-      else {
-        // FIXME?
-        text_view.setText(activity.getResources().getString(R.string.boo_unknown_author));
-      }
-    }
-
-    text_view = (TextView) view.findViewById(R.id.boo_list_item_title);
-    if (null != text_view) {
-      setTextColor(activity, data, text_view, ELEMENT_TITLE);
-
-      text_view.setText(null != boo.mData.mTitle ? boo.mData.mTitle : "");
-    }
-
-    text_view = (TextView) view.findViewById(R.id.boo_list_item_location);
-    if (null != text_view) {
-      setTextColor(activity, data, text_view, ELEMENT_LOCATION);
-
-      if (null != boo.mData.mLocation && null != boo.mData.mLocation.mDescription) {
-        text_view.setText(boo.mData.mLocation.mDescription);
-      }
-      else {
-        text_view.setText("");
-      }
-    }
-
-    // If the image cache contains an appropriate image at the right size, then
-    // we'll display that. If not, display a default image. We need to do the
-    // second in case the item view is being reused.
-    ImageView image_view = (ImageView) view.findViewById(R.id.boo_list_item_image);
-    if (null != image_view) {
-      // First, determine the url we want to display.
-      Pair<String, Uri> image_url = getDisplayUrl(boo);
-
-      boolean customImageSet = false;
-      if (null != image_url) {
-        // If we don't know the image dimensions yet, determine them now.
-        if (-1 == mDimensions) {
-          mDimensions = image_view.getLayoutParams().width
-            - image_view.getPaddingLeft() - image_view.getPaddingRight();
-        }
-
-        // Next, try to grab an image from the cache.
-        Bitmap bitmap = Globals.get().mImageCache.get(image_url.mFirst, mDimensions);
-
-        if (null != bitmap) {
-          image_view.setImageDrawable(new BitmapDrawable(bitmap));
-          customImageSet = true;
-        }
-      }
-
-      // If we were not able to set a custom image here, default to the
-      // anonymous_boo one.
-      if (!customImageSet) {
-        image_view.setImageResource(R.drawable.anonymous_boo);
-      }
-    }
-
-    // Disclosure
-    View disclosure = view.findViewById(R.id.boo_list_item_disclosure);
-    if (null != disclosure && null != mDisclosureListener) {
-      disclosure.setTag(boo);
-      disclosure.setOnClickListener(mDisclosureListener);
     }
 
     return view;
@@ -512,7 +454,7 @@ public class BooListAdapter extends BaseExpandableListAdapter
       return 0;
     }
 
-    int ret = 1;
+    int ret = 2;
     for (int i = 0 ; i < data.getGroupCount() ; ++i) {
       if (data.doesPaginate(i)) {
         ret += 1;
@@ -538,7 +480,7 @@ public class BooListAdapter extends BaseExpandableListAdapter
     }
 
     if (!data.doesPaginate(group) || position < boos.size()) {
-      return VIEW_TYPE_BOO;
+      return data.getGroupType(group);
     }
     return VIEW_TYPE_MORE;
   }
@@ -764,19 +706,120 @@ public class BooListAdapter extends BaseExpandableListAdapter
   {
     mLoading = loading;
     if (null != view) {
-      prepareMoreView(view);
+      ExpandableListActivity activity = mActivity.get();
+      if (null == activity) {
+        return;
+      }
+
+      DataSource data = mData.get();
+      if (null == data) {
+        return;
+      }
+
+
+      prepareMoreView(activity, data, view);
     }
   }
 
 
 
-  public void prepareMoreView(View view)
+  private boolean prepareBooView(ExpandableListActivity activity, DataSource data, int group, int position, View view)
   {
-    DataSource data = mData.get();
-    if (null == data) {
-      return;
+    // Set the view's tag to the Boo we want to display. This is for later
+    // identification.
+    List<Boo> boos = data.getGroup(group);
+    if (position < 0 || position >= boos.size()) {
+      Log.e(LTAG, "Position " + position + " out of range for group " + group);
+      return false;
+    }
+    Boo boo = boos.get(position);
+    view.setTag(boo);
+
+    // Select the view's background.
+    int bgId = data.getBackgroundResource(VIEW_TYPE_BOO);
+    if (-1 != bgId) {
+      view.setBackgroundResource(bgId);
     }
 
+    // Fill view with data.
+    TextView text_view = (TextView) view.findViewById(R.id.boo_list_item_author);
+    if (null != text_view) {
+      setTextColor(activity, data, text_view, ELEMENT_AUTHOR);
+
+      if (null != boo.mData.mUser && null != boo.mData.mUser.mUsername) {
+        text_view.setText(boo.mData.mUser.mUsername);
+      }
+      else {
+        // FIXME?
+        text_view.setText(activity.getResources().getString(R.string.boo_unknown_author));
+      }
+    }
+
+    text_view = (TextView) view.findViewById(R.id.boo_list_item_title);
+    if (null != text_view) {
+      setTextColor(activity, data, text_view, ELEMENT_TITLE);
+
+      text_view.setText(null != boo.mData.mTitle ? boo.mData.mTitle : "");
+    }
+
+    text_view = (TextView) view.findViewById(R.id.boo_list_item_location);
+    if (null != text_view) {
+      setTextColor(activity, data, text_view, ELEMENT_LOCATION);
+
+      if (null != boo.mData.mLocation && null != boo.mData.mLocation.mDescription) {
+        text_view.setText(boo.mData.mLocation.mDescription);
+      }
+      else {
+        text_view.setText("");
+      }
+    }
+
+    // If the image cache contains an appropriate image at the right size, then
+    // we'll display that. If not, display a default image. We need to do the
+    // second in case the item view is being reused.
+    ImageView image_view = (ImageView) view.findViewById(R.id.boo_list_item_image);
+    if (null != image_view) {
+      // First, determine the url we want to display.
+      Pair<String, Uri> image_url = getDisplayUrl(boo);
+
+      boolean customImageSet = false;
+      if (null != image_url) {
+        // If we don't know the image dimensions yet, determine them now.
+        if (-1 == mDimensions) {
+          mDimensions = image_view.getLayoutParams().width
+            - image_view.getPaddingLeft() - image_view.getPaddingRight();
+        }
+
+        // Next, try to grab an image from the cache.
+        Bitmap bitmap = Globals.get().mImageCache.get(image_url.mFirst, mDimensions);
+
+        if (null != bitmap) {
+          image_view.setImageDrawable(new BitmapDrawable(bitmap));
+          customImageSet = true;
+        }
+      }
+
+      // If we were not able to set a custom image here, default to the
+      // anonymous_boo one.
+      if (!customImageSet) {
+        image_view.setImageResource(R.drawable.anonymous_boo);
+      }
+    }
+
+    // Disclosure
+    View disclosure = view.findViewById(R.id.boo_list_item_disclosure);
+    if (null != disclosure && null != mDisclosureListener) {
+      disclosure.setTag(boo);
+      disclosure.setOnClickListener(mDisclosureListener);
+    }
+
+    return true;
+  }
+
+
+
+  private boolean prepareMoreView(ExpandableListActivity activity, DataSource data, View view)
+  {
     // Select the view's background.
     int bgId = data.getBackgroundResource(VIEW_TYPE_MORE);
     if (-1 != bgId) {
@@ -793,8 +836,17 @@ public class BooListAdapter extends BaseExpandableListAdapter
     if (null != swap) {
       swap.setVisibility(mLoading ? View.VISIBLE : View.GONE);
     }
+
+    return true;
   }
 
+
+
+  private boolean prepareUploadView(ExpandableListActivity activity, DataSource data, View view)
+  {
+    // FIXME
+    return true;
+  }
 
 
   public boolean isChildSelectable(int groupPosition, int childPosition)
