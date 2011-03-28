@@ -29,7 +29,7 @@ import java.lang.ref.WeakReference;
 import android.util.Log;
 
 /**
- * Client class for talking to the AudibooService's BooPlaybackService
+ * Client class for talking to the AudiobooService's BooPlaybackService
  **/
 public class BooPlayerClient
 {
