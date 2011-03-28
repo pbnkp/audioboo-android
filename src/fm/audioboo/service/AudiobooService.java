@@ -71,8 +71,15 @@ public class AudiobooService
   public IBinder onBind(Intent intent)
   {
     if (IBooPlaybackService.class.getName().equals(intent.getAction())) {
-      return mBinder;
+      return mPlaybackServiceBinder;
     }
+    else if (IUploadService.class.getName().equals(intent.getAction())) {
+      return mUploadServiceBinder;
+    }
+//    else if (INotificationService.class.getName().equals(intent.getAction())) {
+//    FIXME
+//      return mNotificationServiceBinder;
+//    }
     return null;
   }
 
@@ -168,7 +175,7 @@ public class AudiobooService
   /***************************************************************************
    * IBooPlaybackService implementation
    **/
-  private final IBooPlaybackService.Stub mBinder = new IBooPlaybackService.Stub()
+  private final IBooPlaybackService.Stub mPlaybackServiceBinder = new IBooPlaybackService.Stub()
   {
     public void play(BooData boo, boolean playImmediately)
     {
@@ -253,8 +260,50 @@ public class AudiobooService
     {
       return mPlayer.getDuration();
     }
+  };
 
 
+
+  /***************************************************************************
+   * IUploadService implementation
+   **/
+  private final IUploadService.Stub mUploadServiceBinder = new IUploadService.Stub()
+  {
+    public boolean upload(BooData boo)
+    {
+      Log.d(LTAG, "Scheduled for upload: " + new Boo(boo));
+//      mPlayer.play(new Boo(boo), playImmediately);
+
+      /*
+      // Create notification
+      NotificationManager nm = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+
+      // Create intent for notification clicks. We want to open the Boo's detail
+      // view.
+      Intent intent = new Intent(AudiobooService.this, BooDetailsActivity.class);
+      intent.putExtra(BooDetailsActivity.EXTRA_BOO_DATA, (Parcelable) boo);
+      PendingIntent contentIntent = PendingIntent.getActivity(AudiobooService.this, 0, intent, 0);
+
+      // Create Notification
+      Resources res = getResources();
+      String title = (null != boo.mTitle) ? boo.mTitle : res.getString(R.string.notification_default_title);
+      String username = (null != boo.mUser && null != boo.mUser.mUsername) ? boo.mUser.mUsername : res.getString(R.string.notification_unknown_user);
+      String text = String.format(res.getString(R.string.notification_text), username);
+      Notification notification = new Notification(R.drawable.notification,
+          null, System.currentTimeMillis());
+      notification.setLatestEventInfo(AudiobooService.this, title, text, contentIntent);
+
+      // Set ongoing and no-clear flags to ensure the notification stays until
+      // cleared by this service.
+      notification.flags |= Notification.FLAG_ONGOING_EVENT;
+      notification.flags |= Notification.FLAG_NO_CLEAR;
+
+      // Install notification
+      nm.notify(NOTIFICATION_PLAYING_BACK, notification);
+      */
+
+      return true;
+    }
   };
 }
 

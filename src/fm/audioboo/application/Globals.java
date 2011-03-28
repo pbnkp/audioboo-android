@@ -50,6 +50,7 @@ import android.content.res.Resources;
 import android.provider.Settings;
 
 import fm.audioboo.service.BooPlayerClient;
+import fm.audioboo.service.UploadClient;
 import fm.audioboo.data.User;
 
 import java.lang.ref.WeakReference;
@@ -60,7 +61,9 @@ import android.util.Log;
  * Globals; uses singleton pattern to ensure that all members exist only
  * once. Created and destroyed when the app is started/stopped.
  **/
-public class Globals implements BooPlayerClient.BindListener
+public class Globals
+       implements BooPlayerClient.BindListener,
+                  UploadClient.BindListener
 {
   /***************************************************************************
    * Private constants
@@ -218,6 +221,7 @@ public class Globals implements BooPlayerClient.BindListener
   public API                    mAPI;
   public ImageCache             mImageCache;
   public BooPlayerClient        mPlayer;
+  public UploadClient           mUploader;
   public TitleGenerator         mTitleGenerator;
   public ObjectMemoryCache      mObjectCache;
 
@@ -274,6 +278,13 @@ public class Globals implements BooPlayerClient.BindListener
 
 
 
+  public void onBound(UploadClient client)
+  {
+    mUploader = client;
+  }
+
+
+
   /***************************************************************************
    * Implementation
    **/
@@ -285,6 +296,7 @@ public class Globals implements BooPlayerClient.BindListener
     mImageCache = new ImageCache(context, IMAGE_CACHE_MAX);
 
     boolean bindResult = BooPlayerClient.bindService(context, this);
+    bindResult = UploadClient.bindService(context, this);
 
     mTitleGenerator = new TitleGenerator(context);
 
