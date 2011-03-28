@@ -316,6 +316,7 @@
 
   <!-- Boo details -->
   <string name="details_user_not_available">Nothing is known about the Mystery User!</string>
+  <string name="details_edit_label">Edit</string>
 
   <!-- Contacts -->
   <string name="contacts_title">Contacts</string>

@@ -58,7 +58,8 @@ public class BooDetailsActivity
    * Public constants
    **/
   // Extra names
-  public static final String EXTRA_BOO_DATA = "fm.audioboo.extras.boo-data";
+  public static final String EXTRA_BOO_DATA   = "fm.audioboo.extras.boo-data";
+  public static final String EXTRA_SHOW_EDIT  = "fm.audioboo.extras.show-edit";
 
 
   /***************************************************************************
@@ -83,7 +84,8 @@ public class BooDetailsActivity
   /***************************************************************************
    * Private data
    **/
-  private Boo   mBoo;
+  private Boo     mBoo;
+  private boolean mShowEdit;
 
 
   /***************************************************************************
@@ -102,6 +104,8 @@ public class BooDetailsActivity
           + EXTRA_BOO_DATA + "' extra.");
     }
     mBoo = new Boo(data);
+
+    mShowEdit = 0 != getIntent().getIntExtra(EXTRA_SHOW_EDIT, 0);
 
     // Fill view with data!
     populateView();
@@ -305,6 +309,25 @@ public class BooDetailsActivity
         }
       }));
 
+    }
+
+    // Show edit button
+    View edit = findViewById(R.id.boo_edit);
+    if (null != edit) {
+      edit.setVisibility(mShowEdit ? View.VISIBLE : View.GONE);
+
+      if (mShowEdit) {
+        edit.setOnClickListener(new View.OnClickListener() {
+            public void onClick(View v)
+            {
+              Intent i = new Intent(BooDetailsActivity.this, PublishActivity.class);
+              mBoo.writeToFile();
+              i.putExtra(PublishActivity.EXTRA_BOO_FILENAME, mBoo.mData.mFilename);
+              // FIXME startActivityForResult?
+              startActivity(i);
+            }
+        });
+      }
     }
   }
 

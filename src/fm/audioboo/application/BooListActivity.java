@@ -109,6 +109,17 @@ public abstract class BooListActivity
   public abstract String getTitleString(int api);
 
 
+  /**
+   * Subclasses may want to modify the intent before it's sent to open the
+   * Details page.
+   **/
+  public void modifyDisclosureIntent(Boo boo, Intent intent)
+  {
+    // Default implementation is to pass.
+  }
+
+
+
   /***************************************************************************
    * Implementation
    **/
@@ -308,6 +319,7 @@ public abstract class BooListActivity
     }
     Intent i = new Intent(this, BooDetailsActivity.class);
     i.putExtra(BooDetailsActivity.EXTRA_BOO_DATA, (Parcelable) boo.mData);
+    modifyDisclosureIntent(boo, i);
     startActivity(i);
   }
 

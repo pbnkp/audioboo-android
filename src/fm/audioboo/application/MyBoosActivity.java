@@ -13,6 +13,7 @@ package fm.audioboo.application;
 
 import android.os.Bundle;
 
+import android.content.Intent;
 import android.content.res.Resources;
 
 import android.widget.ListView;
@@ -72,6 +73,25 @@ public class MyBoosActivity extends BooListActivity
   public String getTitleString(int api)
   {
     return getResources().getString(R.string.my_boos_title);
+  }
+
+
+
+  @Override
+  public void modifyDisclosureIntent(Boo boo, Intent intent)
+  {
+    if (null != boo.mData.mUploadInfo) {
+      // If we have upload info, this shouldn't even happen.
+      Log.e(LTAG, "Huh, disclosure clicked on an upload item?");
+      return;
+    }
+    else if (null != boo.mData.mUploadedAt) {
+      // Must be uploaded... we'll not modify stuff here.
+      return;
+    }
+
+    // Right, neither uploaded nor uploading -- must be a draft.
+    intent.putExtra(BooDetailsActivity.EXTRA_SHOW_EDIT, 1);
   }
 
 
