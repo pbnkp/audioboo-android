@@ -283,7 +283,44 @@ public class Boo
 
   public boolean isLocal()
   {
-    return (mData != null && mData.mRecordings != null);
+    if (null == mData) {
+      return false;
+    }
+
+    if (null != mData.mRecordings) {
+      return true;
+    }
+
+    if (null == mData.mHighMP3Url) {
+      return false;
+    }
+
+    String scheme = mData.mHighMP3Url.getScheme();
+    if ("file".equals(scheme)) {
+      return true;
+    }
+
+    return false;
+  }
+
+
+
+  public boolean isRemote()
+  {
+    if (null == mData) {
+      return false;
+    }
+
+    if (null == mData.mHighMP3Url) {
+      return false;
+    }
+
+    String scheme = mData.mHighMP3Url.getScheme();
+    if ("http".equals(scheme) || "https".equals(scheme)) {
+      return true;
+    }
+
+    return false;
   }
 
 

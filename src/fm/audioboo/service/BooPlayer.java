@@ -510,20 +510,14 @@ public class BooPlayer extends Thread
       if (boo.isLocal()) {
         mPlayer = new FLACPlayerWrapper(this);
       }
+      else if (boo.isRemote()) {
+        // Handle everything else via the APIPlayer
+        mPlayer = new APIPlayer(this);
+      }
       else {
-        // Examine the Boo's Uri. From that we determine what player to instanciate.
-        String path = boo.mData.mHighMP3Url.getPath();
-        int ext_sep = path.lastIndexOf(".");
-        String ext = path.substring(ext_sep).toLowerCase();
-
-        if (ext.equals(".flac")) {
-          // Start FLAC player.
-          mPlayer = new FLACPlayerWrapper(this);
-        }
-        else {
-          // Handle everything else via the APIPlayer
-          mPlayer = new APIPlayer(this);
-        }
+        // Not sure what to do here, exactly.
+        Log.e(LTAG, "Boo " + boo + " appears to be neither local nor remote. Huh.");
+        return;
       }
 
       // Now we can use the base API to start playback.
