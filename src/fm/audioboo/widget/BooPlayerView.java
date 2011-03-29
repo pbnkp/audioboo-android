@@ -85,15 +85,12 @@ public class BooPlayerView
   // Context
   private WeakReference<Context>  mContext;
 
-  // Seekbar instance
+  // Views
   private SeekBar                 mSeekBar;
-
-  // Button instance
-  private PlayPauseButton         mButton;
-
-  // Metadata
+  private NotifyingToggleButton   mButton;
   private TextView                mAuthor;
   private TextView                mTitle;
+  private View                    mDisclosure;
 
   // Listener
   private PlaybackEndListener     mListener;
@@ -140,6 +137,18 @@ public class BooPlayerView
 
 
 
+  public void setEnabled(boolean enabled)
+  {
+    if (null != mSeekBar) {
+      mSeekBar.setEnabled(enabled);
+    }
+    if (null != mButton) {
+      mButton.setEnabled(enabled);
+    }
+  }
+
+
+
   public void play(Boo boo)
   {
     play(boo, true);
@@ -168,11 +177,6 @@ public class BooPlayerView
 
   private void resetProgress()
   {
-    if (null != mButton) {
-      mButton.setIndeterminate(false);
-      mSeekBar.setMax(PROGRESS_MAX);
-      mButton.setProgress(0);
-    }
     if (null != mSeekBar) {
       mSeekBar.setIndeterminate(false);
       mSeekBar.setMax(PROGRESS_MAX);
@@ -184,9 +188,6 @@ public class BooPlayerView
 
   private void showPlaying()
   {
-    if (null != mButton) {
-      mButton.setIndeterminate(false);
-    }
     if (null != mSeekBar) {
       mSeekBar.setIndeterminate(false);
     }
@@ -196,9 +197,6 @@ public class BooPlayerView
 
   private void showBuffering()
   {
-    if (null != mButton) {
-      mButton.setIndeterminate(true);
-    }
     if (null != mSeekBar) {
       mSeekBar.setIndeterminate(true);
     }
@@ -362,7 +360,7 @@ public class BooPlayerView
     }
 
     // Set up play/pause button
-    mButton = (PlayPauseButton) content.findViewById(R.id.boo_player_button);
+    mButton = (NotifyingToggleButton) content.findViewById(R.id.boo_player_button);
     if (null != mButton) {
       setButtonState(Constants.STATE_NONE);
       mButton.setOnCheckedChangeListener(this);
@@ -374,6 +372,7 @@ public class BooPlayerView
     // Remember
     mTitle = (TextView) content.findViewById(R.id.boo_player_title);
     mAuthor = (TextView) content.findViewById(R.id.boo_player_author);
+    mDisclosure = content.findViewById(R.id.boo_player_disclosure);
 
     // FIXME need this in main view, too!
     Globals g = Globals.get();
@@ -462,10 +461,6 @@ public class BooPlayerView
       int cur = (int) ((progress / total) * PROGRESS_MAX);
       //Log.d(LTAG, "cur/max: " + cur + "/" + PROGRESS_MAX);
 
-      if (null != mButton) {
-        mButton.setMax(PROGRESS_MAX);
-        mButton.setProgress(cur);
-      }
       if (null != mSeekBar) {
         mSeekBar.setMax(PROGRESS_MAX);
         mSeekBar.setProgress(cur);
