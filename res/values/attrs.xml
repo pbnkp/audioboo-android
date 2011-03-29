@@ -24,12 +24,10 @@
     <attr name="pieColor" format="color" />
   </declare-styleable>
 
-  <!-- Custom PlayPauseProgressView attributes -->
-  <declare-styleable name="PlayPauseProgressView" parent="PieProgressView">
-    <!-- Bitmap for the indeterminate state. -->
-    <attr name="indeterminateBitmap" format="reference" />
-    <!-- Bitmap for the mask applied to the above bitmap. -->
-    <attr name="indeterminateMaskBitmap" format="reference" />
+  <!-- Custom BooPlayerView attributes -->
+  <declare-styleable name="BooPlayerView">
+    <!-- Show or hide the disclosure icon? -->
+    <attr name="showDisclosure" format="boolean" />
   </declare-styleable>
 
   <!-- Custom SpectralView attributes -->

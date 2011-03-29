@@ -9,7 +9,8 @@
 
  $Id$
 -->
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="fill_parent"
     android:layout_height="wrap_content"
     android:layout_margin="0dp"
@@ -88,14 +89,13 @@
     </LinearLayout>
 
     <!-- Disclosure -->
-    <ImageView android:id="@+id/boo_player_disclosure"
+    <Button android:id="@+id/boo_player_disclosure"
         android:layout_width="30dp"
         android:layout_height="fill_parent"
         android:layout_alignParentTop="true"
         android:layout_alignParentRight="true"
         android:padding="2dp"
-        android:clickable="true"
-        android:src="@drawable/disclosure"
+        android:background="@drawable/disclosure"
       />
   </LinearLayout>
 

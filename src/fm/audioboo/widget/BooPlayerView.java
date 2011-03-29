@@ -12,6 +12,7 @@
 package fm.audioboo.widget;
 
 import android.content.Context;
+import android.content.res.TypedArray;
 import android.util.AttributeSet;
 
 import android.view.View;
@@ -20,6 +21,7 @@ import android.view.View.OnTouchListener;
 import android.view.MotionEvent;
 
 import android.widget.RelativeLayout;
+import android.widget.Button;
 import android.widget.CompoundButton;
 import android.widget.SeekBar;
 import android.widget.TextView;
@@ -90,7 +92,10 @@ public class BooPlayerView
   private NotifyingToggleButton   mButton;
   private TextView                mAuthor;
   private TextView                mTitle;
-  private View                    mDisclosure;
+  private Button                  mDisclosure;
+
+  // Configurables
+  private boolean                 mShowDisclosure;
 
   // Listener
   private PlaybackEndListener     mListener;
@@ -102,7 +107,7 @@ public class BooPlayerView
   public BooPlayerView(Context context)
   {
     super(context);
-    setup(context);
+    setup(context, null);
   }
 
 
@@ -110,7 +115,7 @@ public class BooPlayerView
   public BooPlayerView(Context context, AttributeSet attrs)
   {
     super(context, attrs);
-    setup(context);
+    setup(context, attrs);
   }
 
 
@@ -118,7 +123,7 @@ public class BooPlayerView
   public BooPlayerView(Context context, AttributeSet attrs, int defStyle)
   {
     super(context, attrs);
-    setup(context);
+    setup(context, null);
   }
 
 
@@ -137,6 +142,16 @@ public class BooPlayerView
 
 
 
+  public void showDisclosure(boolean show)
+  {
+    mShowDisclosure = show;
+    if (null != mDisclosure) {
+      mDisclosure.setVisibility(show ? View.VISIBLE : View.GONE);
+    }
+  }
+
+
+
   public void setEnabled(boolean enabled)
   {
     if (null != mSeekBar) {
@@ -144,6 +159,9 @@ public class BooPlayerView
     }
     if (null != mButton) {
       mButton.setEnabled(enabled);
+    }
+    if (null != mDisclosure) {
+      mDisclosure.setEnabled(enabled);
     }
   }
 
@@ -372,7 +390,12 @@ public class BooPlayerView
     // Remember
     mTitle = (TextView) content.findViewById(R.id.boo_player_title);
     mAuthor = (TextView) content.findViewById(R.id.boo_player_author);
-    mDisclosure = content.findViewById(R.id.boo_player_disclosure);
+    mDisclosure = (Button) content.findViewById(R.id.boo_player_disclosure);
+
+    // Show disclosure?
+    if (null != mDisclosure) {
+      showDisclosure(mShowDisclosure);
+    }
 
     // FIXME need this in main view, too!
     Globals g = Globals.get();
@@ -404,7 +427,7 @@ public class BooPlayerView
 
 
 
-  private void setup(Context context)
+  private void setup(Context context, AttributeSet attrs)
   {
     mContext = new WeakReference<Context>(context);
 
@@ -417,6 +440,12 @@ public class BooPlayerView
           return true;
         }
     });
+
+    if (null != attrs) {
+      TypedArray a = context.obtainStyledAttributes(attrs, R.styleable.BooPlayerView);
+      mShowDisclosure = a.getBoolean(R.styleable.BooPlayerView_showDisclosure, true);
+      a.recycle();
+    }
   }
 
 
