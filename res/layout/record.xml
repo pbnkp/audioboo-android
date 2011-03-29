@@ -7,68 +7,110 @@
 
  $Id$
 -->
-<RelativeLayout
+<LinearLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:audioboo="http://schemas.android.com/apk/res/fm.audioboo.application"
     android:layout_width="fill_parent"
     android:layout_height="fill_parent"
-    android:background="#3b3b3b"
+    android:orientation="vertical"
   >
-  <LinearLayout
+  <RelativeLayout
       android:layout_width="fill_parent"
-      android:layout_height="fill_parent"
-      android:orientation="vertical"
-      android:gravity="center"
-      android:padding="10dp"
+      android:layout_height="330dp"
+      android:background="@color/record_background"
+      android:gravity="top|center_vertical"
     >
-    <!-- Record button -->
-    <fm.audioboo.widget.RecordButton android:id="@+id/record_button"
-        android:layout_width="fill_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="5dp"
-        android:gravity="center"
-        audioboo:textInitial="Start"
-        audioboo:textOn="Pause"
-        audioboo:textOff="Resume"
-      />
-
-    <!-- Pseudo-spectral analysis view -->
+    <!-- 0. Pseudo-spectral analysis view -->
     <fm.audioboo.widget.SpectralView android:id="@+id/record_spectral_view"
-        android:layout_width="fill_parent"
-        android:layout_height="fill_parent"
+        android:layout_width="288dp"
+        android:layout_height="194dp"
+        android:layout_alignParentTop="true"
+        android:layout_alignParentLeft="true"
+        android:layout_marginTop="35dp"
+        android:layout_marginLeft="16dp"
         android:background="@color/record_grid_background"
         audioboo:numberOfBars="9"
         audioboo:barDrawable="@color/record_grid_bar"
         audioboo:gridColor="@color/record_grid_color"
         audioboo:gridSpacing="4dp"
       />
-  </LinearLayout>
 
-  <!-- Disabled overlay -->
-  <LinearLayout android:id="@+id/record_overlay"
-      android:layout_width="fill_parent"
-      android:layout_height="fill_parent"
-      android:gravity="center"
-      android:clickable="true"
-      android:visibility="gone"
-      android:background="@color/record_overlay_background"
-    >
-    <TextView android:id="@+id/record_countdown"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:textSize="@dimen/record_initial_countdown"
-        android:textStyle="bold"
-        android:background="@android:color/transparent"
+    <!-- 1. Shadow overlay -->
+    <ImageView
+        android:layout_width="fill_parent"
+        android:layout_height="fill_parent"
+        android:layout_alignParentTop="true"
+        android:src="@drawable/inner_shadow"
+        android:scaleType="fitXY"
       />
-  </LinearLayout>
+
+    <!-- 2. Main view content -->
+    <RelativeLayout
+        android:layout_width="fill_parent"
+        android:layout_height="fill_parent"
+        android:gravity="center"
+        android:paddingLeft="15dp"
+        android:paddingRight="15dp"
+      >
+      <!-- Addressee field -->
+      <TextView android:id="@+id/record_adressee"
+          android:layout_width="fill_parent"
+          android:layout_height="wrap_content"
+          android:layout_alignParentTop="true"
+          android:layout_alignParentLeft="true"
+          android:layout_marginTop="5dp"
+          android:gravity="center"
+          android:text="To: unwesen"
+          android:textColor="@color/record_adressee"
+          android:textStyle="bold"
+          android:textSize="@dimen/text_larger"
+          android:shadowColor="@color/text_shadow"
+          android:shadowRadius="1"
+          android:shadowDx="0"
+          android:shadowDy="-1"
+        />
 
 
-  <!-- Player view -->
-  <fm.audioboo.widget.BooPlayerView
-      android:id="@+id/record_player"
+      <!-- Player view -->
+      <!-- FIXME swap this out. -->
+      <fm.audioboo.widget.BooPlayerView
+          android:id="@+id/record_player"
+          android:layout_width="fill_parent"
+          android:layout_height="wrap_content"
+          android:layout_alignParentBottom="true"
+          android:layout_marginBottom="5dp"
+        />
+    </RelativeLayout>
+
+    <!-- 3. Disabled overlay -->
+    <LinearLayout android:id="@+id/record_overlay"
+        android:layout_width="fill_parent"
+        android:layout_height="fill_parent"
+        android:gravity="center"
+        android:clickable="true"
+        android:visibility="gone"
+        android:background="@color/record_overlay_background"
+      >
+      <TextView android:id="@+id/record_countdown"
+          android:layout_width="wrap_content"
+          android:layout_height="wrap_content"
+          android:textSize="@dimen/record_initial_countdown"
+          android:textStyle="bold"
+          android:background="@android:color/transparent"
+        />
+    </LinearLayout>
+  </RelativeLayout>
+
+  <!-- Record button -->
+  <fm.audioboo.widget.RecordButton android:id="@+id/record_button"
       android:layout_width="fill_parent"
       android:layout_height="wrap_content"
-      android:layout_alignParentBottom="true"
-      android:visibility="invisible"
+      android:layout_marginTop="5dp"
+      android:gravity="center"
+      audioboo:textInitial="Start"
+      audioboo:textOn="Pause"
+      audioboo:textOff="Resume"
     />
-</RelativeLayout>
+
+
+</LinearLayout>

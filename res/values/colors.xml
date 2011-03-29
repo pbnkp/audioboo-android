@@ -76,6 +76,9 @@
   <color name="record_grid_color">@color/bb_deep_blue_dark</color>
   <color name="record_grid_background">@color/bb_deep_blue_bright</color>
   <color name="record_grid_bar">@android:color/white</color>
+  <color name="record_background">@color/bb_deep_blue_dark</color>
+
+  <color name="record_adressee">@android:color/white</color>
 
   <!--
     Colors for the player view
