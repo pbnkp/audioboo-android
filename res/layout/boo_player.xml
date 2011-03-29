@@ -91,7 +91,7 @@
     <!-- Disclosure -->
     <Button android:id="@+id/boo_player_disclosure"
         android:layout_width="30dp"
-        android:layout_height="fill_parent"
+        android:layout_height="30dp"
         android:layout_alignParentTop="true"
         android:layout_alignParentRight="true"
         android:padding="2dp"
