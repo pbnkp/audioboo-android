@@ -750,7 +750,6 @@ public class BooListAdapter extends BaseExpandableListAdapter
         text_view.setText(boo.mData.mUser.mUsername);
       }
       else {
-        // FIXME?
         text_view.setText(activity.getResources().getString(R.string.boo_unknown_author));
       }
     }
@@ -770,7 +769,7 @@ public class BooListAdapter extends BaseExpandableListAdapter
         text_view.setText(boo.mData.mLocation.mDescription);
       }
       else {
-        text_view.setText("");
+        text_view.setText(activity.getResources().getString(R.string.boo_unknown_title));
       }
     }
 

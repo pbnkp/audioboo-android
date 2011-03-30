@@ -289,6 +289,7 @@
     Placeholder strings
   -->
   <string name="boo_unknown_author">Mystery User</string>
+  <string name="boo_unknown_title">unnamed boo</string>
 
   <!--
     Date formatting
