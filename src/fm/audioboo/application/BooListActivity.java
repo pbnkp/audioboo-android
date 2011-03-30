@@ -25,9 +25,8 @@ import android.widget.Toast;
 import java.util.List;
 
 import fm.audioboo.service.Constants;
-import fm.audioboo.widget.BooPlayerView;
-
 import fm.audioboo.service.BooPlayerClient;
+import fm.audioboo.data.PlayerState;
 
 import android.util.Log;
 
@@ -37,7 +36,8 @@ import android.util.Log;
 public abstract class BooListActivity
        extends ExpandableListActivity
        implements BooListPaginator.Callback,
-                  BooListPaginator.PaginatorDataSource
+                  BooListPaginator.PaginatorDataSource,
+                  BooPlayerClient.ProgressListener
 {
   /***************************************************************************
    * Private constants
@@ -61,37 +61,6 @@ public abstract class BooListActivity
   // Content
   protected BooListPaginator  mPaginator;
 
-
-  /***************************************************************************
-   * Helper for respoding to playback end.
-   **/
-  private class PlaybackEndListener extends BooPlayerView.PlaybackEndListener
-  {
-    public View mView;
-    public int  mId;
-
-
-    public PlaybackEndListener(View view, int id)
-    {
-      mView = view;
-      mId = id;
-    }
-
-
-    public void onPlaybackEnded(BooPlayerView view, int endState)
-    {
-      if (BooPlayerView.END_STATE_SUCCESS != endState) {
-        Toast.makeText(BooListActivity.this, R.string.error_message_playback,
-            Toast.LENGTH_LONG).show();
-      }
-      if (null != mView) {
-        onItemUnselected(mView, mId);
-      }
-      else {
-        hidePlayer();
-      }
-    }
-  }
 
 
   /***************************************************************************
@@ -166,25 +135,21 @@ public abstract class BooListActivity
     }
 
     // Also initialize the player view
-    BooPlayerView pv = (BooPlayerView) findViewById(R.id.boo_list_player);
+    View pv = findViewById(R.id.boo_list_player);
     if (null != pv) {
-      PlaybackEndListener listener = (PlaybackEndListener) pv.getPlaybackEndListener();
-
       BooPlayerClient player = Globals.get().mPlayer;
-      if (null == player || Constants.STATE_NONE == player.getState()) {
-        // Right, hide the player if it's still visible.
-        // This is a bit tricky... the only place where we reliably remember
-        // the view/id for unselecting an item is in the playback end listener.
-        if (null != listener) {
-          onItemUnselected(listener.mView, listener.mId);
-        }
-      }
-      else {
-        // We appear to be playing back, so let's fade the player in and let it
-        // update.
-        showPlayer();
-        if (null == listener) {
-          pv.setPlaybackEndListener(new PlaybackEndListener(null, -1));
+      if (null != player) {
+        PlayerState state = player.getState();
+        switch (state.mState) {
+          case Constants.STATE_PREPARING:
+          case Constants.STATE_BUFFERING:
+          case Constants.STATE_PLAYING:
+            showPlayer();
+            break;
+
+          default:
+            hidePlayer();
+            break;
         }
       }
     }
@@ -196,6 +161,11 @@ public abstract class BooListActivity
   public void onPause()
   {
     super.onPause();
+
+    BooPlayerClient client = Globals.get().mPlayer;
+    if (null != client) {
+      client.removeProgressListener(this);
+    }
   }
 
 
@@ -233,6 +203,8 @@ public abstract class BooListActivity
     }
 
     player.setVisibility(View.VISIBLE);
+
+    Globals.get().mPlayer.addProgressListener(this);
   }
 
 
@@ -245,50 +217,8 @@ public abstract class BooListActivity
     }
 
     player.setVisibility(View.GONE);
-  }
 
-
-
-  private void onItemSelected(View view, int group, int position)
-  {
-    // The data source knows what group content exists, regardless of whether
-    // we've got a paginated group or not.
-    List<Boo> boos = mPaginator.getGroup(group);
-    if (null == boos) {
-      Log.e(LTAG, "No entries for group: " + group);
-      return;
-    }
-
-    if (position < 0 || position >= boos.size()) {
-      Log.e(LTAG, "Position " + position + " exceeds size of group " + group);
-      return;
-    }
-
-    final Boo boo = boos.get(position);
-
-    // Fade in player view
-    showPlayer();
-
-    // Start playback
-    final BooPlayerView player = (BooPlayerView) findViewById(R.id.boo_list_player);
-    if (null != player) {
-      player.setPlaybackEndListener(new PlaybackEndListener(view, boo.mData.mId));
-      player.play(boo);
-    }
-  }
-
-
-
-  private void onItemUnselected(View view, int id)
-  {
-    // Fade out player view
-    hidePlayer();
-
-    // Stop playback
-    final BooPlayerView player = (BooPlayerView) findViewById(R.id.boo_list_player);
-    if (null != player) {
-      player.stop();
-    }
+    Globals.get().mPlayer.removeProgressListener(this);
   }
 
 
@@ -388,7 +318,24 @@ public abstract class BooListActivity
 
   public void onItemClick(ExpandableListView parent, View view, int group, int position, long id)
   {
-    onItemSelected(view, group, position);
+    // The data source knows what group content exists, regardless of whether
+    // we've got a paginated group or not.
+    List<Boo> boos = mPaginator.getGroup(group);
+    if (null == boos) {
+      Log.e(LTAG, "No entries for group: " + group);
+      return;
+    }
+
+    if (position < 0 || position >= boos.size()) {
+      Log.e(LTAG, "Position " + position + " exceeds size of group " + group);
+      return;
+    }
+
+    final Boo boo = boos.get(position);
+
+    // Playback!
+    showPlayer();
+    Globals.get().mPlayer.play(boo, true);
   }
 
 
@@ -441,5 +388,29 @@ public abstract class BooListActivity
   public int getGroupType(int group)
   {
     return BooListAdapter.VIEW_TYPE_BOO;
+  }
+
+
+
+  /***************************************************************************
+   * BooPlayerClient.PrgoressListener implementation
+   **/
+  public void onProgress(PlayerState state)
+  {
+    switch (state.mState) {
+      case Constants.STATE_ERROR:
+        Toast.makeText(this, R.string.error_message_playback,
+            Toast.LENGTH_LONG).show();
+        break;
+
+      case Constants.STATE_PAUSED:
+      case Constants.STATE_FINISHED:
+        hidePlayer();
+        break;
+
+     default:
+        // Ignore
+        break;
+    }
   }
 }

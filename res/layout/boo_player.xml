@@ -15,7 +15,7 @@
     android:layout_height="wrap_content"
     android:layout_margin="0dp"
     android:orientation="vertical"
-    android:padding="0dp"
+    android:padding="3dp"
   >
 
   <!-- Playback & Metadata -->
@@ -53,6 +53,8 @@
     <LinearLayout
         android:layout_width="fill_parent"
         android:layout_height="wrap_content"
+        android:layout_marginLeft="5dp"
+        android:layout_marginRight="5dp"
         android:layout_weight="1"
         android:orientation="vertical"
         android:gravity="center"
@@ -62,8 +64,6 @@
           android:layout_width="fill_parent"
           android:layout_height="wrap_content"
           android:layout_marginTop="2dp"
-          android:layout_marginLeft="5dp"
-          android:layout_marginRight="5dp"
           android:textSize="@dimen/boo_player_author"
           android:textStyle="bold"
           android:textColor="@color/boo_player_author"
@@ -77,8 +77,6 @@
           android:layout_width="fill_parent"
           android:layout_height="wrap_content"
           android:layout_marginTop="2dp"
-          android:layout_marginLeft="5dp"
-          android:layout_marginRight="5dp"
           android:textSize="@dimen/boo_player_title"
           android:textStyle="bold"
           android:textColor="@color/boo_player_title"
@@ -114,7 +112,6 @@
         android:layout_width="fill_parent"
         android:layout_height="wrap_content"
         android:layout_weight="1"
-        android:layout_marginLeft="8dp"
         android:layout_marginRight="10dp"
         style="?android:progressBarStyleHorizontal"
       />

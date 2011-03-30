@@ -398,7 +398,7 @@ public class RecordActivity extends Activity
       player.setVisibility(View.VISIBLE);
 
       // Tell the player to lay the boo we remember.
-      player.play(mBoo, false);
+      // player.play(mBoo, false); FIXME
     }
   }
 
@@ -412,7 +412,7 @@ public class RecordActivity extends Activity
       Animation animation = AnimationUtils.loadAnimation(this, R.anim.fade_out);
       player.startAnimation(animation);
 
-      player.stop();
+      // FIXME player.stop();
     }
   }
 

@@ -32,6 +32,7 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 
 import fm.audioboo.data.BooData;
+import fm.audioboo.data.PlayerState;
 import fm.audioboo.data.PersistentPlaybackState;
 import fm.audioboo.application.Boo;
 
@@ -160,13 +161,11 @@ public class AudiobooService
   /***************************************************************************
    * ProgressListener implementation
    **/
-  public void onProgress(int state, double progress, double total)
+  public void onProgress(PlayerState state)
   {
     // Log.d(LTAG, "Got state 1: " + state + " - " + System.currentTimeMillis());
     Intent i = new Intent(Constants.EVENT_PROGRESS);
-    i.putExtra(Constants.PROGRESS_STATE, state);
-    i.putExtra(Constants.PROGRESS_PROGRESS, progress);
-    i.putExtra(Constants.PROGRESS_TOTAL, total);
+    i.putExtra(Constants.PROGRESS_STATE, (Parcelable) state);
     sendBroadcast(i);
   }
 
@@ -235,30 +234,9 @@ public class AudiobooService
 
 
 
-    public int getState()
+    public PlayerState getState()
     {
-      return mPlayer.getPlaybackState();
-    }
-
-
-
-    public String getTitle()
-    {
-      return mPlayer.getTitle();
-    }
-
-
-
-    public String getUsername()
-    {
-      return mPlayer.getUsername();
-    }
-
-
-
-    public double getDuration()
-    {
-      return mPlayer.getDuration();
+      return mPlayer.getPlayerState();
     }
   };
 

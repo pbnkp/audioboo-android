@@ -16,7 +16,8 @@ import java.util.Timer;
 
 import java.lang.ref.WeakReference;
 
-import fm.audioboo.data.PersistentPlaybackState;
+import fm.audioboo.data.PersistentPlaybackState; // FIXME PlayerState
+import fm.audioboo.data.PlayerState;
 import fm.audioboo.application.Boo;
 
 import android.util.Log;
@@ -70,7 +71,7 @@ public class BooPlayer extends Thread
    **/
   public static interface ProgressListener
   {
-    public void onProgress(int state, double progress, double total);
+    public void onProgress(PlayerState state);
   }
 
 
@@ -100,7 +101,6 @@ public class BooPlayer extends Thread
 
   // Tick timer, for tracking progress
   private volatile Timer        mTimer;
-  private TimerTask             mTimerTask;
 
   // Internal player state
   private volatile int          mState        = Constants.STATE_NONE;
@@ -156,17 +156,18 @@ public class BooPlayer extends Thread
    **/
   public void play(Boo boo, boolean playImmediately)
   {
+    // Log.d(LTAG, "Asked to play: " + boo + " / " + playImmediately);
     synchronized (mLock)
     {
-      if (null != mBoo && null != mBoo.mData) {
-        mResetState = true;
-        return;
+      if (null == boo || null == boo.mData) {
+        mBoo = null;
+        mPendingState = Constants.STATE_NONE;
       }
-      if (mBoo != boo) {
-        mResetState = true;
+      else {
+        mBoo = boo;
+        mPendingState = playImmediately ? Constants.STATE_PLAYING : Constants.STATE_PAUSED;
       }
-      mBoo = boo;
-      mPendingState = playImmediately ? Constants.STATE_PLAYING : Constants.STATE_PAUSED;
+      mResetState = true;
     }
     interrupt();
   }
@@ -223,15 +224,50 @@ public class BooPlayer extends Thread
 
 
 
-  public String getTitle()
+  public PlayerState getPlayerState()
   {
-    synchronized (mLock)
-    {
-      if (null == mBoo || null == mBoo.mData) {
-        return null;
-      }
-      return mBoo.mData.mTitle;
+    PlayerState s = new PlayerState();
+
+    synchronized (mLock) {
+      s.mState = mState;
+      s.mProgress = mPlaybackProgress;
+      s.mTotal = getDuration();
+      s.mBooId = getBooIdInternal();
+      s.mBooTitle = getTitleInternal();
+      s.mBooUsername = getUsernameInternal();
     }
+
+    return s;
+  }
+
+
+
+  private String getTitleInternal()
+  {
+    if (null == mBoo || null == mBoo.mData) {
+      return null;
+    }
+    return mBoo.mData.mTitle;
+  }
+
+
+
+  private String getUsernameInternal()
+  {
+    if (null == mBoo || null == mBoo.mData || null == mBoo.mData.mUser) {
+      return null;
+    }
+    return mBoo.mData.mUser.mUsername;
+  }
+
+
+
+  private int getBooIdInternal()
+  {
+    if (null == mBoo || null == mBoo.mData) {
+      return -1;
+    }
+    return mBoo.mData.mId;
   }
 
 
@@ -248,19 +284,6 @@ public class BooPlayer extends Thread
       state.mState = mState;
       state.mProgress = mPlaybackProgress;
       return state;
-    }
-  }
-
-
-
-  public String getUsername()
-  {
-    synchronized (mLock)
-    {
-      if (null == mBoo || null == mBoo.mData || null == mBoo.mData.mUser) {
-        return null;
-      }
-      return mBoo.mData.mUser.mUsername;
     }
   }
 
@@ -298,7 +321,6 @@ public class BooPlayer extends Thread
     mShouldRun = true;
     mResetState = false;
 
-    Boo playingBoo = null;
     while (mShouldRun)
     {
       try {
@@ -316,14 +338,14 @@ public class BooPlayer extends Thread
           currentBoo = mBoo;
           currentState = mState;
           pendingState = mPendingState;
-
-          // If the current and pending Boo don't match, then we need to reset
-          // the state machine. Then we'll go from there.
           reset = mResetState;
-          if (mResetState) {
+          if (reset) {
             mResetState = false;
             currentState = Constants.STATE_NONE;
           }
+
+          // Log.d(LTAG, "#1 currentBoo: " + currentBoo + " - currentState: " + currentState + " - pendingState: " + pendingState);
+          // Log.d(LTAG, "Reset? " + reset);
 
           // If the next state is to be an error state, let's not bother with
           // trying to find out what to do next - we want to stop.
@@ -393,7 +415,7 @@ public class BooPlayer extends Thread
         // If the pending state is an error state, also send an error state
         // to listeners.
         if (Constants.STATE_ERROR == pendingState) {
-          sendStateError();
+          sendState(Constants.STATE_ERROR);
         }
 
         // Now perform the appropriate action to attain the new state.
@@ -503,7 +525,7 @@ public class BooPlayer extends Thread
       return;
     }
 
-    sendStateBuffering();
+    sendState(Constants.STATE_PREPARING);
 
     // Local Boos are treated via the FLACPlayerWrapper.
     synchronized (mLock) {
@@ -544,7 +566,7 @@ public class BooPlayer extends Thread
       mPlayer.pause();
     }
 
-    sendStateBuffering();
+    sendState(Constants.STATE_PAUSED);
   }
 
 
@@ -564,7 +586,7 @@ public class BooPlayer extends Thread
       startPlaybackState();
     }
     else {
-      sendStatePlayback();
+      sendState(Constants.STATE_PLAYING);
     }
 
     return true;
@@ -574,6 +596,7 @@ public class BooPlayer extends Thread
 
   private void stopInternal(boolean sendState)
   {
+    // Log.d(LTAG, "Stop internal: " + sendState);
     synchronized (mLock) {
       if (null != mPlayer) {
         mPlayer.stop();
@@ -583,15 +606,13 @@ public class BooPlayer extends Thread
       if (null != mTimer) {
         mTimer.cancel();
         mTimer = null;
-        mTimerTask = null;
       }
-
-      mBoo = null;
     }
 
-    // Log.d(LTAG, "sending State ended: " + sendState);
     if (sendState) {
-      sendStateEnded();
+      // Log.d(LTAG, "sending State ended: " + sendState);
+      sendState(Constants.STATE_FINISHED);
+      mBoo = null; // Reset *after* sending end state.
     }
   }
 
@@ -613,89 +634,37 @@ public class BooPlayer extends Thread
     // continuous progress to the users of this class.
     mPlaybackProgress = 0f;
     mTimestamp = System.currentTimeMillis();
-
-    mListener.onProgress(Constants.STATE_PLAYING, mPlaybackProgress, getDuration());
+    sendState(Constants.STATE_PLAYING);
 
     try {
       mTimer = new Timer();
-      mTimerTask = new TimerTask()
+      TimerTask task = new TimerTask()
       {
         public void run()
         {
           onTimer();
         }
       };
-      mTimer.scheduleAtFixedRate(mTimerTask, 0, TIMER_TASK_INTERVAL);
+      mTimer.scheduleAtFixedRate(task, 0, TIMER_TASK_INTERVAL);
     } catch (java.lang.IllegalStateException ex) {
       Log.e(LTAG, "Could not start timer: " + ex);
-      sendStateError();
+      sendState(Constants.STATE_ERROR);
     }
   }
 
 
 
-  /**
-   * Notifies the listener that playback has ended.
-   **/
-  private void sendStateEnded()
+  private void sendState(int state)
   {
-    // Log.d(LTAG, "Send end state");
-
     if (null == mListener) {
       return;
     }
 
-    mListener.onProgress(Constants.STATE_FINISHED, mPlaybackProgress, getDuration());
-  }
+    // Overwrite numeric state.
+    PlayerState s = getPlayerState();
+    s.mState = state;
 
-
-
-  /**
-   * Notifies the listener that the player is in buffering state.
-   **/
-  private void sendStateBuffering()
-  {
-    //Log.d(LTAG, "Send buffering state");
-
-    if (null == mListener) {
-      return;
-    }
-
-    mListener.onProgress(Constants.STATE_BUFFERING, 0f, getDuration());
-  }
-
-
-
-  /**
-   * Notifies the listener that the player is playing back; this is really
-   * only used after a sendStateBuffering() has been sent. Under normal
-   * conditions, onTimer() below sends updates.
-   **/
-  private void sendStatePlayback()
-  {
-    //Log.d(LTAG, "Send playback state");
-
-    if (null == mListener) {
-      return;
-    }
-
-    mListener.onProgress(Constants.STATE_PLAYING, mPlaybackProgress, getDuration());
-  }
-
-
-
-  /**
-   * Sends an error state to the listener.
-   **/
-  private void sendStateError()
-  {
-    //Log.d(LTAG, "Send error state");
-
-    if (null == mListener) {
-      return;
-    }
-
-    mListener.onProgress(Constants.STATE_ERROR, 0f, getDuration());
+    mListener.onProgress(s);
   }
 
 
@@ -710,19 +679,21 @@ public class BooPlayer extends Thread
     long diff = current - mTimestamp;
     mTimestamp = current;
 
+    int state = -1;
     synchronized (mLock)
     {
-      if (Constants.STATE_PLAYING != mState) {
-        return;
-      }
+      state = mState;
     }
 
-    // Log.d(LTAG, "timestamp: " + mTimestamp);
-    // Log.d(LTAG, "diff: " + diff);
-    // Log.d(LTAG, "progress: " + mPlaybackProgress);
-    mPlaybackProgress += (double) diff / 1000.0;
 
-    sendStatePlayback();
+    if (state == Constants.STATE_PLAYING) {
+      // Log.d(LTAG, "timestamp: " + mTimestamp);
+      // Log.d(LTAG, "diff: " + diff);
+      // Log.d(LTAG, "progress: " + mPlaybackProgress);
+      mPlaybackProgress += (double) diff / 1000.0;
+    }
+
+    sendState(state);
   }
 
 

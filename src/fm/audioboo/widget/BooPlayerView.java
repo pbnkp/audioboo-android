@@ -36,6 +36,8 @@ import fm.audioboo.application.Globals;
 import fm.audioboo.service.Constants;
 import fm.audioboo.service.BooPlayerClient;
 
+import fm.audioboo.data.PlayerState;
+
 import fm.audioboo.application.R;
 
 import java.lang.ref.WeakReference;
@@ -62,26 +64,6 @@ public class BooPlayerView
 
 
   /***************************************************************************
-   * Public constants
-   **/
-  // Playback ends either successfully or with an error.
-  public static final int END_STATE_SUCCESS = 0;
-  public static final int END_STATE_ERROR   = 1;
-
-
-
-  /***************************************************************************
-   * Informs users that playback ended
-   **/
-  public static abstract class PlaybackEndListener
-  {
-    public abstract void onPlaybackEnded(BooPlayerView view, int endState);
-  }
-
-
-
-
-  /***************************************************************************
    * Data members
    **/
   // Context
@@ -96,9 +78,6 @@ public class BooPlayerView
 
   // Configurables
   private boolean                 mShowDisclosure;
-
-  // Listener
-  private PlaybackEndListener     mListener;
 
 
   /***************************************************************************
@@ -128,20 +107,6 @@ public class BooPlayerView
 
 
 
-  public void setPlaybackEndListener(PlaybackEndListener listener)
-  {
-    mListener = listener;
-  }
-
-
-
-  public PlaybackEndListener getPlaybackEndListener()
-  {
-    return mListener;
-  }
-
-
-
   public void showDisclosure(boolean show)
   {
     mShowDisclosure = show;
@@ -156,39 +121,16 @@ public class BooPlayerView
   {
     if (null != mSeekBar) {
       mSeekBar.setEnabled(enabled);
+      mSeekBar.setClickable(enabled);
     }
     if (null != mButton) {
       mButton.setEnabled(enabled);
+      mButton.setClickable(enabled);
     }
     if (null != mDisclosure) {
       mDisclosure.setEnabled(enabled);
+      mDisclosure.setClickable(enabled);
     }
-  }
-
-
-
-  public void play(Boo boo)
-  {
-    play(boo, true);
-  }
-
-
-
-  public void play(Boo boo, boolean playImmediately)
-  {
-    Context ctx = mContext.get();
-    if (null == ctx) {
-      return;
-    }
-
-    setActive(true);
-
-    // Log.d(LTAG, "view play: " + playImmediately);
-
-    // Playback
-    startPlaying(boo, playImmediately);
-
-    updateMetadata();
   }
 
 
@@ -208,6 +150,8 @@ public class BooPlayerView
   {
     if (null != mSeekBar) {
       mSeekBar.setIndeterminate(false);
+//      mSeekBar.setMax(PROGRESS_MAX);
+//      mSeekBar.setProgress(PROGRESS_MAX); // FIXME
     }
   }
 
@@ -222,60 +166,27 @@ public class BooPlayerView
 
 
 
-  private void setButtonState(int newState)
-  {
-    switch (newState) {
-      case Constants.STATE_NONE: // Same as STATE_FINISHED
-      case Constants.STATE_PREPARING:
-      case Constants.STATE_PAUSED:
-        mButton.setChecked(true);
-        resetProgress();
-        break;
-
-      case Constants.STATE_ERROR:
-        mButton.setChecked(true);
-        resetProgress();
-        sendEnded(END_STATE_ERROR);
-        break;
-
-      case Constants.STATE_PLAYING:
-        mButton.setChecked(false);
-        showPlaying();
-        break;
-
-      case Constants.STATE_BUFFERING:
-        mButton.setChecked(false);
-        showBuffering();
-        break;
-    }
-  }
-
-
-
-  private void startPlaying(Boo boo, boolean playImmediately)
-  {
-    // Log.d(LTAG, "view start");
-
-    // Initialize button state
-    setButtonState(Constants.STATE_BUFFERING);
-
-    // Grab the play/pause button from the View. That's handed to the
-    // BooPlayer.
-    if (null != boo) {
-      Globals.get().mPlayer.play(boo, playImmediately);
-    }
-    else {
-      Globals.get().mPlayer.resume();
-    }
-  }
-
-
-
   public void setTitle(String title)
   {
     if (null != mTitle) {
       mTitle.setText(title);
     }
+  }
+
+
+
+  public void setTitle(int resource)
+  {
+    if (null == mTitle) {
+      return;
+    }
+
+    Context ctx = mContext.get();
+    if (null == ctx) {
+      return;
+    }
+
+    setTitle(ctx.getResources().getString(resource));
   }
 
 
@@ -289,56 +200,18 @@ public class BooPlayerView
 
 
 
-  /**
-   * Makes child elements clickable or not.
-   **/
-  public void setActive(boolean flag)
+  public void setAuthor(int resource)
   {
-    if (null != mButton) {
-      mButton.setClickable(flag);
+    if (null == mAuthor) {
+      return;
     }
-    if (null != mSeekBar) {
-      mButton.setClickable(flag);
+
+    Context ctx = mContext.get();
+    if (null == ctx) {
+      return;
     }
-  }
 
-
-
-  public void stop()
-  {
-    // Log.d(LTAG, "view stop");
-    setActive(false);
-
-    // Stops playback.
-    Globals.get().mPlayer.stop();
-
-    // Set button to a neutral state
-    setButtonState(Constants.STATE_FINISHED);
-  }
-
-
-
-  public void pause()
-  {
-    // Log.d(LTAG, "view pause");
-    // Pauses playback.
-    Globals.get().mPlayer.pause();
-  }
-
-
-
-  public void resume()
-  {
-    // Log.d(LTAG, "view resume");
-    // Resumes playback.
-    Globals.get().mPlayer.resume();
-  }
-
-
-
-  public boolean isPaused()
-  {
-    return (Constants.STATE_PAUSED == Globals.get().mPlayer.getState());
+    setAuthor(ctx.getResources().getString(resource));
   }
 
 
@@ -380,12 +253,8 @@ public class BooPlayerView
     // Set up play/pause button
     mButton = (NotifyingToggleButton) content.findViewById(R.id.boo_player_button);
     if (null != mButton) {
-      setButtonState(Constants.STATE_NONE);
       mButton.setOnCheckedChangeListener(this);
     }
-
-    // Set the view to show buffering animations
-    showBuffering();
 
     // Remember
     mTitle = (TextView) content.findViewById(R.id.boo_player_title);
@@ -397,32 +266,41 @@ public class BooPlayerView
       showDisclosure(mShowDisclosure);
     }
 
-    // FIXME need this in main view, too!
-    Globals g = Globals.get();
-    if (null != g) {
-      BooPlayerClient c = g.mPlayer;
+    // Initialize, if we can.
+    Globals globals = Globals.get();
+    if (null != globals) {
+      BooPlayerClient client = globals.mPlayer;
 
-      if (null != c) {
-        // Be informed of whatever player state exists.
-        c.setProgressListener(this);
-
-        // If the playback service is playing, initialize title, etc.
-        if (Constants.STATE_NONE != c.getState()) {
-          // Initialize button state
-          setButtonState(Constants.STATE_BUFFERING);
-          updateMetadata();
-        }
+      if (null == client) {
+        setVisualState(Constants.STATE_NONE, null, null);
+        globals.setClientBindListener(new Globals.ClientBindListener() {
+            public void onBound()
+            {
+              Globals.get().setClientBindListener(null);
+              initialize();
+            }
+        });
+      }
+      else {
+        initialize();
       }
     }
   }
 
 
 
-  private void sendEnded(int state)
+  private void initialize()
   {
-    if (null != mListener) {
-      mListener.onPlaybackEnded(this, state);
+    BooPlayerClient client = Globals.get().mPlayer;
+    if (null == client) {
+      Log.e(LTAG, "Initialized when no player is bound!");
+      return;
     }
+
+    // Be informed of whatever player state exists.
+    client.addProgressListener(this);
+
+    updateVisualState();
   }
 
 
@@ -450,26 +328,17 @@ public class BooPlayerView
 
 
 
-  private void updateMetadata()
+  private void setTitleAndAuthor(String title, String author)
   {
-    Context ctx = mContext.get();
-    if (null == ctx) {
-      return;
-    }
-
-
-    String title = Globals.get().mPlayer.getTitle();
     if (null == title) {
-      setTitle(ctx.getResources().getString(R.string.boo_player_new_title));
+      setTitle(R.string.boo_player_new_title);
     }
     else {
       setTitle(title);
     }
 
-
-    String author = Globals.get().mPlayer.getUsername();
     if (null == author) {
-      setAuthor(""); // FIXME
+      setAuthor(R.string.boo_player_no_author);
     }
     else {
       setAuthor(author);
@@ -477,23 +346,86 @@ public class BooPlayerView
   }
 
 
+
+  private void updateVisualState()
+  {
+    updateVisualState(null);
+  }
+
+
+
+  private void updateVisualState(PlayerState state)
+  {
+    int numericState = Constants.STATE_NONE;
+    String title = null;
+    String author = null;
+
+    if (null != state) {
+      numericState = state.mState;
+      title = state.mBooTitle;
+      author = state.mBooUsername;
+    }
+
+    setVisualState(numericState, title, author);
+  }
+
+
+
+  private void setVisualState(int state, String title, String author)
+  {
+    // Log.d(LTAG, "[" + this + "] Setting state: " + state + " " + title + "/" + author);
+    switch (state) {
+      case Constants.STATE_NONE:
+      case Constants.STATE_ERROR:
+        setEnabled(false);
+        setTitle(R.string.boo_player_no_title);
+        setAuthor(R.string.boo_player_no_author);
+        mButton.setChecked(true);
+        resetProgress();
+        break;
+
+      case Constants.STATE_PREPARING:
+      case Constants.STATE_BUFFERING:
+        setEnabled(true);
+        setTitleAndAuthor(title, author);
+        mButton.setChecked(false);
+        showBuffering();
+        break;
+
+      case Constants.STATE_PLAYING:
+        setEnabled(true);
+        setTitleAndAuthor(title, author);
+        mButton.setChecked(false);
+        showPlaying();
+        break;
+
+      case Constants.STATE_FINISHED:
+        resetProgress(); // fall through
+      case Constants.STATE_PAUSED:
+        setEnabled(true);
+        setTitleAndAuthor(title, author);
+        mButton.setChecked(true);
+        showPlaying();
+        break;
+    }
+  }
+
+
   /***************************************************************************
    * BooPlayerClient.ProgressListener implementation
    **/
-  public void onProgress(int state, double progress, double total)
+  public void onProgress(PlayerState state)
   {
     // Update button state
-    setButtonState(state);
+    updateVisualState(state);
 
     // If there's progress, update that, too.
-    if (total > 0) {
-      int cur = (int) ((progress / total) * PROGRESS_MAX);
+    if (null != mSeekBar && state.mTotal > 0) {
+      int cur = (int) ((state.mProgress / state.mTotal) * PROGRESS_MAX);
       //Log.d(LTAG, "cur/max: " + cur + "/" + PROGRESS_MAX);
 
-      if (null != mSeekBar) {
-        mSeekBar.setMax(PROGRESS_MAX);
-        mSeekBar.setProgress(cur);
-      }
+      mSeekBar.setMax(PROGRESS_MAX);
+      mSeekBar.setProgress(cur);
     }
   }
 
@@ -504,10 +436,15 @@ public class BooPlayerView
    **/
   public void onCheckedChanged(CompoundButton buttonView, boolean isChecked)
   {
-    int state = Globals.get().mPlayer.getState();
-    boolean shouldBeChecked = (Constants.STATE_NONE == state)
-      || (Constants.STATE_PAUSED == state)
-      || (Constants.STATE_ERROR == state);
+    PlayerState state = null;
+    BooPlayerClient client = Globals.get().mPlayer;
+    if (null != client) {
+      state = client.getState();
+    }
+
+    boolean shouldBeChecked = (null == state)
+      || (Constants.STATE_PAUSED == state.mState)
+      || (Constants.STATE_ERROR == state.mState);
 
     // Log.d(LTAG, "Is checked: " + isChecked + " - should be? " + shouldBeChecked);
 
@@ -516,13 +453,31 @@ public class BooPlayerView
     }
 
     if (isChecked) {
-      stop();
-      sendEnded(END_STATE_SUCCESS);
+      Globals.get().mPlayer.pause();
     }
     else {
-      if (Constants.STATE_PAUSED == state) {
-        startPlaying(null, false);
+      if (null != state && Constants.STATE_PAUSED == state.mState) {
+        Globals.get().mPlayer.resume();
       }
     }
+  }
+
+
+
+  @Override
+  public void onWindowFocusChanged(boolean hasWindowFocus)
+  {
+    super.onWindowFocusChanged(hasWindowFocus);
+
+    if (!hasWindowFocus) {
+      BooPlayerClient client = Globals.get().mPlayer;
+      if (null != client) {
+        client.removeProgressListener(this);
+      }
+      return;
+    }
+
+    // Ensure that the view always has the latest state.
+    initialize();
   }
 }

@@ -75,6 +75,8 @@
     Boo player view
   -->
   <string name="boo_player_new_title">New recording</string>
+  <string name="boo_player_no_title">unnamed boo</string>
+  <string name="boo_player_no_author">Mystery User</string>
 
 
   <!--
@@ -249,7 +251,7 @@
   <!-- Notification related strings -->
   <string name="notification_default_title">unnamed boo</string>
   <string name="notification_text">by %1$s</string>
-  <string name="notification_unknown_user">unknown user</string>
+  <string name="notification_unknown_user">Mystery User</string>
 
 
   <!--

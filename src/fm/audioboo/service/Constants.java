@@ -44,8 +44,4 @@ public class Constants
 
   // Event data.
   public static final String PROGRESS_STATE     = "fm.audioboo.service.event.data.progress-state";
-  public static final String PROGRESS_PROGRESS  = "fm.audioboo.service.event.data.progress-progress";
-  public static final String PROGRESS_TOTAL     = "fm.audioboo.service.event.data.progress-total";
-
-
 }

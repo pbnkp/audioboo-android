@@ -129,6 +129,15 @@ public class Globals
 
 
   /***************************************************************************
+   * Listener interface
+   **/
+  public static interface ClientBindListener
+  {
+    public void onBound();
+  }
+
+
+  /***************************************************************************
    * Singleton data
    **/
   private static Globals  sInstance;
@@ -153,6 +162,9 @@ public class Globals
 
   // Boo manager instance.
   private BooManager                mBooManager;
+
+  // Listener for client bound changes.
+  private ClientBindListener        mClientBindListener;
 
   // Map of error codes to error messages.
   private HashMap<Integer, String>  mErrorMessages;
@@ -274,6 +286,9 @@ public class Globals
   public void onBound(BooPlayerClient client)
   {
     mPlayer = client;
+    if (null != mClientBindListener) {
+      mClientBindListener.onBound();
+    }
   }
 
 
@@ -304,6 +319,13 @@ public class Globals
 
     // Find out the device linked status early.
     updateStatus(null);
+  }
+
+
+
+  public void setClientBindListener(ClientBindListener listener)
+  {
+    mClientBindListener = listener;
   }
 
 

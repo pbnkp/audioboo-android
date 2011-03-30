@@ -23,8 +23,12 @@ import android.os.RemoteException;
 
 import fm.audioboo.application.Boo;
 import fm.audioboo.application.Globals;
+import fm.audioboo.data.PlayerState;
 
 import java.lang.ref.WeakReference;
+
+import java.util.List;
+import java.util.LinkedList;
 
 import android.util.Log;
 
@@ -44,7 +48,7 @@ public class BooPlayerClient
    **/
   public static interface ProgressListener
   {
-    public void onProgress(int state, double progress, double total);
+    public void onProgress(PlayerState state);
   }
 
 
@@ -69,21 +73,17 @@ public class BooPlayerClient
   private volatile IBooPlaybackService  mStub = null;
 
   // Progress listener
-  private ProgressListener              mListener;
+  private Object                        mListenerLock = new Object();
+  private List<WeakReference<ProgressListener>>  mListeners = new LinkedList<WeakReference<ProgressListener>>();
+
   private BroadcastReceiver             mReceiver = new BroadcastReceiver() {
     @Override
     public void onReceive(Context context, Intent intent)
     {
       if (intent.getAction().equals(Constants.EVENT_PROGRESS)) {
-        int state = intent.getIntExtra(Constants.PROGRESS_STATE, 0);
-        double progress = intent.getDoubleExtra(Constants.PROGRESS_PROGRESS, 0f);
-        double total = intent.getDoubleExtra(Constants.PROGRESS_TOTAL, 0f);
-
+        PlayerState state = (PlayerState) intent.getParcelableExtra(Constants.PROGRESS_STATE);
         // Log.d(LTAG, String.format("State: %d ... %f/%f", state, progress, total));
-
-        if (null != mListener) {
-          mListener.onProgress(state, progress, total);
-        }
+        sendProgress(state);
       }
     }
   };
@@ -183,9 +183,78 @@ public class BooPlayerClient
 
 
 
-  public void setProgressListener(ProgressListener listener)
+  public void addProgressListener(ProgressListener listener)
   {
-    mListener = listener;
+    synchronized (mListenerLock) {
+      List<WeakReference<ProgressListener>> toRemove = new LinkedList<WeakReference<ProgressListener>>();
+
+      boolean add = true;
+      for (WeakReference<ProgressListener> ref : mListeners) {
+        if (ref.get() == listener) {
+          add = false;
+        }
+        else if (null == ref.get()) {
+          toRemove.add(ref);
+        }
+      }
+
+      if (add) {
+        // Log.d(LTAG, "Adding listener: " + listener);
+        mListeners.add(new WeakReference<ProgressListener>(listener));
+      }
+
+      mListeners.removeAll(toRemove);
+    }
+  }
+
+
+
+  public void removeProgressListener(ProgressListener listener)
+  {
+    synchronized (mListenerLock) {
+      List<WeakReference<ProgressListener>> toRemove = new LinkedList<WeakReference<ProgressListener>>();
+
+      for (WeakReference<ProgressListener> ref : mListeners) {
+        if (ref.get() == listener) {
+          // Log.d(LTAG, "Removing listener: " + listener);
+          toRemove.add(ref);
+        }
+        else if (null == ref.get()) {
+          toRemove.add(ref);
+        }
+      }
+
+      mListeners.removeAll(toRemove);
+    }
+  }
+
+
+
+  private void sendProgress(PlayerState state)
+  {
+    List<ProgressListener> targets = new LinkedList<ProgressListener>();
+
+    synchronized (mListenerLock) {
+      List<WeakReference<ProgressListener>> toRemove = new LinkedList<WeakReference<ProgressListener>>();
+
+      for (WeakReference<ProgressListener> ref : mListeners) {
+        ProgressListener listener = ref.get();
+        if (null != listener) {
+          targets.add(listener);
+        }
+        else {
+          toRemove.add(ref);
+        }
+      }
+
+      mListeners.removeAll(toRemove);
+    }
+
+
+    for (ProgressListener listener : targets) {
+      // Log.d(LTAG, "Dispatching to listener: " + listener);
+      listener.onProgress(state);
+    }
   }
 
 
@@ -198,9 +267,14 @@ public class BooPlayerClient
     // The first thing we do is send a "buffering" state. The first event from
     // the service can be delayed up to 5 seconds, in which time we may not show
     // any progress at all.
-    if (null != mListener) {
-      mListener.onProgress(Constants.STATE_BUFFERING, 0f, boo.getDuration());
-    }
+    PlayerState state = new PlayerState();
+    state.mState = (playImmediately ? Constants.STATE_BUFFERING : Constants.STATE_PREPARING);
+    state.mProgress = 0f;
+    state.mTotal = boo.getDuration();
+    state.mBooId = boo.mData.mId;
+    state.mBooTitle = boo.mData.mTitle;
+    state.mBooUsername = (null == boo.mData.mUser ? null : boo.mData.mUser.mUsername);
+    sendProgress(state);
 
     // Before sending stuff off to the service, make sure the mp3 uri (if it
     // exists) is absolute.
@@ -254,50 +328,13 @@ public class BooPlayerClient
 
 
 
-  public int getState()
+  public PlayerState getState()
   {
     try {
       return mStub.getState();
     } catch (RemoteException ex) {
       Log.e(LTAG, "Exception " + ex.getMessage());
     }
-    return Constants.STATE_NONE;
-  }
-
-
-
-  public String getTitle()
-  {
-    try {
-      return mStub.getTitle();
-    } catch (RemoteException ex) {
-      Log.e(LTAG, "Exception " + ex.getMessage());
-    }
     return null;
   }
-
-
-
-  public String getUsername()
-  {
-    try {
-      return mStub.getUsername();
-    } catch (RemoteException ex) {
-      Log.e(LTAG, "Exception " + ex.getMessage());
-    }
-    return null;
-  }
-
-
-
-  public double getDuration()
-  {
-    try {
-      return mStub.getDuration();
-    } catch (RemoteException ex) {
-      Log.e(LTAG, "Exception " + ex.getMessage());
-    }
-    return 0f;
-  }
-
 }
