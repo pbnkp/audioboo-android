@@ -548,11 +548,11 @@ public class API
     HashMap<String, Object> signedParams = null;
 
     if (isMessage) {
-      api = String.format(API_BOO_DETAILS, booId);
-    }
-    else {
       api = String.format(API_MESSAGE_DETAILS, booId);
       signedParams = new HashMap<String, Object>();
+    }
+    else {
+      api = String.format(API_BOO_DETAILS, booId);
     }
 
     // This request has no parameters.

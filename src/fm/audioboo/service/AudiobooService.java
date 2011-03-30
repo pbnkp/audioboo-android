@@ -15,6 +15,8 @@ import android.os.IBinder;
 import android.os.Parcelable;
 import android.os.Environment;
 
+import android.net.Uri;
+
 import android.content.Context;
 import android.content.Intent;
 import android.content.res.Resources;
@@ -178,6 +180,7 @@ public class AudiobooService
   {
     public void play(BooData boo, boolean playImmediately)
     {
+      Log.d(LTAG, "Boo: " + new Boo(boo));
       mPlayer.play(new Boo(boo), playImmediately);
 
       // Create notification
@@ -185,8 +188,8 @@ public class AudiobooService
 
       // Create intent for notification clicks. We want to open the Boo's detail
       // view.
-      Intent intent = new Intent(AudiobooService.this, BooDetailsActivity.class);
-      intent.putExtra(BooDetailsActivity.EXTRA_BOO_DATA, (Parcelable) boo);
+      Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(
+          String.format("audioboo:boo_details?id=%d", boo.mId)));
       PendingIntent contentIntent = PendingIntent.getActivity(AudiobooService.this, 0, intent, 0);
 
       // Create Notification
