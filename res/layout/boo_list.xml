@@ -67,7 +67,6 @@
       </ViewAnimator>
 
       <!-- Flip between logo and error bubble -->
-      <!-- FIXME -->
       <ViewAnimator android:id="@+id/boo_list_error_flipper"
           android:layout_width="fill_parent"
           android:layout_height="wrap_content"
