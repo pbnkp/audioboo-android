@@ -319,6 +319,8 @@
   <!-- Boo details -->
   <string name="details_user_not_available">Nothing is known about the Mystery User!</string>
   <string name="details_edit_label">Edit</string>
+  <string name="details_invalid_uri">Could not open URI</string>
+  <string name="details_load_error">Error loading details</string>
 
   <!-- Contacts -->
   <string name="contacts_title">Contacts</string>
@@ -331,6 +333,8 @@
   <string name="contact_label_favorites">favourites</string>
   <string name="contact_label_followings">following</string>
   <string name="contact_label_followers">followers</string>
+
+  <string name="contact_load_error">Error loading details</string>
 
   <!-- My boos -->
   <string name="my_boos_title">My Boos</string>

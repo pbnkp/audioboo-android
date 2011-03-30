@@ -61,6 +61,10 @@ public class BooDetailsActivity
   public static final String EXTRA_BOO_DATA   = "fm.audioboo.extras.boo-data";
   public static final String EXTRA_SHOW_EDIT  = "fm.audioboo.extras.show-edit";
 
+  // Cache keys
+  public static final String BOO_KEY_FORMAT = "fm.audioboo.cache.boo-%d";
+  public static final double BOO_TIMEOUT = 1200.0;
+
 
   /***************************************************************************
    * Cache baton
@@ -87,6 +91,26 @@ public class BooDetailsActivity
   private Boo     mBoo;
   private boolean mShowEdit;
 
+  // Request handling
+  private Handler mHandler = new Handler(new Handler.Callback() {
+      public boolean handleMessage(Message msg)
+      {
+        if (API.ERR_SUCCESS == msg.what) {
+          mBoo = (Boo) msg.obj;
+
+          String key = String.format(BOO_KEY_FORMAT, mBoo.mData.mId);
+          Globals.get().mObjectCache.put(key, mBoo, BOO_TIMEOUT);
+
+          populateView();
+        }
+        else {
+          Toast.makeText(BooDetailsActivity.this, R.string.details_load_error, Toast.LENGTH_LONG).show();
+          finish();
+        }
+        return true;
+      }
+  });
+
 
   /***************************************************************************
    * Implementation
@@ -97,13 +121,52 @@ public class BooDetailsActivity
     super.onCreate(savedInstanceState);
     setContentView(R.layout.boo_details);
 
-    // Grab extras
-    BooData data = getIntent().getParcelableExtra(EXTRA_BOO_DATA);
-    if (null == data) {
-      throw new IllegalArgumentException("Intent needs to define the '"
-          + EXTRA_BOO_DATA + "' extra.");
+    Intent intent = getIntent();
+
+    // See if we perhaps are launched via ACTION_VIEW;
+    Uri dataUri = intent.getData();
+    if (null != dataUri) {
+      String query = dataUri.getQuery();
+      int pos = query.indexOf("=");
+
+      if (-1 == pos) {
+        Toast.makeText(this, R.string.details_invalid_uri, Toast.LENGTH_LONG).show();
+        finish();
+        return;
+      }
+
+      String param = query.substring(0, pos);
+      if (!param.equals("id")) {
+        Toast.makeText(this, R.string.details_invalid_uri, Toast.LENGTH_LONG).show();
+        finish();
+        return;
+      }
+
+      String id = query.substring(pos + 1);
+      try {
+        int intId = Integer.valueOf(id);
+
+        String key = String.format(BOO_KEY_FORMAT, intId);
+        mBoo = (Boo) Globals.get().mObjectCache.get(key);
+
+        if (null == mBoo) {
+          Globals.get().mAPI.fetchBooDetails(intId, mHandler);
+        }
+      } catch (NumberFormatException ex) {
+        Toast.makeText(this, R.string.details_invalid_uri, Toast.LENGTH_LONG).show();
+        finish();
+        return;
+      }
     }
-    mBoo = new Boo(data);
+    else {
+      // Grab extras
+      BooData data = intent.getParcelableExtra(EXTRA_BOO_DATA);
+      if (null == data) {
+        throw new IllegalArgumentException("Intent needs to define the '"
+            + EXTRA_BOO_DATA + "' extra.");
+      }
+      mBoo = new Boo(data);
+    }
 
     mShowEdit = 0 != getIntent().getIntExtra(EXTRA_SHOW_EDIT, 0);
 
