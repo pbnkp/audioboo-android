@@ -235,6 +235,7 @@ public class BooPlayer extends Thread
       s.mBooId = getBooIdInternal();
       s.mBooTitle = getTitleInternal();
       s.mBooUsername = getUsernameInternal();
+      s.mBooIsMessage = getIsMessageInternal();
     }
 
     return s;
@@ -268,6 +269,16 @@ public class BooPlayer extends Thread
       return -1;
     }
     return mBoo.mData.mId;
+  }
+
+
+
+  private boolean getIsMessageInternal()
+  {
+    if (null == mBoo || null == mBoo.mData) {
+      return false;
+    }
+    return mBoo.mData.mIsMessage;
   }
 
 

@@ -32,6 +32,7 @@ import android.net.Uri;
 import fm.audioboo.application.Pair;
 import fm.audioboo.application.Boo;
 import fm.audioboo.application.Globals;
+import fm.audioboo.application.UriUtils;
 
 import fm.audioboo.service.Constants;
 import fm.audioboo.service.BooPlayerClient;
@@ -281,8 +282,8 @@ public class BooPlayerView
               return;
             }
 
-            Intent i = new Intent(Intent.ACTION_VIEW, Uri.parse(
-                String.format("audioboo:boo_details?id=%d", state.mBooId)));
+            Intent i = new Intent(Intent.ACTION_VIEW, UriUtils.createDetailsUri(
+                state.mBooId, state.mBooIsMessage));
             ctx.startActivity(i);
           }
       });
@@ -500,7 +501,6 @@ public class BooPlayerView
     }
 
     if (isChecked) {
-      Log.d(LTAG, "Going to pause!");
       Globals.get().mPlayer.pause();
     }
     else {

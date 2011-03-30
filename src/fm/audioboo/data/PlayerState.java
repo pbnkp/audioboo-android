@@ -40,6 +40,7 @@ public class PlayerState implements Parcelable, Serializable
   public int      mBooId;
   public String   mBooTitle;
   public String   mBooUsername;
+  public boolean  mBooIsMessage;
 
 
   public PlayerState()
@@ -50,6 +51,7 @@ public class PlayerState implements Parcelable, Serializable
     mBooId = -1;
     mBooTitle = null;
     mBooUsername = null;
+    mBooIsMessage = false;
   }
 
 
@@ -80,6 +82,7 @@ public class PlayerState implements Parcelable, Serializable
     out.writeInt(mBooId);
     out.writeString(mBooTitle);
     out.writeString(mBooUsername);
+    out.writeInt(mBooIsMessage ? 1 : 0);
   }
 
 
@@ -109,5 +112,6 @@ public class PlayerState implements Parcelable, Serializable
     mBooId = in.readInt();
     mBooTitle = in.readString();
     mBooUsername = in.readString();
+    mBooIsMessage = (in.readInt() != 0);
   }
 }

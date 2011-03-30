@@ -35,7 +35,10 @@ import android.graphics.drawable.BitmapDrawable;
 
 import android.app.Dialog;
 
+import java.util.List;
 import java.util.LinkedList;
+
+import org.apache.http.NameValuePair;
 
 import fm.audioboo.data.BooData;
 import fm.audioboo.data.PlayerState;
@@ -129,36 +132,38 @@ public class BooDetailsActivity
     // See if we perhaps are launched via ACTION_VIEW;
     Uri dataUri = intent.getData();
     if (null != dataUri) {
-      String query = dataUri.getQuery();
-      int pos = query.indexOf("=");
+      int id = -1;
+      boolean message = false;
 
-      if (-1 == pos) {
-        Toast.makeText(this, R.string.details_invalid_uri, Toast.LENGTH_LONG).show();
-        finish();
-        return;
-      }
-
-      String param = query.substring(0, pos);
-      if (!param.equals("id")) {
-        Toast.makeText(this, R.string.details_invalid_uri, Toast.LENGTH_LONG).show();
-        finish();
-        return;
-      }
-
-      String id = query.substring(pos + 1);
-      try {
-        int intId = Integer.valueOf(id);
-
-        String key = String.format(BOO_KEY_FORMAT, intId);
-        mBoo = (Boo) Globals.get().mObjectCache.get(key);
-
-        if (null == mBoo) {
-          Globals.get().mAPI.fetchBooDetails(intId, mHandler);
+      List<NameValuePair> params = UriUtils.getQuery(dataUri);
+      for (NameValuePair pair : params) {
+        if (pair.getName().equals("id")) {
+          try {
+            id = Integer.valueOf(pair.getValue());
+          } catch (NumberFormatException ex) {
+            id = -1; // signal error
+          }
         }
-      } catch (NumberFormatException ex) {
+        else if (pair.getName().equals("message")) {
+          try {
+            message = Integer.valueOf(pair.getValue()) != 0;
+          } catch (NumberFormatException ex) {
+            message = false;
+          }
+        }
+      }
+
+      if (-1 == id) {
         Toast.makeText(this, R.string.details_invalid_uri, Toast.LENGTH_LONG).show();
         finish();
         return;
+      }
+
+      String key = String.format(BOO_KEY_FORMAT, id);
+      mBoo = (Boo) Globals.get().mObjectCache.get(key);
+
+      if (null == mBoo) {
+        Globals.get().mAPI.fetchBooDetails(id, mHandler, message);
       }
     }
     else {

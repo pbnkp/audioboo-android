@@ -36,8 +36,9 @@ import java.io.IOException;
 import fm.audioboo.data.BooData;
 import fm.audioboo.data.PlayerState;
 import fm.audioboo.data.PersistentPlaybackState;
-import fm.audioboo.application.Boo;
 
+import fm.audioboo.application.Boo;
+import fm.audioboo.application.UriUtils;
 import fm.audioboo.application.BooDetailsActivity;
 
 import fm.audioboo.application.R;
@@ -180,7 +181,6 @@ public class AudiobooService
   {
     public void play(BooData boo, boolean playImmediately)
     {
-      Log.d(LTAG, "Boo: " + new Boo(boo));
       mPlayer.play(new Boo(boo), playImmediately);
 
       // Create notification
@@ -188,8 +188,8 @@ public class AudiobooService
 
       // Create intent for notification clicks. We want to open the Boo's detail
       // view.
-      Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(
-          String.format("audioboo:boo_details?id=%d", boo.mId)));
+      Intent intent = new Intent(Intent.ACTION_VIEW, UriUtils.createDetailsUri(
+            boo.mId, boo.mIsMessage));
       PendingIntent contentIntent = PendingIntent.getActivity(AudiobooService.this, 0, intent, 0);
 
       // Create Notification
