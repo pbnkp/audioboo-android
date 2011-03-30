@@ -13,6 +13,7 @@ package fm.audioboo.widget;
 
 import android.content.Context;
 import android.content.res.TypedArray;
+import android.content.Intent;
 import android.util.AttributeSet;
 
 import android.view.View;
@@ -26,8 +27,7 @@ import android.widget.CompoundButton;
 import android.widget.SeekBar;
 import android.widget.TextView;
 
-import android.os.Handler;
-import android.os.Message;
+import android.net.Uri;
 
 import fm.audioboo.application.Pair;
 import fm.audioboo.application.Boo;
@@ -221,7 +221,7 @@ public class BooPlayerView
   {
     super.onFinishInflate();
 
-    Context ctx = mContext.get();
+    final Context ctx = mContext.get();
     if (null == ctx) {
       return;
     }
@@ -264,6 +264,23 @@ public class BooPlayerView
     // Show disclosure?
     if (null != mDisclosure) {
       showDisclosure(mShowDisclosure);
+      mDisclosure.setOnClickListener(new View.OnClickListener() {
+          public void onClick(View v)
+          {
+            BooPlayerClient client = Globals.get().mPlayer;
+            if (null == client) {
+              return;
+            }
+            PlayerState state = client.getState();
+            if (null == state) {
+              return;
+            }
+
+            Intent i = new Intent(Intent.ACTION_VIEW, Uri.parse(
+                String.format("audioboo:boo_details?id=%d", state.mBooId)));
+            ctx.startActivity(i);
+          }
+      });
     }
 
     // Initialize, if we can.
