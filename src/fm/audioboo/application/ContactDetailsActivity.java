@@ -25,6 +25,7 @@ import android.widget.TextView;
 import android.widget.ImageView;
 import android.widget.ViewAnimator;
 import android.widget.Button;
+import android.widget.Toast;
 
 import android.graphics.drawable.Drawable;
 import android.graphics.drawable.BitmapDrawable;
@@ -79,7 +80,8 @@ public class ContactDetailsActivity extends Activity
           populateView();
         }
         else {
-          // FIXME toast & exit?
+          Toast.makeText(ContactDetailsActivity.this, R.string.contact_load_error, Toast.LENGTH_LONG).show();
+          finish();
         }
         return true;
       }
