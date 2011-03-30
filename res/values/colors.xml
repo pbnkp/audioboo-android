@@ -117,6 +117,7 @@
   -->
   <color name="main_menu_label">@android:color/white</color>
   <color name="main_player_label">@color/bb_gray_80</color>
+  <color name="main_background">#0f0e0d</color>
 
   <!--
     Contact details

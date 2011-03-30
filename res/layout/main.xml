@@ -9,34 +9,35 @@
 
  $Id$
 -->
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="fill_parent"
     android:layout_height="fill_parent"
-    android:orientation="vertical"
+    android:background="@color/main_background"
   >
 
-  <!-- Main menu flow -->
-  <LinearLayout
+  <!-- Top half -->
+  <RelativeLayout
       android:layout_width="fill_parent"
-      android:layout_height="250dp"
-      android:orientation="vertical"
+      android:layout_height="300dp"
+      android:layout_alignParentTop="true"
       android:background="@drawable/stripes_bg"
     >
-    <fm.audioboo.widget.Flow
-        android:id="@+id/main_menu_flow"
-        android:layout_width="fill_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="30dp"
-        android:unselectedAlpha="0.8"
-        android:spacing="-10dp"
-        android:fadingEdge="none"
-      />
+    <!-- Main menu flow -->
     <LinearLayout
         android:layout_width="fill_parent"
         android:layout_height="wrap_content"
+        android:layout_centerInParent="true"
+        android:orientation="vertical"
         android:gravity="center"
-        android:orientation="horizontal"
       >
+      <fm.audioboo.widget.Flow
+          android:id="@+id/main_menu_flow"
+          android:layout_width="fill_parent"
+          android:layout_height="wrap_content"
+          android:unselectedAlpha="0.8"
+          android:spacing="-10dp"
+          android:fadingEdge="none"
+        />
       <TextView
           android:id="@+id/main_menu_label"
           android:layout_width="wrap_content"
@@ -52,51 +53,59 @@
           android:paddingRight="15dp"
         />
     </LinearLayout>
-  </LinearLayout>
+  </RelativeLayout>
 
-  <!-- Playback -->
+  <!-- Bottom half -->
   <LinearLayout
       android:layout_width="fill_parent"
-      android:layout_height="154dp"
+      android:layout_height="wrap_content"
+      android:layout_alignParentBottom="true"
       android:orientation="vertical"
-      android:background="@drawable/playback_background"
     >
-    <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="14dp"
-        android:layout_marginLeft="22dp"
-        android:text="@string/main_menu_now_playing"
-        android:textColor="@color/main_player_label"
-        android:textSize="@dimen/text_standard"
-      />
-
-    <fm.audioboo.widget.BooPlayerView
-        android:id="@+id/main_boos_player"
+    <!-- Playback -->
+    <LinearLayout
         android:layout_width="fill_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="10dp"
-        android:layout_marginLeft="17dp"
-        android:layout_marginRight="17dp"
-        android:layout_alignParentBottom="true"
-      />
+        android:layout_height="154dp"
+        android:orientation="vertical"
+        android:background="@drawable/playback_background"
+      >
+      <TextView
+          android:layout_width="wrap_content"
+          android:layout_height="wrap_content"
+          android:layout_marginTop="14dp"
+          android:layout_marginLeft="22dp"
+          android:text="@string/main_menu_now_playing"
+          android:textColor="@color/main_player_label"
+          android:textSize="@dimen/text_standard"
+        />
+
+      <fm.audioboo.widget.BooPlayerView
+          android:id="@+id/main_boos_player"
+          android:layout_width="fill_parent"
+          android:layout_height="wrap_content"
+          android:layout_marginTop="10dp"
+          android:layout_marginLeft="17dp"
+          android:layout_marginRight="17dp"
+          android:layout_alignParentBottom="true"
+        />
+    </LinearLayout>
+
+    <!-- Record -->
+    <Button android:id="@+id/main_record"
+      android:layout_width="fill_parent"
+      android:layout_height="wrap_content"
+      android:layout_margin="10dp"
+      android:paddingLeft="15dp"
+      android:paddingRight="15dp"
+      android:text="@string/main_record"
+      android:background="@drawable/btn_green"
+      android:textColor="@android:color/white"
+      android:textStyle="bold"
+      android:textSize="@dimen/text_huge"
+      android:shadowColor="@color/text_shadow"
+      android:shadowRadius="1"
+      android:shadowDx="0"
+      android:shadowDy="-1"
+    />
   </LinearLayout>
-
-  <!-- Record -->
-  <Button android:id="@+id/main_record"
-    android:layout_width="fill_parent"
-    android:layout_height="wrap_content"
-    android:paddingLeft="15dp"
-    android:paddingRight="15dp"
-    android:text="@string/main_record"
-    android:background="@drawable/btn_green"
-    android:textColor="@android:color/white"
-    android:textStyle="bold"
-    android:textSize="@dimen/text_huge"
-    android:shadowColor="@color/text_shadow"
-    android:shadowRadius="1"
-    android:shadowDx="0"
-    android:shadowDy="-1"
-  />
-
-</LinearLayout>
+</RelativeLayout>
