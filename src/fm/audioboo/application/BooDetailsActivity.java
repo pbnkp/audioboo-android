@@ -27,6 +27,7 @@ import android.view.ViewTreeObserver;
 
 import android.widget.TextView;
 import android.widget.ImageView;
+import android.widget.ViewAnimator;
 import android.widget.Toast;
 
 import android.graphics.drawable.Drawable;
@@ -37,6 +38,9 @@ import android.app.Dialog;
 import java.util.LinkedList;
 
 import fm.audioboo.data.BooData;
+import fm.audioboo.data.PlayerState;
+import fm.audioboo.service.BooPlayerClient;
+import fm.audioboo.service.Constants;
 
 import android.util.Log;
 
@@ -45,7 +49,8 @@ import android.util.Log;
  **/
 public class BooDetailsActivity
        extends Activity
-       implements ViewTreeObserver.OnGlobalLayoutListener
+       implements ViewTreeObserver.OnGlobalLayoutListener,
+                  BooPlayerClient.ProgressListener
 {
   /***************************************************************************
    * Private constants
@@ -316,6 +321,18 @@ public class BooDetailsActivity
       }
     }
 
+    // Play button!
+    View button = findViewById(R.id.boo_play);
+    if (null != button) {
+      button.setOnClickListener(new View.OnClickListener() {
+          public void onClick(View v)
+          {
+            // Switch playback to this boo!
+            Globals.get().mPlayer.play(mBoo, true);
+          }
+      });
+    }
+
 
     // Finally, fire off requests for images.
     if (0 < uris.size()) {
@@ -409,11 +426,106 @@ public class BooDetailsActivity
         image_view.setLayoutParams(params);
       }
     }
+  }
 
 
+
+  @Override
+  public void onResume()
+  {
+    super.onResume();
+    //Log.d(LTAG, "Resume");
+
+    // Also initialize the player view
+    View pv = findViewById(R.id.boo_player_container);
+    if (null != pv) {
+      BooPlayerClient player = Globals.get().mPlayer;
+      if (null != player) {
+        PlayerState state = player.getState();
+        switch (state.mState) {
+          case Constants.STATE_PREPARING:
+          case Constants.STATE_BUFFERING:
+          case Constants.STATE_PLAYING:
+          case Constants.STATE_PAUSED:
+            showPlayerContainer();
+            break;
+
+          default:
+            hidePlayerContainer();
+            break;
+        }
+      }
+    }
+  }
+
+
+
+  private void showPlayerContainer()
+  {
+    final View player = findViewById(R.id.boo_player_container);
+    if (null == player) {
+      return;
+    }
+
+    player.setVisibility(View.VISIBLE);
+
+    Globals.get().mPlayer.addProgressListener(this);
+
+    // What's interesting as well is whether or not it's *this* Boo that's being
+    // played or not.
+    PlayerState state = Globals.get().mPlayer.getState();
+    if (null == state) {
+      return;
+    }
+
+    ViewAnimator flipper = (ViewAnimator) findViewById(R.id.boo_player_flipper);
+    if (null == mBoo || null == mBoo.mData || mBoo.mData.mId == state.mBooId) {
+      // We have a match. Since we do, we want to show the player
+      flipper.setDisplayedChild(0);
+    }
+    else {
+      // Show the button to let people play the current view instead!
+      flipper.setDisplayedChild(1);
+    }
+  }
+
+
+
+  private void hidePlayerContainer()
+  {
+    final View player = findViewById(R.id.boo_player_container);
+    if (null == player) {
+      return;
+    }
+
+    player.setVisibility(View.GONE);
+
+    Globals.get().mPlayer.removeProgressListener(this);
   }
 
 
 
 
+
+  /***************************************************************************
+   * BooPlayerClient.ProgressListener implementation
+   **/
+  public void onProgress(PlayerState state)
+  {
+    switch (state.mState) {
+      case Constants.STATE_ERROR:
+        Toast.makeText(this, R.string.error_message_playback,
+            Toast.LENGTH_LONG).show();
+        // XXX Fall through
+
+      case Constants.STATE_FINISHED:
+      case Constants.STATE_NONE:
+        hidePlayerContainer();
+        break;
+
+     default:
+        showPlayerContainer();
+        break;
+    }
+  }
 }

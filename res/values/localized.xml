@@ -318,9 +318,9 @@
 
   <!-- Boo details -->
   <string name="details_user_not_available">Nothing is known about the Mystery User!</string>
-  <string name="details_edit_label">Edit</string>
   <string name="details_invalid_uri">Could not open URI</string>
   <string name="details_load_error">Error loading details</string>
+  <string name="details_play_label">Play This</string>
 
   <!-- Contacts -->
   <string name="contacts_title">Contacts</string>

@@ -7,7 +7,9 @@
 
  $Id$
 -->
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:audioboo="http://schemas.android.com/apk/res/fm.audioboo.application"
     android:orientation="vertical"
     android:layout_width="fill_parent"
     android:layout_height="fill_parent"
@@ -159,5 +161,55 @@
   </ScrollView>
 
   <!-- Player -->
-  <!-- FIXME -->
+  <LinearLayout android:id="@+id/boo_player_container"
+      android:layout_width="fill_parent"
+      android:layout_height="wrap_content"
+      android:layout_alignParentBottom="true"
+      android:orientation="vertical"
+      android:background="@color/boo_player_background"
+      android:visibility="gone"
+    >
+    <!-- Separator -->
+    <ImageView
+        android:src="@android:drawable/divider_horizontal_dark"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:scaleType="fitXY"
+      />
+
+    <!-- Player/Play Button Flipper -->
+    <ViewAnimator android:id="@+id/boo_player_flipper"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+      >
+      <fm.audioboo.widget.BooPlayerView
+          android:id="@+id/boo_player"
+          android:layout_width="fill_parent"
+          android:layout_height="wrap_content"
+          audioboo:showDisclosure="false"
+        />
+      <LinearLayout
+          android:layout_width="fill_parent"
+          android:layout_height="fill_parent"
+          android:gravity="center"
+        >
+        <Button android:id="@+id/boo_play"
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:layout_margin="10dp"
+            android:paddingLeft="15dp"
+            android:paddingRight="15dp"
+            android:text="@string/details_play_label"
+            android:background="@drawable/btn_green"
+            android:textColor="@android:color/white"
+            android:textStyle="bold"
+            android:textSize="@dimen/text_huge"
+            android:shadowColor="@color/text_shadow"
+            android:shadowRadius="1"
+            android:shadowDx="0"
+            android:shadowDy="-1"
+          />
+      </LinearLayout>
+    </ViewAnimator>
+  </LinearLayout>
 </LinearLayout>
