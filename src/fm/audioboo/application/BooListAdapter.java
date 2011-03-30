@@ -758,7 +758,12 @@ public class BooListAdapter extends BaseExpandableListAdapter
     if (null != text_view) {
       setTextColor(activity, data, text_view, ELEMENT_TITLE);
 
-      text_view.setText(null != boo.mData.mTitle ? boo.mData.mTitle : "");
+      if (null != boo.mData.mTitle) {
+        text_view.setText(boo.mData.mTitle);
+      }
+      else {
+        text_view.setText(activity.getResources().getString(R.string.boo_unknown_title));
+      }
     }
 
     text_view = (TextView) view.findViewById(R.id.boo_list_item_location);
@@ -769,7 +774,7 @@ public class BooListAdapter extends BaseExpandableListAdapter
         text_view.setText(boo.mData.mLocation.mDescription);
       }
       else {
-        text_view.setText(activity.getResources().getString(R.string.boo_unknown_title));
+        text_view.setText("");
       }
     }
 
