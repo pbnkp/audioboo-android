@@ -51,7 +51,8 @@ import android.util.Log;
 public class BooPlayerView
        extends RelativeLayout
        implements BooPlayerClient.ProgressListener,
-                  CompoundButton.OnCheckedChangeListener
+                  CompoundButton.OnCheckedChangeListener,
+                  NotifyingToggleButton.OnPressedListener
 {
   /***************************************************************************
    * Private constants
@@ -68,6 +69,9 @@ public class BooPlayerView
    **/
   // Context
   private WeakReference<Context>  mContext;
+
+  // Toggle state detection
+  private volatile boolean        mWasPressed;
 
   // Views
   private SeekBar                 mSeekBar;
@@ -253,6 +257,7 @@ public class BooPlayerView
     // Set up play/pause button
     mButton = (NotifyingToggleButton) content.findViewById(R.id.boo_player_button);
     if (null != mButton) {
+      mButton.setOnPressedListener(this);
       mButton.setOnCheckedChangeListener(this);
     }
 
@@ -428,6 +433,25 @@ public class BooPlayerView
   }
 
 
+
+  @Override
+  public void onWindowFocusChanged(boolean hasWindowFocus)
+  {
+    super.onWindowFocusChanged(hasWindowFocus);
+
+    if (!hasWindowFocus) {
+      BooPlayerClient client = Globals.get().mPlayer;
+      if (null != client) {
+        client.removeProgressListener(this);
+      }
+      return;
+    }
+
+    // Ensure that the view always has the latest state.
+    initialize();
+  }
+
+
   /***************************************************************************
    * BooPlayerClient.ProgressListener implementation
    **/
@@ -453,6 +477,11 @@ public class BooPlayerView
    **/
   public void onCheckedChanged(CompoundButton buttonView, boolean isChecked)
   {
+    if (!mWasPressed) {
+      return;
+    }
+    mWasPressed = false;
+
     PlayerState state = null;
     BooPlayerClient client = Globals.get().mPlayer;
     if (null != client) {
@@ -463,6 +492,7 @@ public class BooPlayerView
       || (Constants.STATE_PAUSED == state.mState)
       || (Constants.STATE_ERROR == state.mState);
 
+    // Log.d(LTAG, "State: " + state);
     // Log.d(LTAG, "Is checked: " + isChecked + " - should be? " + shouldBeChecked);
 
     if (shouldBeChecked == isChecked) {
@@ -470,6 +500,7 @@ public class BooPlayerView
     }
 
     if (isChecked) {
+      Log.d(LTAG, "Going to pause!");
       Globals.get().mPlayer.pause();
     }
     else {
@@ -481,20 +512,11 @@ public class BooPlayerView
 
 
 
-  @Override
-  public void onWindowFocusChanged(boolean hasWindowFocus)
+  /***************************************************************************
+   * NotifyingToggleButton.OnPressedListener
+   **/
+  public void onPressed(NotifyingToggleButton buttonView, boolean isPressed)
   {
-    super.onWindowFocusChanged(hasWindowFocus);
-
-    if (!hasWindowFocus) {
-      BooPlayerClient client = Globals.get().mPlayer;
-      if (null != client) {
-        client.removeProgressListener(this);
-      }
-      return;
-    }
-
-    // Ensure that the view always has the latest state.
-    initialize();
+    mWasPressed = isPressed;
   }
 }

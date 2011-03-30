@@ -32,9 +32,9 @@ public class NotifyingToggleButton extends ToggleButton
   /***************************************************************************
    * Notification class
    **/
-  public static abstract class OnPressedListener
+  public static interface OnPressedListener
   {
-    abstract void onPressed(NotifyingToggleButton button, boolean isPressed);
+    void onPressed(NotifyingToggleButton button, boolean isPressed);
   }
 
 
