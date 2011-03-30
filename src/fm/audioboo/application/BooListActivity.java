@@ -20,6 +20,7 @@ import android.content.res.Configuration;
 import android.view.View;
 
 import android.widget.ExpandableListView;
+import android.widget.ViewAnimator;
 import android.widget.Toast;
 
 import java.util.List;
@@ -264,13 +265,9 @@ public abstract class BooListActivity
       // Replace the list view with a loading screen.
       setListAdapter(null);
 
-      View view = findViewById(R.id.boo_list_progress);
-      if (null != view) {
-        view.setVisibility(View.VISIBLE);
-      }
-      view = findViewById(R.id.boo_list_retry);
-      if (null != view) {
-        view.setVisibility(View.GONE);
+      ViewAnimator anim = (ViewAnimator) findViewById(R.id.boo_list_progress);
+      if (null != anim) {
+        anim.setDisplayedChild(0);
       }
     }
     else {
@@ -298,13 +295,9 @@ public abstract class BooListActivity
     // Also reset view.
     setListAdapter(null);
 
-    View view = findViewById(R.id.boo_list_progress);
-    if (null != view) {
-      view.setVisibility(View.GONE);
-    }
-    view = findViewById(R.id.boo_list_retry);
-    if (null != view) {
-      view.setVisibility(View.VISIBLE);
+    ViewAnimator anim = (ViewAnimator) findViewById(R.id.boo_list_progress);
+    if (null != anim) {
+      anim.setDisplayedChild(1);
     }
 
     // Same for "loading" view; not that it matters at this point, but it

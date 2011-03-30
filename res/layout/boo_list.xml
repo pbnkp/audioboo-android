@@ -42,14 +42,15 @@
         android:gravity="center"
       >
 
-      <RelativeLayout
+      <!-- Flip between progress and retry button -->
+      <ViewAnimator android:id="@+id/boo_list_progress"
           android:layout_width="fill_parent"
           android:layout_height="60dp"
-          android:gravity="center"
         >
-        <ProgressBar android:id="@+id/boo_list_progress"
+        <ProgressBar
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:layout_gravity="center"
             android:max="10000"
             style="android:progressBarStyleSmall"
           />
@@ -57,42 +58,41 @@
         <Button android:id="@+id/boo_list_retry"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:layout_gravity="center"
             android:paddingLeft="15dp"
             android:paddingRight="15dp"
             android:text="@string/browse_retry"
-            android:visibility="gone"
             android:background="@drawable/btn_default"
           />
-      </RelativeLayout>
+      </ViewAnimator>
 
-      <ImageView
-          android:layout_width="wrap_content"
+      <!-- Flip between logo and error bubble -->
+      <!-- FIXME -->
+      <ViewAnimator android:id="@+id/boo_list_error_flipper"
+          android:layout_width="fill_parent"
           android:layout_height="wrap_content"
           android:layout_marginTop="20dp"
-          android:src="@drawable/logotype"
-        />
+        >
+        <ImageView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:src="@drawable/logotype"
+          />
+      </ViewAnimator>
     </LinearLayout>
 
     <!-- Hint -->
     <TextView
-        android:id="@+id/boo_list_hint"
         android:layout_width="fill_parent"
-        android:layout_height="120dp"
-        android:layout_marginLeft="15dp"
-        android:layout_marginRight="15dp"
-        android:layout_marginBottom="15dp"
-        android:layout_marginTop="15dp"
+        android:layout_height="wrap_content"
+        android:layout_margin="15dp"
         android:layout_alignParentBottom="true"
-        android:background="@drawable/bubble"
         android:gravity="center"
         android:text="@string/browse_hint_menu"
         android:textColor="@android:color/white"
         android:textStyle="bold"
         android:textSize="@dimen/text_large"
-        android:shadowColor="@color/text_shadow"
-        android:shadowRadius="1"
-        android:shadowDx="0"
-        android:shadowDy="-1"
       />
   </RelativeLayout>
 
