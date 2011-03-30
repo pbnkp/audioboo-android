@@ -393,7 +393,7 @@ public abstract class BooListActivity
 
 
   /***************************************************************************
-   * BooPlayerClient.PrgoressListener implementation
+   * BooPlayerClient.ProgressListener implementation
    **/
   public void onProgress(PlayerState state)
   {
@@ -401,15 +401,16 @@ public abstract class BooListActivity
       case Constants.STATE_ERROR:
         Toast.makeText(this, R.string.error_message_playback,
             Toast.LENGTH_LONG).show();
-        break;
+        // XXX Fall through
 
       case Constants.STATE_PAUSED:
       case Constants.STATE_FINISHED:
+      case Constants.STATE_NONE:
         hidePlayer();
         break;
 
      default:
-        // Ignore
+        showPlayer();
         break;
     }
   }
