@@ -576,6 +576,34 @@ class ResponseParser
 
 
   /**
+   * Parses a response containing a single Boo
+   **/
+  public static Response<Boo> parseBooResponse(String response, Handler handler, boolean isMessage)
+  {
+    try {
+      Response<JSONObject> body = retrieveBody(response, handler);
+      if (null == body) {
+        return null;
+      }
+
+      Boo boo = parseBoo(body.mContent.getJSONObject(AUDIO_CLIP), isMessage);
+
+      Response<Boo> result = new Response<Boo>();
+      result.mTimestamp = body.mTimestamp;
+      result.mWindow = body.mWindow;
+      result.mContent = boo;
+      return result;
+
+    } catch (JSONException ex) {
+      Log.e(LTAG, "Could not parse JSON response: " + ex);
+      handler.obtainMessage(API.ERR_PARSE_ERROR).sendToTarget();
+      return null;
+    }
+  }
+
+
+
+  /**
    * Parses a response containing a single User
    **/
   public static Response<User> parseUserResponse(String response, Handler handler)

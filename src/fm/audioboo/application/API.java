@@ -227,6 +227,7 @@ public class API
   private static final String API_CONTACTS                = "account/followings";
   private static final String API_ACCOUNT                 = "account";
   private static final String API_USER                    = "users/%d";
+  private static final String API_BOO_DETAILS             = "audio_clips/%d";
 
   // API version, format parameter
   private static final String KEY_API_VERSION             = "version";
@@ -525,7 +526,46 @@ public class API
 
 
   /**
-   * Fetch recent Boos.
+   * Fetch details for a Boo
+   **/
+  public void fetchBooDetails(int booId, final Handler result_handler)
+  {
+    if (null != mRequester) {
+      mRequester.keepRunning = false;
+      mRequester.interrupt();
+    }
+
+    // FIXME OR message
+    String api = String.format(API_BOO_DETAILS, booId);
+
+    // This request has no parameters.
+    mRequester = new Requester(api, null, null, null,
+        new Handler(new Handler.Callback() {
+          public boolean handleMessage(Message msg)
+          {
+            if (ERR_SUCCESS == msg.what) {
+              ResponseParser.Response<Boo> boo
+                  = ResponseParser.parseBooResponse((String) msg.obj, result_handler, false); // FIXME
+              if (null != boo) {
+                result_handler.obtainMessage(ERR_SUCCESS, boo.mContent).sendToTarget();
+              }
+            }
+            else {
+              result_handler.obtainMessage(msg.what, msg.obj).sendToTarget();
+            }
+            return true;
+          }
+        }
+    ));
+    mRequester.start();
+
+
+  }
+
+
+
+  /**
+   * Fetch Boos.
    * On success, the message object will be a LinkedList<Boo>.
    **/
   public void fetchBoos(final int type, final Handler result_handler, int page,
