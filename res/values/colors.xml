@@ -61,6 +61,7 @@
     Colors for the lists of boos. Also see res/color
   -->
   <color name="boo_list_image_background">#a1a7b2</color>
+  <color name="boo_list_error">@color/bb_black_80</color>
 
   <!--
     Colors for the in-list playback button

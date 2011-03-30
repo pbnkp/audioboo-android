@@ -79,6 +79,18 @@
             android:layout_gravity="center"
             android:src="@drawable/logotype"
           />
+        <TextView android:id="@+id/boo_list_error"
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:layout_margin="15dp"
+            android:layout_gravity="center"
+            android:background="@drawable/popup_inline_error"
+            android:gravity="center"
+            android:text="foo"
+            android:textColor="@color/boo_list_error"
+            android:textStyle="bold"
+            android:textSize="@dimen/text_large"
+          />
       </ViewAnimator>
     </LinearLayout>
 

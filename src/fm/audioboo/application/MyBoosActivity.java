@@ -24,10 +24,6 @@ import android.view.MenuItem;
 
 import android.widget.Toast;
 
-import android.content.DialogInterface;
-import android.app.Dialog;
-import android.app.AlertDialog;
-
 import java.util.List;
 
 import android.util.Log;
@@ -48,16 +44,6 @@ public class MyBoosActivity extends BooListActivity
   // "recent_boos_actions" in res/values/localized.xml
   private static final int  ACTION_REFRESH  = 0;
 
-  // Dialog IDs
-  private static final int  DIALOG_ERROR    = Globals.DIALOG_ERROR;
-
-
-  /***************************************************************************
-   * Data members
-   **/
-  // Last error information - used and cleared in onCreateDialog
-  private int               mErrorCode = -1;
-  private API.APIException  mException;
 
 
   /***************************************************************************
@@ -91,20 +77,7 @@ public class MyBoosActivity extends BooListActivity
     }
 
     // Right, neither uploaded nor uploading -- must be a draft.
-    intent.putExtra(BooDetailsActivity.EXTRA_SHOW_EDIT, 1);
-  }
-
-
-
-  @Override
-  public void onError(int code, API.APIException exception)
-  {
-    super.onError(code, exception);
-
-    // Store error variables.
-    mErrorCode = code;
-    mException = exception;
-    showDialog(DIALOG_ERROR);
+    // FIXME intent.putExtra(BooDetailsActivity.EXTRA_SHOW_EDIT, 1);
   }
 
 
@@ -144,24 +117,6 @@ public class MyBoosActivity extends BooListActivity
     }
 
     return true;
-  }
-
-
-
-  protected Dialog onCreateDialog(int id)
-  {
-    Dialog dialog = null;
-    Resources res = getResources();
-
-    switch (id) {
-      case DIALOG_ERROR:
-        dialog = Globals.get().createDialog(this, id, mErrorCode, mException);
-        mErrorCode = -1;
-        mException = null;
-        break;
-    }
-
-    return dialog;
   }
 
 

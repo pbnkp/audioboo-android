@@ -23,10 +23,6 @@ import android.view.MenuItem;
 
 import android.widget.Toast;
 
-import android.content.DialogInterface;
-import android.app.Dialog;
-import android.app.AlertDialog;
-
 import java.util.List;
 
 import android.util.Log;
@@ -48,9 +44,6 @@ public class MessagesActivity extends BooListActivity
   private static final int  ACTION_REFRESH  = 0;
   private static final int  ACTION_SWITCH   = 1;
 
-  // Dialog IDs
-  private static final int  DIALOG_ERROR    = Globals.DIALOG_ERROR;
-
   // Display modes
   private static final int DISPLAY_MODE_INBOX   = 0;
   private static final int DISPLAY_MODE_OUTBOX  = 1;
@@ -58,10 +51,6 @@ public class MessagesActivity extends BooListActivity
   /***************************************************************************
    * Data members
    **/
-  // Last error information - used and cleared in onCreateDialog
-  private int               mErrorCode = -1;
-  private API.APIException  mException;
-
   // Display mode
   private int               mDisplayMode = DISPLAY_MODE_INBOX;
   private int               mApiType = getInitAPI();
@@ -80,19 +69,6 @@ public class MessagesActivity extends BooListActivity
   public String getTitleString(int api)
   {
     return getResources().getString(R.string.inbox_title);
-  }
-
-
-
-  @Override
-  public void onError(int code, API.APIException exception)
-  {
-    super.onError(code, exception);
-
-    // Store error variables.
-    mErrorCode = code;
-    mException = exception;
-    showDialog(DIALOG_ERROR);
   }
 
 
@@ -165,24 +141,6 @@ public class MessagesActivity extends BooListActivity
     }
 
     return true;
-  }
-
-
-
-  protected Dialog onCreateDialog(int id)
-  {
-    Dialog dialog = null;
-    Resources res = getResources();
-
-    switch (id) {
-      case DIALOG_ERROR:
-        dialog = Globals.get().createDialog(this, id, mErrorCode, mException);
-        mErrorCode = -1;
-        mException = null;
-        break;
-    }
-
-    return dialog;
   }
 
 

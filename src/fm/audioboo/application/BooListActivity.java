@@ -20,6 +20,7 @@ import android.content.res.Configuration;
 import android.view.View;
 
 import android.widget.ExpandableListView;
+import android.widget.TextView;
 import android.widget.ViewAnimator;
 import android.widget.Toast;
 
@@ -85,6 +86,7 @@ public abstract class BooListActivity
    **/
   public void modifyDisclosureIntent(Boo boo, Intent intent)
   {
+    // FIXME create intent instead
     // Default implementation is to pass.
   }
 
@@ -183,6 +185,11 @@ public abstract class BooListActivity
 
   public void refresh(int type)
   {
+    ViewAnimator anim = (ViewAnimator) findViewById(R.id.boo_list_error_flipper);
+    if (null != anim) {
+      anim.setDisplayedChild(0);
+    }
+
     mPaginator.refresh(type);
     setTitle(getTitleString(type));
   }
@@ -304,6 +311,17 @@ public abstract class BooListActivity
     // will when the view is populated again.
     if (null != mPaginator.getAdapter()) {
       mPaginator.getAdapter().setLoading(false, null);
+    }
+
+    // Flip error flipper to show error view.
+    anim = (ViewAnimator) findViewById(R.id.boo_list_error_flipper);
+    if (null != anim) {
+      anim.setDisplayedChild(1);
+
+      TextView msg = (TextView) findViewById(R.id.boo_list_error);
+      if (null != msg) {
+        msg.setText(R.string.boo_list_generic_error);
+      }
     }
   }
 

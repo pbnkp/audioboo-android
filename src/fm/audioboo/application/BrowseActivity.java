@@ -52,15 +52,11 @@ public class BrowseActivity extends BooListActivity
 
   // Dialog IDs
   private static final int  DIALOG_FILTERS  = 1;
-  private static final int  DIALOG_ERROR    = Globals.DIALOG_ERROR;
+
 
   /***************************************************************************
    * Data members
    **/
-  // Last error information - used and cleared in onCreateDialog
-  private int               mErrorCode = -1;
-  private API.APIException  mException;
-
   // Labels for filters
   private String[]          mFilterLabels;
 
@@ -78,19 +74,6 @@ public class BrowseActivity extends BooListActivity
   public String getTitleString(int api)
   {
     return mFilterLabels[api];
-  }
-
-
-
-  @Override
-  public void onError(int code, API.APIException exception)
-  {
-    super.onError(code, exception);
-
-    // Store error variables.
-    mErrorCode = code;
-    mException = exception;
-    showDialog(DIALOG_ERROR);
   }
 
 
@@ -156,12 +139,6 @@ public class BrowseActivity extends BooListActivity
     Resources res = getResources();
 
     switch (id) {
-      case DIALOG_ERROR:
-        dialog = Globals.get().createDialog(this, id, mErrorCode, mException);
-        mErrorCode = -1;
-        mException = null;
-        break;
-
       case DIALOG_FILTERS:
         // Create dialog
         AlertDialog.Builder builder = new AlertDialog.Builder(this);

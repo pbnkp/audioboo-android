@@ -25,6 +25,7 @@
   -->
   <!-- Author string to use when the boo was posted anonymously -->
   <string name="boo_list_anonymous_author">The BooBot</string>
+  <string name="boo_list_generic_error">Oops! I can\'t reach the server. That makes me sad.</string>
 
   <!--
     Browse boos tab
