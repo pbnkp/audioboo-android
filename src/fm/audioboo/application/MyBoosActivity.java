@@ -64,20 +64,27 @@ public class MyBoosActivity extends BooListActivity
 
 
   @Override
-  public void modifyDisclosureIntent(Boo boo, Intent intent)
+  public Intent getDisclosureIntent(Boo boo)
   {
+    if (null == boo || null == boo.mData) {
+      return null;
+    }
+
     if (null != boo.mData.mUploadInfo) {
       // If we have upload info, this shouldn't even happen.
       Log.e(LTAG, "Huh, disclosure clicked on an upload item?");
-      return;
-    }
-    else if (null != boo.mData.mUploadedAt) {
-      // Must be uploaded... we'll not modify stuff here.
-      return;
+      return null;
     }
 
-    // Right, neither uploaded nor uploading -- must be a draft.
-    // FIXME intent.putExtra(BooDetailsActivity.EXTRA_SHOW_EDIT, 1);
+    // Delegate to super for stuff that's already been uploaded.
+    if (null != boo.mData.mUploadedAt) {
+      return super.getDisclosureIntent(boo);
+    }
+
+    boo.writeToFile();
+    Intent i = new Intent(this, PublishActivity.class);
+    i.putExtra(PublishActivity.EXTRA_BOO_FILENAME, boo.mData.mFilename);
+    return i;
   }
 
 

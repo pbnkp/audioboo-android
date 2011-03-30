@@ -81,13 +81,18 @@ public abstract class BooListActivity
 
 
   /**
-   * Subclasses may want to modify the intent before it's sent to open the
-   * Details page.
+   * Subclasses may want to return a different intent from the one created by
+   * default.
    **/
-  public void modifyDisclosureIntent(Boo boo, Intent intent)
+  public Intent getDisclosureIntent(Boo boo)
   {
-    // FIXME create intent instead
-    // Default implementation is to pass.
+    if (null == boo || null == boo.mData) {
+      return null;
+    }
+
+    Intent i = new Intent(this, BooDetailsActivity.class);
+    i.putExtra(BooDetailsActivity.EXTRA_BOO_DATA, (Parcelable) boo.mData);
+    return i;
   }
 
 
@@ -251,14 +256,10 @@ public abstract class BooListActivity
 
   public void onDisclosureClicked(Boo boo)
   {
-    if (null == boo || null == boo.mData) {
-      // Silently ignore clicks on empty fields.
-      return;
+    Intent i = getDisclosureIntent(boo);
+    if (null != i) {
+      startActivity(i);
     }
-    Intent i = new Intent(this, BooDetailsActivity.class);
-    i.putExtra(BooDetailsActivity.EXTRA_BOO_DATA, (Parcelable) boo.mData);
-    modifyDisclosureIntent(boo, i);
-    startActivity(i);
   }
 
 
