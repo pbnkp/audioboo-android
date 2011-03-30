@@ -155,27 +155,6 @@
             android:visibility="gone"
           />
       </LinearLayout>
-
-
-      <!-- Optional edit button -->
-      <Button android:id="@+id/boo_edit"
-          android:layout_width="fill_parent"
-          android:layout_height="wrap_content"
-          android:layout_marginTop="15dp"
-          android:paddingLeft="15dp"
-          android:paddingRight="15dp"
-          android:text="@string/details_edit_label"
-          android:background="@drawable/btn_green"
-          android:textColor="@android:color/white"
-          android:textStyle="bold"
-          android:textSize="@dimen/contact_button"
-          android:shadowColor="@color/text_shadow"
-          android:shadowRadius="1"
-          android:shadowDx="0"
-          android:shadowDy="-1"
-          android:visibility="gone"
-        />
-
     </LinearLayout>
   </ScrollView>
 
