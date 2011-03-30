@@ -228,6 +228,7 @@ public class API
   private static final String API_ACCOUNT                 = "account";
   private static final String API_USER                    = "users/%d";
   private static final String API_BOO_DETAILS             = "audio_clips/%d";
+  private static final String API_MESSAGE_DETAILS         = "account/messages/%d";
 
   // API version, format parameter
   private static final String KEY_API_VERSION             = "version";
@@ -275,7 +276,8 @@ public class API
   }
 
   // HTTP Client parameters
-  private static final int          HTTP_TIMEOUT            = 60 * 1000;
+  private static final int          HTTP_CONNECT_TIMEOUT    = 30 * 1000;
+  private static final int          HTTP_RESPONSE_TIMEOUT   = 30 * 1000;
   private static final HttpVersion  HTTP_VERSION            = HttpVersion.HTTP_1_1;
 
   // Requester startup delay. Avoids high load at startup that could impact UX.
@@ -296,7 +298,7 @@ public class API
    **/
   private class Requester extends Thread
   {
-    public boolean keepRunning = true;
+    public volatile boolean keepRunning = true;
 
     private String                  mApi;
     private HashMap<String, Object> mParams;
@@ -519,7 +521,8 @@ public class API
   protected static HttpParams defaultHttpParams()
   {
     HttpParams params = new BasicHttpParams();
-    HttpConnectionParams.setConnectionTimeout(params, HTTP_TIMEOUT);
+    HttpConnectionParams.setConnectionTimeout(params, HTTP_CONNECT_TIMEOUT);
+    HttpConnectionParams.setSoTimeout(params, HTTP_RESPONSE_TIMEOUT);
     HttpProtocolParams.setVersion(params, HTTP_VERSION);
     return params;
   }
@@ -530,22 +533,36 @@ public class API
    **/
   public void fetchBooDetails(int booId, final Handler result_handler)
   {
+    fetchBooDetails(booId, result_handler, false);
+  }
+
+  public void fetchBooDetails(int booId, final Handler result_handler,
+      final boolean isMessage)
+  {
     if (null != mRequester) {
       mRequester.keepRunning = false;
       mRequester.interrupt();
     }
 
-    // FIXME OR message
-    String api = String.format(API_BOO_DETAILS, booId);
+    String api = null;
+    HashMap<String, Object> signedParams = null;
+
+    if (isMessage) {
+      api = String.format(API_BOO_DETAILS, booId);
+    }
+    else {
+      api = String.format(API_MESSAGE_DETAILS, booId);
+      signedParams = new HashMap<String, Object>();
+    }
 
     // This request has no parameters.
-    mRequester = new Requester(api, null, null, null,
+    mRequester = new Requester(api, null, signedParams, null,
         new Handler(new Handler.Callback() {
           public boolean handleMessage(Message msg)
           {
             if (ERR_SUCCESS == msg.what) {
               ResponseParser.Response<Boo> boo
-                  = ResponseParser.parseBooResponse((String) msg.obj, result_handler, false); // FIXME
+                  = ResponseParser.parseBooResponse((String) msg.obj, result_handler, isMessage);
               if (null != boo) {
                 result_handler.obtainMessage(ERR_SUCCESS, boo.mContent).sendToTarget();
               }
