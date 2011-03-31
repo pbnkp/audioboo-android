@@ -52,9 +52,9 @@ public class UriUtils
 
       // Parse query
       List<NameValuePair> params = URLEncodedUtils.parse(juri, "utf8");
-      for (NameValuePair pair : params) {
-        Log.d(LTAG, "pair: " + pair.getName() + " = " + pair.getValue());
-      }
+//      for (NameValuePair pair : params) {
+//        Log.d(LTAG, "pair: " + pair.getName() + " = " + pair.getValue());
+//      }
 
       return params;
     } catch (URISyntaxException ex) {
