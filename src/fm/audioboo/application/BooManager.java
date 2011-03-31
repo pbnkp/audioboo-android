@@ -75,8 +75,9 @@ public class BooManager
   // Preferred path for creating new Boos; an index into mPaths
   private int           mCreateIndex;
   // Boos found.
-  private List<Boo>     mDrafts;
+  private List<Boo>     mBooDrafts;
   private List<Boo>     mBooUploads;
+  private List<Boo>     mMessageDrafts;
   private List<Boo>     mMessageUploads;
 
 
@@ -111,18 +112,16 @@ public class BooManager
 
 
 
-  public List<Boo> getDrafts()
+  public List<Boo> getBooDrafts()
   {
-    // FIXME getBooDrafts()
-    return mDrafts;
+    return mBooDrafts;
   }
 
 
 
   public List<Boo> getMessageDrafts()
   {
-    // FIXME
-    return null;
+    return mMessageDrafts;
   }
 
 
@@ -137,29 +136,6 @@ public class BooManager
   public List<Boo> getMessageUploads()
   {
     return mMessageUploads;
-  }
-
-
-
-  public Boo getLatestDraft()
-  {
-    if (null == mDrafts) {
-      return null;
-    }
-
-    Boo latest = null;
-    for (Boo b : mDrafts) {
-      if (null == latest) {
-        latest = b;
-        continue;
-      }
-
-      if (b.mData.mUpdatedAt.after(latest.mData.mUpdatedAt)) {
-        latest = b;
-      }
-    }
-
-    return latest;
   }
 
 
@@ -288,8 +264,9 @@ public class BooManager
 
   public void rebuildIndex()
   {
-    List<Boo> drafts = new LinkedList<Boo>();
+    List<Boo> booDrafts = new LinkedList<Boo>();
     List<Boo> booUploads = new LinkedList<Boo>();
+    List<Boo> messageDrafts = new LinkedList<Boo>();
     List<Boo> messageUploads = new LinkedList<Boo>();
 
     BooFileFilter filter = new BooFileFilter();
@@ -332,7 +309,12 @@ public class BooManager
         }
 
         if (null == b.mData.mUploadInfo) {
-          drafts.add(b);
+          if (b.mData.mIsMessage) {
+            messageDrafts.add(b);
+          }
+          else {
+            booDrafts.add(b);
+          }
         }
         else {
           if (b.mData.mIsMessage) {
@@ -345,13 +327,10 @@ public class BooManager
       }
     }
 
-    if (0 == drafts.size()) {
-      Log.w(LTAG, "No Boos found!");
-    }
-
-    mDrafts = drafts;
-    mMessageUploads = messageUploads;
+    mBooDrafts = booDrafts;
     mBooUploads = booUploads;
+    mMessageDrafts = messageDrafts;
+    mMessageUploads = messageUploads;
   }
 
 

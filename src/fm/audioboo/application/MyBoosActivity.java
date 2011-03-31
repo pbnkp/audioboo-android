@@ -177,6 +177,15 @@ public class MyBoosActivity extends BooListActivity
 
 
 
+  @Override
+  public void refresh()
+  {
+    Globals.get().getBooManager().rebuildIndex();
+    super.refresh();
+  }
+
+
+
   /***************************************************************************
    * BooListPaginator.PaginatorDataSource implementation
    **/
@@ -203,7 +212,7 @@ public class MyBoosActivity extends BooListActivity
         return Globals.get().getBooManager().getBooUploads();
 
       case 1:
-        return Globals.get().getBooManager().getDrafts();
+        return Globals.get().getBooManager().getBooDrafts();
 
       case 2:
         Log.e(LTAG, "Can't return the paginated group here.");

@@ -236,6 +236,15 @@ public class MessagesActivity extends BooListActivity
 
 
 
+  @Override
+  public void refresh()
+  {
+    Globals.get().getBooManager().rebuildIndex();
+    super.refresh();
+  }
+
+
+
   /***************************************************************************
    * BooListPaginator.PaginatorDataSource implementation
    **/
