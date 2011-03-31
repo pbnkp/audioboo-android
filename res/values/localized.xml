@@ -63,7 +63,7 @@
   </string-array>
 
   <!-- Recording errors - we want to report the code -->
-  <string name="record_error_message">Recording Error %d: please try again.
+  <string name="record_error_message">Recording Error %1$d: please try again.
     Try rebooting your phone. If the error persists, please report the error
     with a desription of what you were doing when it occurred.</string>
 
@@ -334,6 +334,7 @@
   <string name="details_load_error">Error loading details</string>
   <string name="details_play_label">Play This</string>
   <string name="details_reply_label">Reply</string>
+  <string name="details_reply_title">Re: %1$s</string>
 
   <!-- Contacts -->
   <string name="contacts_title">Contacts</string>

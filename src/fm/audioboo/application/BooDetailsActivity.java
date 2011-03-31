@@ -344,9 +344,11 @@ public class BooDetailsActivity
       button.setOnClickListener(new View.OnClickListener() {
           public void onClick(View v)
           {
+            String title = getResources().getString(R.string.details_reply_title);
+            title = String.format(title, mBoo.mData.mTitle);
             Intent intent = new Intent(Intent.ACTION_VIEW,
                 UriUtils.createRecordUri(mBoo.mData.mUser.mId,
-                  mBoo.mData.mUser.mUsername, mBoo.mData.mId));
+                  mBoo.mData.mUser.mUsername, mBoo.mData.mId, title));
             startActivity(intent);
           }
       });

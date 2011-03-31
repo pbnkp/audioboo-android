@@ -92,19 +92,19 @@ public class UriUtils
   public static Uri createRecordUri(int destination_id, String destination_name,
       boolean isChannel)
   {
-    return createRecordUri(destination_id, destination_name, isChannel, -1);
+    return createRecordUri(destination_id, destination_name, isChannel, -1, null);
   }
 
 
   public static Uri createRecordUri(int destination_id, String destination_name,
-      int in_reply_to)
+      int in_reply_to, String title)
   {
-    return createRecordUri(destination_id, destination_name, false, in_reply_to);
+    return createRecordUri(destination_id, destination_name, false, in_reply_to, title);
   }
 
 
   public static Uri createRecordUri(int destination_id, String destination_name,
-      boolean isChannel, int in_reply_to)
+      boolean isChannel, int in_reply_to, String title)
   {
     String uri = null;
     try {
@@ -126,6 +126,15 @@ public class UriUtils
 
     if (-1 != in_reply_to) {
       uri += String.format("&destination[parent_id]=%d", in_reply_to);
+    }
+
+    if (null != title) {
+      try {
+        uri += String.format("&destination[title]=%s", URLEncoder.encode(title, "utf8"));
+      } catch (java.io.UnsupportedEncodingException ex) {
+        Log.e(LTAG, "utf8 is unsupported? unlikely.");
+        return null;
+      }
     }
 
     return Uri.parse(uri);
