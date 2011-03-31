@@ -260,11 +260,10 @@ public class BooListAdapter extends BaseExpandableListAdapter
 
     for (int group = 0 ; group < data.getGroupCount() ; ++group) {
       List<Boo> boos = data.getGroup(group);
-      if (null == boos) {
-        Log.e(LTAG, "No boos for a group... must skip calculation, I suppose.");
-        continue;
+      int group_size = 0;
+      if (null != boos) {
+        group_size = boos.size();
       }
-      int group_size = boos.size();
 
       int first = offset + 1;
       int last = first + group_size;
@@ -655,8 +654,11 @@ public class BooListAdapter extends BaseExpandableListAdapter
       return;
     }
     Boo expected_boo = boos.get(baton.itemIndex.mSecond);
-    Boo current_boo = (Boo) item_view.getTag();
-    if (null != current_boo && expected_boo.mData.mId != current_boo.mData.mId) {
+    @SuppressWarnings("unchecked")
+    Pair<Boo, Integer> current = (Pair<Boo, Integer>) item_view.getTag();
+    if (null != current && null != current.mFirst && null != current.mFirst.mData
+        && expected_boo.mData.mId != current.mFirst.mData.mId)
+    {
       // There's been a race between cancelling downloads and sending the
       // message with the resulting bitmap.
       return;
@@ -733,7 +735,7 @@ public class BooListAdapter extends BaseExpandableListAdapter
       return false;
     }
     Boo boo = boos.get(position);
-    view.setTag(boo);
+    view.setTag(new Pair<Boo, Integer>(boo, group));
 
     // Select the view's background.
     int bgId = data.getBackgroundResource(VIEW_TYPE_BOO);
@@ -813,7 +815,7 @@ public class BooListAdapter extends BaseExpandableListAdapter
     // Disclosure
     View disclosure = view.findViewById(R.id.boo_list_item_disclosure);
     if (null != disclosure && null != mDisclosureListener) {
-      disclosure.setTag(boo);
+      disclosure.setTag(new Pair<Boo, Integer>(boo, group));
       disclosure.setOnClickListener(mDisclosureListener);
     }
 

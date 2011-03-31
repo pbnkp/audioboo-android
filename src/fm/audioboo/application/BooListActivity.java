@@ -80,23 +80,6 @@ public abstract class BooListActivity
   public abstract String getTitleString(int api);
 
 
-  /**
-   * Subclasses may want to return a different intent from the one created by
-   * default.
-   **/
-  public Intent getDisclosureIntent(Boo boo)
-  {
-    if (null == boo || null == boo.mData) {
-      return null;
-    }
-
-    Intent i = new Intent(this, BooDetailsActivity.class);
-    i.putExtra(BooDetailsActivity.EXTRA_BOO_DATA, (Parcelable) boo.mData);
-    return i;
-  }
-
-
-
   /***************************************************************************
    * Implementation
    **/
@@ -114,7 +97,13 @@ public abstract class BooListActivity
     mPaginator.setDisclosureListener(new View.OnClickListener() {
       public void onClick(View v)
       {
-        onDisclosureClicked((Boo) v.getTag());
+        @SuppressWarnings("unchecked")
+        Pair<Boo, Integer> pair = (Pair<Boo, Integer>) v.getTag();
+        if (null == pair) {
+          Log.e(LTAG, "No tag set!");
+          return;
+        }
+        onDisclosureClicked(pair.mFirst, pair.mSecond);
       }
     });
 
@@ -254,12 +243,15 @@ public abstract class BooListActivity
 
 
 
-  public void onDisclosureClicked(Boo boo)
+  public void onDisclosureClicked(Boo boo, int group)
   {
-    Intent i = getDisclosureIntent(boo);
-    if (null != i) {
-      startActivity(i);
+    if (null == boo || null == boo.mData) {
+      return;
     }
+
+    Intent i = new Intent(this, BooDetailsActivity.class);
+    i.putExtra(BooDetailsActivity.EXTRA_BOO_DATA, (Parcelable) boo.mData);
+    startActivity(i);
   }
 
 
@@ -354,7 +346,13 @@ public abstract class BooListActivity
 
   public boolean onItemLongClick(ExpandableListView parent, View view, int group, int position, long id)
   {
-    onDisclosureClicked((Boo) view.getTag());
+    @SuppressWarnings("unchecked")
+    Pair<Boo, Integer> pair = (Pair<Boo, Integer>) view.getTag();
+    if (null == pair) {
+      Log.e(LTAG, "No tag set!");
+      return false;
+    }
+    onDisclosureClicked(pair.mFirst, pair.mSecond);
     return true;
   }
 

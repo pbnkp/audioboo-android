@@ -116,6 +116,7 @@ public class API
   public static final int BOOS_NEARBY               = 4;
   public static final int BOOS_MINE                 = 5;
   public static final int BOOS_INBOX                = 6;
+  public static final int BOOS_OUTBOX               = 7;
 
   // API version we're requesting
   public static final int API_VERSION               = 200;
@@ -215,6 +216,7 @@ public class API
     "audio_clips/located",            // BOOS_LOCATED
     "account/audio_clips",            // BOOS_MINE
     "account/inbox",                  // BOOS_INBOX
+    "account/outbox",                 // BOOS_OUTBOX
   };
 
   //private static final String API_UPLOAD                  = "account/audio_clips";
@@ -1313,7 +1315,8 @@ public class API
 
   public Uri makeAbsoluteUri(Uri relative)
   {
-    // FIXME
+    // FIXME is this used?
+    Log.(LTAG, "***********************************************************************");
     if (null == relative.getAuthority()) {
       return Uri.parse(String.format("%s://%s%s",
           API_REQUEST_URI_SCHEME, mAPIHost, relative));

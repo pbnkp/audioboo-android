@@ -102,16 +102,28 @@
     </LinearLayout>
   </RelativeLayout>
 
-  <!-- Record button -->
-  <fm.audioboo.widget.RecordButton android:id="@+id/record_button"
+  <TableLayout
       android:layout_width="fill_parent"
       android:layout_height="wrap_content"
-      android:layout_marginTop="5dp"
       android:gravity="center"
-      audioboo:textInitial="Start"
-      audioboo:textOn="Pause"
-      audioboo:textOff="Resume"
-    />
+      android:stretchColumns="0,1"
+    >
+    <TableRow
+        android:layout_height="wrap_content"
+        android:layout_span="2"
+      >
+      <!-- Record button -->
+      <fm.audioboo.widget.RecordButton android:id="@+id/record_button"
+          android:layout_width="fill_parent"
+          android:layout_height="wrap_content"
+          android:layout_marginTop="5dp"
+          android:gravity="center"
+          audioboo:textInitial="Start"
+          audioboo:textOn="Pause"
+          audioboo:textOff="Resume"
+        />
+    </TableRow>
 
-
+    <!-- TODO upload button. I thought there was another one; we don't need the table if there isn't -->
+  </TableLayout>
 </LinearLayout>

@@ -127,7 +127,7 @@ public class MessagesActivity extends BooListActivity
       case ACTION_SWITCH:
         if (DISPLAY_MODE_INBOX == mDisplayMode) {
           mDisplayMode = DISPLAY_MODE_OUTBOX;
-          refresh(API.BOOS_INBOX); // FIXME should be OUTBOX
+          refresh(API.BOOS_OUTBOX);
         }
         else {
           mDisplayMode = DISPLAY_MODE_INBOX;
@@ -155,7 +155,7 @@ public class MessagesActivity extends BooListActivity
         return 1;
 
       case DISPLAY_MODE_OUTBOX:
-        return 2;
+        return 3;
 
       default:
         Log.e(LTAG, "unreachable line reached.");
@@ -172,7 +172,7 @@ public class MessagesActivity extends BooListActivity
         return 0;
 
       case DISPLAY_MODE_OUTBOX:
-        return 1;
+        return 2;
 
       default:
         Log.e(LTAG, "unreachable line reached.");
@@ -189,11 +189,17 @@ public class MessagesActivity extends BooListActivity
         return null;
 
       case DISPLAY_MODE_OUTBOX:
-        if (group == paginatedGroup()) {
-          Log.e(LTAG, "Wait, what? We can't source the paginated group here.");
-          return null;
+        switch (group) {
+          case 0:
+            return Globals.get().getBooManager().getMessageUploads();
+
+          case 1:
+            return Globals.get().getBooManager().getMessageDrafts();
+
+          default:
+            Log.e(LTAG, "Nope, not valid.");
+            return null;
         }
-        return Globals.get().getBooManager().getMessageUploads();
 
       default:
         Log.e(LTAG, "unreachable line reached.");
@@ -210,10 +216,20 @@ public class MessagesActivity extends BooListActivity
         return "";
 
       case DISPLAY_MODE_OUTBOX:
-        if (0 == group) {
-          return getResources().getString(R.string.inbox_outbox);
+        switch (group) {
+          case 0:
+            return getResources().getString(R.string.inbox_outbox);
+
+          case 1:
+            return getResources().getString(R.string.inbox_drafts);
+
+          case 2:
+            return getResources().getString(R.string.inbox_sent);
+
+          default:
+            Log.e(LTAG, "unreachable line");
+            return null;
         }
-        return getResources().getString(R.string.inbox_sent);
 
       default:
         Log.e(LTAG, "unreachable line reached.");
@@ -272,6 +288,7 @@ public class MessagesActivity extends BooListActivity
         return BooListAdapter.VIEW_TYPE_UPLOAD;
 
       case 1:
+      case 2:
         return BooListAdapter.VIEW_TYPE_BOO;
 
       default:

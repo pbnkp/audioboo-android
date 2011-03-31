@@ -64,27 +64,32 @@ public class MyBoosActivity extends BooListActivity
 
 
   @Override
-  public Intent getDisclosureIntent(Boo boo)
+  public void onDisclosureClicked(Boo boo, int group)
   {
     if (null == boo || null == boo.mData) {
-      return null;
+      return;
     }
 
-    if (null != boo.mData.mUploadInfo) {
-      // If we have upload info, this shouldn't even happen.
-      Log.e(LTAG, "Huh, disclosure clicked on an upload item?");
-      return null;
-    }
+    switch (group) {
+      case 0:
+        Log.e(LTAG, "What? Disclosure on uploads clicked?");
+        return;
 
-    // Delegate to super for stuff that's already been uploaded.
-    if (null != boo.mData.mUploadedAt) {
-      return super.getDisclosureIntent(boo);
-    }
+      case 1:
+        boo.writeToFile();
+        Intent i = new Intent(this, PublishActivity.class);
+        i.putExtra(PublishActivity.EXTRA_BOO_FILENAME, boo.mData.mFilename);
+        startActivity(i);
+        return;
 
-    boo.writeToFile();
-    Intent i = new Intent(this, PublishActivity.class);
-    i.putExtra(PublishActivity.EXTRA_BOO_FILENAME, boo.mData.mFilename);
-    return i;
+      case 2:
+        super.onDisclosureClicked(boo, group);
+        return;
+
+      default:
+        Log.e(LTAG, "unreachable line");
+        break;
+    }
   }
 
 

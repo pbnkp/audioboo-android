@@ -113,7 +113,16 @@ public class BooManager
 
   public List<Boo> getDrafts()
   {
+    // FIXME getBooDrafts()
     return mDrafts;
+  }
+
+
+
+  public List<Boo> getMessageDrafts()
+  {
+    // FIXME
+    return null;
   }
 
 
