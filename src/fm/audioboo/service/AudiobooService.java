@@ -303,8 +303,6 @@ public class AudiobooService
       // Install notification
       nm.notify(NOTIFICATION_PLAYING_BACK, notification);
       */
-
-      return true;
     }
   };
 }

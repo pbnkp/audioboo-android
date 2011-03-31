@@ -192,17 +192,12 @@ public class UploadClient
   /***************************************************************************
    * Upload implementation
    **/
-  public boolean upload(Boo boo)
+  public void processQueue()
   {
-    if (null == boo || null == boo.mData) {
-      return false;
-    }
-
     try {
-      return mStub.upload(boo.mData);
+      mStub.processQueue();
     } catch (RemoteException ex) {
       Log.e(LTAG, "Exception " + ex.getMessage());
-      return false;
     }
   }
 }
