@@ -18,9 +18,8 @@ import fm.audioboo.data.BooData;
 interface IUploadService
 {
   /**
-   * Upload the given Boo. Note that the Boo is placed into an upload queue,
-   * but may not be uploaded immediately.
-   * Returns true if the upload was successfully scheduled, false otherwise.
+   * Signal the service to start processing the upload queue. If the service is
+   * already processing, the upload queue will be refreshed.
    **/
-  boolean upload(in BooData boo);
+  void processQueue();
 }

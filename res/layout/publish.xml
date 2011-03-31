@@ -117,34 +117,20 @@
       <Button android:id="@+id/publish_submit"
           android:layout_width="fill_parent"
           android:layout_height="wrap_content"
-          android:gravity="center"
+          android:layout_margin="10dp"
+          android:paddingLeft="15dp"
+          android:paddingRight="15dp"
           android:text="@string/publish_submit_text"
+          android:background="@drawable/btn_green"
+          android:textColor="@android:color/white"
+          android:textStyle="bold"
+          android:textSize="@dimen/text_huge"
+          android:shadowColor="@color/text_shadow"
+          android:shadowRadius="1"
+          android:shadowDx="0"
+          android:shadowDy="-1"
         />
+
     </LinearLayout>
   </ScrollView>
-
-  <!-- Progress view -->
-  <!-- FIXME -->
-  <LinearLayout android:id="@+id/publish_progress"
-      android:orientation="vertical"
-      android:layout_width="fill_parent"
-      android:layout_height="fill_parent"
-      android:gravity="center"
-      android:visibility="gone"
-    >
-
-    <ProgressBar
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:max="10000"
-        style="android:progressBarStyleSmall"
-      />
-
-    <ImageView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="20dp"
-        android:src="@drawable/logotype"
-      />
-  </LinearLayout>
 </RelativeLayout>

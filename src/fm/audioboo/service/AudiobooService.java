@@ -270,9 +270,10 @@ public class AudiobooService
    **/
   private final IUploadService.Stub mUploadServiceBinder = new IUploadService.Stub()
   {
-    public boolean upload(BooData boo)
+    public void processQueue()
     {
-      Log.d(LTAG, "Scheduled for upload: " + new Boo(boo));
+      // TODO
+//      Log.d(LTAG, "Scheduled for upload: " + new Boo(boo));
 //      mPlayer.play(new Boo(boo), playImmediately);
 
       /*

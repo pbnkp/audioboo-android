@@ -108,6 +108,9 @@
     <item>Remove</item>
   </string-array>
 
+  <!-- Toast text when something has been queued -->
+  <string name="publish_queued">Queued for upload!</string>
+
   <!--
     Account view
   -->

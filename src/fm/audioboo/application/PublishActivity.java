@@ -15,10 +15,6 @@ import android.app.Activity;
 
 import android.os.Bundle;
 
-import android.os.Handler;
-import android.os.Message;
-import android.os.AsyncTask;
-
 import android.content.Intent;
 
 import android.view.View;
@@ -30,6 +26,7 @@ import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.ListView;
 import android.widget.ArrayAdapter;
+import android.widget.Toast;
 
 import android.content.Context;
 import android.content.ContentResolver;
@@ -59,6 +56,9 @@ import android.util.Log;
 import fm.audioboo.widget.EditTags;
 
 import fm.audioboo.data.BooLocation;
+import fm.audioboo.data.Tag;
+import fm.audioboo.data.UploadInfo;
+
 
 /**
  * Contains code necessary for uploading Boos.
@@ -76,16 +76,19 @@ public class PublishActivity extends Activity
 
   // Dialog IDs.
   private static final int DIALOG_IMAGE_OPTIONS = 1;
-  private static final int DIALOG_ERROR         = Globals.DIALOG_ERROR;
 
   // Image option IDs.
   private static final int IMAGE_OPT_CHOOSE     = 0;
   private static final int IMAGE_OPT_CREATE     = 1;
   private static final int IMAGE_OPT_REMOVE     = 2;
 
+  // Result codes:
+  // - RESULT_CANCELED  - nothing done.
+  // - RESULT_OK        - edited.
+  // - RESULT_PUBLISHED - in publishing queue.
+  private static final int RESULT_PUBLISHED     = Activity.RESULT_FIRST_USER;
 
-  // Message IDs.
-  private static final int START_UPLOAD         = 42;
+
 
   /***************************************************************************
    * Public constants
@@ -95,45 +98,12 @@ public class PublishActivity extends Activity
 
 
   /***************************************************************************
-   * PublishCallback
-   **/
-  private class PublishCallback implements Handler.Callback
-  {
-    public Handler mHandler = null;
-
-    public boolean handleMessage(Message msg)
-    {
-      switch (msg.what) {
-        case START_UPLOAD:
-          Globals.get().mAPI.uploadBoo(mBoo, mHandler);
-          break;
-
-        case API.ERR_SUCCESS:
-          onUploadSucceeded((Integer) msg.obj);
-          break;
-
-        default:
-          mErrorCode = msg.what;
-          mException = (API.APIException) msg.obj;
-          showDialog(DIALOG_ERROR);
-          break;
-      }
-      return true;
-    }
-  }
-
-
-
-  /***************************************************************************
    * Data
    **/
-  // Filename and Boo data.
-  private String            mBooFilename;
   private Boo               mBoo;
 
-  // Last error information - used and cleared in onCreateDialog
-  private int               mErrorCode = -1;
-  private API.APIException  mException;
+  // Flag to indicate whether the Boo has been changed at all.
+  private boolean           mBooChanged = false;
 
 
 
@@ -144,6 +114,8 @@ public class PublishActivity extends Activity
   public void onCreate(Bundle savedInstanceState)
   {
     super.onCreate(savedInstanceState);
+    setContentView(R.layout.publish);
+    setTitle(getResources().getString(R.string.publish_activity_title));
 
     // Grab extras
     Bundle extras = getIntent().getExtras();
@@ -160,13 +132,7 @@ public class PublishActivity extends Activity
           + "not be loaded.");
     }
     mBoo = boo;
-    mBooFilename = filename;
     // Log.d(LTAG, "Boo: " + mBoo);
-
-
-    // Create view, etc.
-    setContentView(R.layout.publish);
-    setTitle(getResources().getString(R.string.publish_activity_title));
 
     // Hook up the buttons.
     Button submit = (Button) findViewById(R.id.publish_submit);
@@ -193,9 +159,9 @@ public class PublishActivity extends Activity
 
 
   @Override
-  public void onStart()
+  public void onResume()
   {
-    super.onStart();
+    super.onResume();
 
     // Initialize UI. It's possible that the Boo already contains a lot
     // of information, i.e.
@@ -224,22 +190,27 @@ public class PublishActivity extends Activity
         tags_view.setTags(mBoo.mData.mTags);
       }
     }
-
   }
 
 
 
   @Override
-  public void onPause()
+  public void onBackPressed()
   {
-    super.onPause();
-
-    // Save our current progress. The nice part is that this lets us resume
-    // editing, and the title might even be reflected in the recorder view.
-    if (null != mBoo) {
-      updateBoo(false);
-      mBoo.writeToFile(mBooFilename);
+    if (null == mBoo.mData.mUploadInfo) {
+      // Not published yet! Save our current progress. The nice part is that
+      // this lets us resume editing, and the title might even be reflected
+      // in the recorder view.
+      if (updateBoo(false)) {
+        mBoo.writeToFile();
+        setResult(Activity.RESULT_OK);
+      }
+      else {
+        setResult(Activity.RESULT_CANCELED);
+      }
     }
+
+    finish();
   }
 
 
@@ -259,34 +230,51 @@ public class PublishActivity extends Activity
    * into mBoo. The parameter specifies whether the title field's hint should
    * be used if the title is empty.
    **/
-  private void updateBoo(boolean useHint)
+  private boolean updateBoo(boolean useHint)
   {
+    if (null == mBoo) {
+      return false;
+    }
+
+    boolean retval = mBooChanged;
+
     // Grab Boo title.
     EditText edit_text = (EditText) findViewById(R.id.publish_title);
     if (null != edit_text) {
       String title = edit_text.getText().toString();
-      if (null != title && 0 != title.length()) {
-        mBoo.mData.mTitle = title;
+      if (useHint && (null == title || 0 == title.length())) {
+        title = edit_text.getHint().toString();
       }
-      if (null == mBoo.mData.mTitle && useHint) {
-        mBoo.mData.mTitle = edit_text.getHint().toString();
+
+      if (null == mBoo.mData.mTitle || !mBoo.mData.mTitle.equals(title)) {
+        mBoo.mData.mTitle = title;
+        retval = true;
       }
     }
 
     // Grab tags
     EditTags tags_view = (EditTags) findViewById(R.id.publish_tags);
     if (null != tags_view) {
-      mBoo.mData.mTags = tags_view.getTags();
+      List<Tag> tags = tags_view.getTags();
+      if (tagsChanged(mBoo.mData.mTags, tags)) {
+        mBoo.mData.mTags = tags;
+        retval = true;
+      }
     }
 
     // Make a last ditch attempt to get a Location for the Boo, if necessary.
     if (null == mBoo.mData.mLocation) {
       Location loc = Globals.get().mLocation;
-      if (null != loc) {
-        mBoo.mData.mLocation = new BooLocation(this, Globals.get().mLocation);
+      if (null == mBoo.mData.mLocation && null != loc) {
+        mBoo.mData.mLocation = new BooLocation(this, loc);
+        retval = true;
       }
     }
+
+    mBooChanged = retval;
+    return retval;
   }
+
 
 
   private void onSubmit()
@@ -295,27 +283,23 @@ public class PublishActivity extends Activity
     InputMethodManager imm = (InputMethodManager)getSystemService(Context.INPUT_METHOD_SERVICE);
     View view = findViewById(R.id.publish_form);
     imm.hideSoftInputFromWindow(view.getWindowToken(), 0);
-    view.setVisibility(View.GONE);
-    view = findViewById(R.id.publish_progress);
-    view.setVisibility(View.VISIBLE);
 
     // Update mBoo's information
     updateBoo(true);
 
-    // Handler/Callback for flattening/uploading.
-    final PublishCallback callback = new PublishCallback();
-    final Handler handler = new Handler(callback);
-    callback.mHandler = handler;
+    // Mark this for uploading.
+    mBoo.mData.mUploadInfo = new UploadInfo();
+    mBoo.writeToFile();
 
-    // Flatten Boo in background, then upload.
-    Thread th = new Thread() {
-      public void run()
-      {
-        mBoo.flattenAudio();
-        handler.obtainMessage(START_UPLOAD).sendToTarget();
-      }
-    };
-    th.start();
+    // Notify upload manage that there's stuff to do!
+    Globals.get().mUploader.processQueue();
+
+    // Show a toast
+    Toast.makeText(this, R.string.publish_queued, Toast.LENGTH_LONG).show();
+
+    // That's it, it's published!
+    setResult(RESULT_PUBLISHED);
+    finish();
   }
 
 
@@ -361,6 +345,7 @@ public class PublishActivity extends Activity
       image.setImageResource(R.drawable.anonymous_boo);
     }
   }
+
 
 
   private Bitmap fetchBitmap(Uri uri)
@@ -480,6 +465,7 @@ public class PublishActivity extends Activity
 
     // Treat the image written just now as the Boo image.
     setImageFile(filename);
+    mBooChanged = true;
   }
 
 
@@ -496,41 +482,12 @@ public class PublishActivity extends Activity
 
 
 
-  private void onUploadSucceeded(int booId)
-  {
-    // Log.d(LTAG, "Boo uploaded to: " + booId);
-
-    // Clean up after ourselves...
-    mBoo.delete();
-    mBoo = null;
-
-    // Signal to caller that we successfully uploaded the Boo.
-    setResult(Activity.RESULT_OK);
-    finish();
-  }
-
-
-
   protected Dialog onCreateDialog(int id)
   {
     Resources res = getResources();
 
     switch (id) {
-      case DIALOG_ERROR:
-        Dialog dialog = Globals.get().createDialog(this, id, mErrorCode, mException,
-            new DialogInterface.OnClickListener() {
-              public void onClick(DialogInterface dialog, int id) {
-                setResult(Activity.RESULT_CANCELED);
-                PublishActivity.this.finish();
-              }
-            });
-        mErrorCode = -1;
-        mException = null;
-
-        return dialog;
-
-
-      case DIALOG_IMAGE_OPTIONS:
+     case DIALOG_IMAGE_OPTIONS:
         // Create dialog
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
         // Call these functions so that a) views are created, and b) we can set the
@@ -592,5 +549,35 @@ public class PublishActivity extends Activity
         list.setAdapter(new ArrayAdapter<CharSequence>(this,
             android.R.layout.select_dialog_item, android.R.id.text1, opts));
     }
+  }
+
+
+
+  private boolean tagsChanged(List<Tag> first, List<Tag> second)
+  {
+    if (null == second) {
+      return false;
+    }
+
+    if (null == first) {
+      if (second.isEmpty()) {
+        return false;
+      }
+      return true;
+    }
+
+    if (first.size() != second.size()) {
+      return true;
+    }
+
+    for (int i = 0 ; i < first.size() ; ++i) {
+      Tag f = first.get(i);
+      Tag s = second.get(i);
+      if (!f.equals(s)) {
+        return true;
+      }
+    }
+
+    return false;
   }
 }
