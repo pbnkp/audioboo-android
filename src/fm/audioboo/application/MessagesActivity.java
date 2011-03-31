@@ -73,6 +73,42 @@ public class MessagesActivity extends BooListActivity
 
 
 
+  @Override
+  public void onDisclosureClicked(Boo boo, int group)
+  {
+    if (null == boo || null == boo.mData) {
+      return;
+    }
+
+    if (DISPLAY_MODE_INBOX == mDisplayMode) {
+      super.onDisclosureClicked(boo, group);
+      return;
+    }
+
+    switch (group) {
+      case 0:
+        Log.e(LTAG, "What? Disclosure on uploads clicked?");
+        return;
+
+      case 1:
+        boo.writeToFile();
+        Intent i = new Intent(this, PublishActivity.class);
+        i.putExtra(PublishActivity.EXTRA_BOO_FILENAME, boo.mData.mFilename);
+        startActivity(i);
+        return;
+
+      case 2:
+        super.onDisclosureClicked(boo, group);
+        return;
+
+      default:
+        Log.e(LTAG, "unreachable line");
+        break;
+    }
+  }
+
+
+
   /***************************************************************************
    * Implementation
    **/
