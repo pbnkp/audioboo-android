@@ -15,6 +15,7 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
 
+import android.content.Intent;
 import android.content.res.Configuration;
 
 import android.net.Uri;
@@ -215,7 +216,9 @@ public class ContactDetailsActivity extends Activity
       button.setOnClickListener(new View.OnClickListener() {
           public void onClick(View v)
           {
-            // FIXME 
+            Intent intent = new Intent(Intent.ACTION_VIEW,
+                UriUtils.createRecordUri(user.mId, user.mUsername, false));
+            startActivity(intent);
           }
       });
     }
