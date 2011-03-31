@@ -11,8 +11,11 @@
 
 package fm.audioboo.application;
 
+import android.app.Activity;
+
 import android.os.Bundle;
 
+import android.content.Intent;
 import android.content.res.Resources;
 
 import android.widget.ListView;
@@ -41,12 +44,16 @@ public class MessagesActivity extends BooListActivity
 
   // Action identifiers -- must correspond to the indices of the array
   // "recent_boos_actions" in res/values/localized.xml
-  private static final int  ACTION_REFRESH  = 0;
-  private static final int  ACTION_SWITCH   = 1;
+  private static final int  ACTION_SWITCH   = ACTION_REFRESH + 1;
+
+  // Activity codes
+  private static final int ACTIVITY_RECORD  = ACTIVITY_DETAILS + 1;
+  private static final int ACTIVITY_PUBLISH = ACTIVITY_DETAILS + 2;
 
   // Display modes
   private static final int DISPLAY_MODE_INBOX   = 0;
   private static final int DISPLAY_MODE_OUTBOX  = 1;
+
 
   /***************************************************************************
    * Data members
@@ -94,7 +101,7 @@ public class MessagesActivity extends BooListActivity
         boo.writeToFile();
         Intent i = new Intent(this, PublishActivity.class);
         i.putExtra(PublishActivity.EXTRA_BOO_FILENAME, boo.mData.mFilename);
-        startActivity(i);
+        startActivityForResult(i, ACTIVITY_PUBLISH);
         return;
 
       case 2:
@@ -103,6 +110,34 @@ public class MessagesActivity extends BooListActivity
 
       default:
         Log.e(LTAG, "unreachable line");
+        break;
+    }
+  }
+
+
+
+  @Override
+  public void onItemClicked(Boo boo, int group)
+  {
+    if (null == boo || null == boo.mData) {
+      return;
+    }
+
+    if (DISPLAY_MODE_INBOX == mDisplayMode) {
+      super.onItemClicked(boo, group);
+      return;
+    }
+
+    switch (group) {
+      case 1: // Drafts
+        boo.writeToFile();
+        Intent i = new Intent(this, RecordActivity.class);
+        i.putExtra(RecordActivity.EXTRA_BOO_FILENAME, boo.mData.mFilename);
+        startActivityForResult(i, ACTIVITY_RECORD);
+        break;
+
+      default:
+        super.onItemClicked(boo, group);
         break;
     }
   }
@@ -177,6 +212,26 @@ public class MessagesActivity extends BooListActivity
     }
 
     return true;
+  }
+
+
+
+  protected void onActivityResult(int requestCode, int resultCode, Intent data)
+  {
+    switch (requestCode) {
+      case ACTIVITY_RECORD:
+      case ACTIVITY_PUBLISH:
+        if (Activity.RESULT_CANCELED == resultCode) {
+          return;
+        }
+        refresh();
+        break;
+
+      case ACTIVITY_DETAILS:
+      default:
+        // Ignore
+        break;
+    }
   }
 
 

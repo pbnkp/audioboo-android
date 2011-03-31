@@ -56,6 +56,9 @@ public abstract class BooListActivity
   protected static final int  ACTION_REFRESH  = 0;
   protected static final int  ACTION_LAST     = ACTION_REFRESH;
 
+  // Activity codes
+  protected static final int  ACTIVITY_DETAILS  = 0;
+
 
   /***************************************************************************
    * Data members
@@ -251,7 +254,7 @@ public abstract class BooListActivity
 
     Intent i = new Intent(this, BooDetailsActivity.class);
     i.putExtra(BooDetailsActivity.EXTRA_BOO_DATA, (Parcelable) boo.mData);
-    startActivity(i);
+    startActivityForResult(i, ACTIVITY_DETAILS);
   }
 
 
@@ -335,9 +338,17 @@ public abstract class BooListActivity
       return;
     }
 
-    final Boo boo = boos.get(position);
+    onItemClicked(boos.get(position), group);
+  }
 
-    // Playback!
+
+
+  public void onItemClicked(Boo boo, int group)
+  {
+    if (null == boo || null == boo.mData) {
+      return;
+    }
+
     showPlayer();
     Globals.get().mPlayer.play(boo, true);
   }

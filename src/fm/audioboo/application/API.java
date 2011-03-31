@@ -1316,7 +1316,7 @@ public class API
   public Uri makeAbsoluteUri(Uri relative)
   {
     // FIXME is this used?
-    Log.(LTAG, "***********************************************************************");
+    Log.d(LTAG, "***********************************************************************");
     if (null == relative.getAuthority()) {
       return Uri.parse(String.format("%s://%s%s",
           API_REQUEST_URI_SCHEME, mAPIHost, relative));

@@ -87,6 +87,14 @@ public class RecordActivity extends Activity
 
 
   /***************************************************************************
+   * Public constants
+   **/
+  // Extra names
+  public static final String EXTRA_BOO_FILENAME = "fm.audioboo.extras.boo-filename";
+
+
+
+  /***************************************************************************
    * Data members
    **/
   // Recorder instance

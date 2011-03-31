@@ -11,6 +11,8 @@
 
 package fm.audioboo.application;
 
+import android.app.Activity;
+
 import android.os.Bundle;
 
 import android.content.Intent;
@@ -40,10 +42,9 @@ public class MyBoosActivity extends BooListActivity
   // Log ID
   private static final String LTAG  = "MyBoosActivity";
 
-  // Action identifiers -- must correspond to the indices of the array
-  // "recent_boos_actions" in res/values/localized.xml
-  private static final int  ACTION_REFRESH  = 0;
-
+  // Activity codes
+  private static final int ACTIVITY_RECORD  = ACTIVITY_DETAILS + 1;
+  private static final int ACTIVITY_PUBLISH = ACTIVITY_DETAILS + 2;
 
 
   /***************************************************************************
@@ -79,7 +80,7 @@ public class MyBoosActivity extends BooListActivity
         boo.writeToFile();
         Intent i = new Intent(this, PublishActivity.class);
         i.putExtra(PublishActivity.EXTRA_BOO_FILENAME, boo.mData.mFilename);
-        startActivity(i);
+        startActivityForResult(i, ACTIVITY_PUBLISH);
         return;
 
       case 2:
@@ -88,6 +89,29 @@ public class MyBoosActivity extends BooListActivity
 
       default:
         Log.e(LTAG, "unreachable line");
+        break;
+    }
+  }
+
+
+
+  @Override
+  public void onItemClicked(Boo boo, int group)
+  {
+    if (null == boo || null == boo.mData) {
+      return;
+    }
+
+    switch (group) {
+      case 1: // Drafts
+        boo.writeToFile();
+        Intent i = new Intent(this, RecordActivity.class);
+        i.putExtra(RecordActivity.EXTRA_BOO_FILENAME, boo.mData.mFilename);
+        startActivityForResult(i, ACTIVITY_RECORD);
+        break;
+
+      default:
+        super.onItemClicked(boo, group);
         break;
     }
   }
@@ -129,6 +153,26 @@ public class MyBoosActivity extends BooListActivity
     }
 
     return true;
+  }
+
+
+
+  protected void onActivityResult(int requestCode, int resultCode, Intent data)
+  {
+    switch (requestCode) {
+      case ACTIVITY_RECORD:
+      case ACTIVITY_PUBLISH:
+        if (Activity.RESULT_CANCELED == resultCode) {
+          return;
+        }
+        refresh();
+        break;
+
+      case ACTIVITY_DETAILS:
+      default:
+        // Ignore
+        break;
+    }
   }
 
 
