@@ -345,4 +345,7 @@
   <string name="my_drafts">Drafts</string>
   <string name="my_boos">My Boos</string>
 
+  <!-- Dispatching -->
+  <string name="dispatch_error">This URI is not recognized by Audioboo</string>
+
 </resources>
