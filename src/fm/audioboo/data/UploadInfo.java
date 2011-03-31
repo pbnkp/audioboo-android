@@ -18,6 +18,7 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.IOException;
 
+import fm.audioboo.service.Constants;
 
 
 /**
@@ -30,8 +31,13 @@ public class UploadInfo implements Parcelable, Serializable
    **/
   // Chunk size and last chunk successfully processed. Offsets into the data
   // can be calculated from there.
-  public int      mChunkSize;
-  public int      mLastFinishedChunk;
+  public int      mChunkSize          = Constants.UPLOAD_CHUNK_SIZE;
+  public int      mLastFinishedChunk  = 0;
+
+
+  public UploadInfo()
+  {
+  }
 
 
   /***************************************************************************

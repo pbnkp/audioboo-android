@@ -38,6 +38,11 @@ public class DestinationInfo implements Parcelable, Serializable
   public int      mInReplyTo = -1;
 
 
+  public DestinationInfo()
+  {
+  }
+
+
   /***************************************************************************
    * Parcelable implementation
    **/

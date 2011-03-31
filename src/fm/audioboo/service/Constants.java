@@ -44,4 +44,7 @@ public class Constants
 
   // Event data.
   public static final String PROGRESS_STATE     = "fm.audioboo.service.event.data.progress-state";
+
+  // Upload chunk size.
+  public static final int UPLOAD_CHUNK_SIZE     = 8192;
 }

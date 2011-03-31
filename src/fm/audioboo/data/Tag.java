@@ -51,6 +51,24 @@ public class Tag implements Parcelable, Serializable
   }
 
 
+
+  public boolean equals(Object o)
+  {
+    if (this == o) {
+      return true;
+    }
+
+
+    if (!(o instanceof Tag)) {
+      return false;
+    }
+
+    Tag other = (Tag) o;
+
+    return mNormalised.equals(other.mNormalised);
+  }
+
+
   /***************************************************************************
    * Parcelable implementation
    **/
