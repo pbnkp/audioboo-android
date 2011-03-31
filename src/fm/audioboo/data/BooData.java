@@ -35,7 +35,7 @@ public class BooData implements Parcelable, Serializable
   /***************************************************************************
    * Recording metadata.
    **/
-  public static class Recording implements Parcelable
+  public static class Recording implements Parcelable, Serializable
   {
     public String  mFilename;
     public double  mDuration;
@@ -146,7 +146,8 @@ public class BooData implements Parcelable, Serializable
   public int                    mPlays;
   public int                    mComments;
 
-  // Only set if this Boo is in the upload queue
+  // Only set if this Boo is in the upload queue, or a draft on disk.
+  public DestinationInfo        mDestinationInfo;
   public UploadInfo             mUploadInfo;
 
 
@@ -256,6 +257,9 @@ public class BooData implements Parcelable, Serializable
 
     out.writeInt(mPlays);
     out.writeInt(mComments);
+
+    out.writeParcelable(mDestinationInfo, flags);
+    out.writeParcelable(mUploadInfo, flags);
   }
 
 
@@ -312,6 +316,9 @@ public class BooData implements Parcelable, Serializable
 
     mPlays          = in.readInt();
     mComments       = in.readInt();
+
+    mDestinationInfo  = in.readParcelable(DestinationInfo.class.getClassLoader());
+    mUploadInfo       = in.readParcelable(UploadInfo.class.getClassLoader());
   }
 
 

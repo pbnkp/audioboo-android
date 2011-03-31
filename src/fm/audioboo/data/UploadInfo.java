@@ -72,21 +72,4 @@ public class UploadInfo implements Parcelable, Serializable
     mChunkSize = in.readInt();
     mLastFinishedChunk = in.readInt();
   }
-
-
-
-  /***************************************************************************
-   * Serializable implementation
-   **/
-  private void writeObject(java.io.ObjectOutputStream out) throws IOException
-  {
-    out.defaultWriteObject();
-  }
-
-
-
-  private void readObject(java.io.ObjectInputStream in) throws IOException, ClassNotFoundException
-  {
-    in.defaultReadObject();
-  }
 }
