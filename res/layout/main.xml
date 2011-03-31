@@ -92,20 +92,20 @@
 
     <!-- Record -->
     <Button android:id="@+id/main_record"
-      android:layout_width="fill_parent"
-      android:layout_height="wrap_content"
-      android:layout_margin="10dp"
-      android:paddingLeft="15dp"
-      android:paddingRight="15dp"
-      android:text="@string/main_record"
-      android:background="@drawable/btn_green"
-      android:textColor="@android:color/white"
-      android:textStyle="bold"
-      android:textSize="@dimen/text_huge"
-      android:shadowColor="@color/text_shadow"
-      android:shadowRadius="1"
-      android:shadowDx="0"
-      android:shadowDy="-1"
-    />
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:layout_margin="10dp"
+        android:paddingLeft="15dp"
+        android:paddingRight="15dp"
+        android:text="@string/main_record"
+        android:background="@drawable/btn_green"
+        android:textColor="@android:color/white"
+        android:textStyle="bold"
+        android:textSize="@dimen/text_huge"
+        android:shadowColor="@color/text_shadow"
+        android:shadowRadius="1"
+        android:shadowDx="0"
+        android:shadowDy="-1"
+      />
   </LinearLayout>
 </RelativeLayout>
