@@ -129,6 +129,9 @@ public class MessagesActivity extends BooListActivity
     }
 
     switch (group) {
+      case 0: // Uploads
+        return;
+
       case 1: // Drafts
         boo.writeToFile();
         Intent i = new Intent(this, RecordActivity.class);
