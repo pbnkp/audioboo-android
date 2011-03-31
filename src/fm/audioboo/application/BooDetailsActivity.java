@@ -338,6 +338,29 @@ public class BooDetailsActivity
       });
     }
 
+    // Reply button!
+    button = findViewById(R.id.boo_reply);
+    if (null != button) {
+      button.setOnClickListener(new View.OnClickListener() {
+          public void onClick(View v)
+          {
+            Intent intent = new Intent(Intent.ACTION_VIEW,
+                UriUtils.createRecordUri(mBoo.mData.mUser.mId,
+                  mBoo.mData.mUser.mUsername, mBoo.mData.mId));
+            startActivity(intent);
+          }
+      });
+
+      if (mBoo.mData.mIsMessage
+          && mBoo.mData.mUser.mId != Globals.get().mAccount.mId)
+      {
+        button.setVisibility(View.VISIBLE);
+      }
+      else {
+        button.setVisibility(View.GONE);
+      }
+    }
+
 
     // Finally, fire off requests for images.
     if (0 < uris.size()) {

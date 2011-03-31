@@ -333,6 +333,7 @@
   <string name="details_invalid_uri">Could not open URI</string>
   <string name="details_load_error">Error loading details</string>
   <string name="details_play_label">Play This</string>
+  <string name="details_reply_label">Reply</string>
 
   <!-- Contacts -->
   <string name="contacts_title">Contacts</string>
