@@ -26,6 +26,8 @@ import android.util.AttributeSet;
 import android.content.res.TypedArray;
 import android.content.res.ColorStateList;
 
+import java.lang.ref.WeakReference;
+
 import fm.audioboo.application.R;
 
 import android.util.Log;
@@ -98,7 +100,7 @@ public class SpectralView extends RelativeLayout
   private double              mFilterStep;
 
   // Context
-  private Context             mContext;
+  private WeakReference<Context>  mContext;
 
 
   /***************************************************************************
@@ -107,7 +109,7 @@ public class SpectralView extends RelativeLayout
   public SpectralView(Context context)
   {
     super(context);
-    mContext = context;
+    mContext = new WeakReference<Context>(context);
   }
 
 
@@ -115,7 +117,7 @@ public class SpectralView extends RelativeLayout
   public SpectralView(Context context, AttributeSet attrs)
   {
     super(context, attrs);
-    mContext = context;
+    mContext = new WeakReference<Context>(context);
     initWithAttrs(attrs);
   }
 
@@ -124,7 +126,7 @@ public class SpectralView extends RelativeLayout
   public SpectralView(Context context, AttributeSet attrs, int defStyle)
   {
     super(context, attrs, defStyle);
-    mContext = context;
+    mContext = new WeakReference<Context>(context);
     initWithAttrs(attrs);
   }
 
@@ -160,9 +162,45 @@ public class SpectralView extends RelativeLayout
 
 
 
+  public void setGridColor(int resource)
+  {
+    Context ctx = mContext.get();
+    if (null == ctx) {
+      return;
+    }
+
+    mGridColor = ctx.getResources().getColorStateList(resource);
+  }
+
+
+
+  public void setBarDrawable(int resource)
+  {
+    Context ctx = mContext.get();
+    if (null == ctx) {
+      return;
+    }
+
+    Drawable draw = ctx.getResources().getDrawable(resource);
+    if (null == draw) {
+      Log.e(LTAG, "Could not load resource for bar drawable.");
+      return;
+    }
+
+    mBarDrawable = new ClipDrawable(draw,
+        Gravity.FILL_HORIZONTAL | Gravity.BOTTOM, ClipDrawable.VERTICAL);
+  }
+
+
+
   private void initWithAttrs(AttributeSet attrs)
   {
-    TypedArray a = mContext.obtainStyledAttributes(attrs, R.styleable.SpectralView);
+    Context ctx = mContext.get();
+    if (null == ctx) {
+      return;
+    }
+
+    TypedArray a = ctx.obtainStyledAttributes(attrs, R.styleable.SpectralView);
 
     // Read number of bars, defaulting to DEFAULT_NUMBER_OF_BARS
     mNumberOfBars = a.getInt(R.styleable.SpectralView_numberOfBars,

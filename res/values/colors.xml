@@ -31,6 +31,18 @@
   <color name="bb_dark_blue_dark">#ff2d383b</color>
   <color name="bb_dark_blue_medium">#ff4b566b</color>
 
+  <!-- Gradients -->
+  <color name="bb_darkPink">#ffc2065e</color>
+  <color name="bb_lightPink">#ffe813c4</color>
+  <color name="bb_darkBlue">#ff0628c2</color>
+  <color name="bb_lightBlue">#ff136ce8</color>
+
+  <!-- Squares -->
+  <color name="bb_mutedPink">#ffff5cc6</color>
+  <color name="bb_whitePink">#fff7bee8</color>
+  <color name="bb_mutedBlue">#ff1f9eff</color>
+  <color name="bb_whiteBlue">#ffcde7fa</color>
+
   <!--
   <color name="bb_palette_near_black">#ff050606</color>
   <color name="bb_palette_">#ff24485f</color>
@@ -74,12 +86,17 @@
   -->
   <color name="record_overlay_background">@color/bb_darkgray_80</color>
 
-  <color name="record_grid_color">@color/bb_deep_blue_dark</color>
-  <color name="record_grid_background">@color/bb_deep_blue_bright</color>
-  <color name="record_grid_bar">@android:color/white</color>
-  <color name="record_background">@color/bb_deep_blue_dark</color>
+  <color name="record_grid_color">@color/bb_darkPink</color>
+  <color name="record_grid_background">@color/bb_mutedPink</color>
+  <color name="record_grid_bar">@color/bb_whitePink</color>
+  <color name="record_background">@color/bb_darkPink</color>
 
-  <color name="record_adressee">@android:color/white</color>
+  <color name="record_to_grid_color">@color/bb_darkBlue</color>
+  <color name="record_to_grid_background">@color/bb_mutedBlue</color>
+  <color name="record_to_grid_bar">@color/bb_whiteBlue</color>
+  <color name="record_to_background">@color/bb_darkBlue</color>
+
+  <color name="record_addressee">@android:color/white</color>
 
   <!--
     Colors for the player view

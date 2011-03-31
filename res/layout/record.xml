@@ -14,7 +14,7 @@
     android:layout_height="fill_parent"
     android:orientation="vertical"
   >
-  <RelativeLayout
+  <RelativeLayout android:id="@+id/record_background"
       android:layout_width="fill_parent"
       android:layout_height="330dp"
       android:background="@color/record_background"
@@ -53,15 +53,15 @@
         android:paddingRight="15dp"
       >
       <!-- Addressee field -->
-      <TextView android:id="@+id/record_adressee"
+      <TextView android:id="@+id/record_addressee"
           android:layout_width="fill_parent"
           android:layout_height="wrap_content"
           android:layout_alignParentTop="true"
           android:layout_alignParentLeft="true"
           android:layout_marginTop="5dp"
           android:gravity="center"
-          android:text="To: unwesen"
-          android:textColor="@color/record_adressee"
+          android:text=" "
+          android:textColor="@color/record_addressee"
           android:textStyle="bold"
           android:textSize="@dimen/text_larger"
           android:shadowColor="@color/text_shadow"

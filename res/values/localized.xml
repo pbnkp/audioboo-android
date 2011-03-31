@@ -72,6 +72,12 @@
   <!-- Toast for succesfully publishing a Boo -->
   <string name="record_publish_success_toast">Boo Published!</string>
 
+  <!-- Toast for invalid URIs -->
+  <string name="record_invalid_uri">Invalid recording URI</string>
+
+  <!-- Adressee field -->
+  <string name="record_addressee">To: %1$s</string>
+
   <!--
     Boo player view
   -->

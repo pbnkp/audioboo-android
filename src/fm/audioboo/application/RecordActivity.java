@@ -48,6 +48,9 @@ import android.location.Location;
 
 import android.net.Uri;
 
+import org.apache.http.NameValuePair;
+
+import java.util.List;
 import java.util.Date;
 
 import java.io.File;
@@ -106,6 +109,12 @@ public class RecordActivity extends Activity
   // Request code - sent to PublishActivity so it can respond appropriately.
   private int           mRequestCode;
 
+  // Destination-related data. If the destination id is -1, then we're not
+  // recording to a destination.
+  private int           mDestinationId = -1;
+  private String        mDestinationName;
+  private boolean       mIsChannel;           // channel or user
+  private int           mInReplyToId;         // -1, or message id
 
 
   /***************************************************************************
@@ -115,6 +124,53 @@ public class RecordActivity extends Activity
   public void onCreate(Bundle savedInstanceState)
   {
     super.onCreate(savedInstanceState);
+    setContentView(R.layout.record);
+
+    Intent intent = getIntent();
+
+    // See if we perhaps are launched via ACTION_VIEW;
+    Uri dataUri = intent.getData();
+    if (null != dataUri) {
+      List<NameValuePair> params = UriUtils.getQuery(dataUri);
+      for (NameValuePair pair : params) {
+        String name = pair.getName();
+        if (name.equals("destination[stream_id]")) {
+          try {
+            mDestinationId = Integer.valueOf(pair.getValue());
+            mIsChannel = true;
+          } catch (NumberFormatException ex) {
+            mDestinationId = -1;
+          }
+        }
+
+        else if (name.equals("destination[recipient_id]")) {
+          try {
+            mDestinationId = Integer.valueOf(pair.getValue());
+            mIsChannel = false;
+          } catch (NumberFormatException ex) {
+            mDestinationId = -1;
+          }
+        }
+
+        else if (name.equals("destination[parent_id]")) {
+          try {
+            mInReplyToId = Integer.valueOf(pair.getValue());
+          } catch (NumberFormatException ex) {
+            mInReplyToId = -1;
+          }
+        }
+
+        else if (name.equals("destination_name")) {
+          mDestinationName = pair.getValue();
+        }
+      }
+
+      if (-1 == mDestinationId || null == mDestinationName) {
+        Toast.makeText(this, R.string.record_invalid_uri, Toast.LENGTH_LONG).show();
+        finish();
+        return;
+      }
+    }
   }
 
 
@@ -308,9 +364,6 @@ public class RecordActivity extends Activity
     // onConfigurationChanged(). Either way, we need to reconstruct the
     // activity's state as it was previously.
 
-    // First of all, we need to set the content view.
-    setContentView(R.layout.record);
-
     // That also implies that we've lost our bindings for the button, etc.
     mRecordButton = (RecordButton) findViewById(R.id.record_button);
     if (null == mRecordButton) {
@@ -343,6 +396,28 @@ public class RecordActivity extends Activity
       return;
     }
 
+    // Set colors depending on whether a destination ID is set or not.
+    int gridColor = R.color.record_grid_color;
+    int gridBackgroundColor = R.color.record_grid_background;
+    int gridBarColor = R.color.record_grid_bar;
+    int backgroundColor = R.color.record_background;
+    if (-1 != mDestinationId) {
+      gridColor = R.color.record_to_grid_color;
+      gridBackgroundColor = R.color.record_to_grid_background;
+      gridBarColor = R.color.record_to_grid_bar;
+      backgroundColor = R.color.record_to_background;
+    }
+
+    View view = findViewById(R.id.record_background);
+    if (null != view) {
+      Log.d(LTAG, "Set background resource!");
+      view.setBackgroundResource(backgroundColor);
+    }
+
+    mSpectralView.setBarDrawable(gridBarColor);
+    mSpectralView.setGridColor(gridColor);
+    mSpectralView.setBackgroundResource(gridBackgroundColor);
+
 
     // If we've been recording, set the button/spectral view to the appropriate
     // state.
@@ -358,6 +433,20 @@ public class RecordActivity extends Activity
         if (null != amp) {
           mRecordButton.setProgress((int) (amp.mPosition / 1000));
         }
+      }
+    }
+
+    // Show/Hide addressee field.
+    TextView text_view = (TextView) findViewById(R.id.record_addressee);
+    if (null != text_view) {
+      if (-1 == mDestinationId) {
+        // Making it invisible messes up the layout, so let's just set an empty
+        // text.
+        text_view.setText(" ");
+      }
+      else {
+        String addressee = String.format(getResources().getString(R.string.record_addressee), mDestinationName);
+        text_view.setText(addressee);
       }
     }
   }
