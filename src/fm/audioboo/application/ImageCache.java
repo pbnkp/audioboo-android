@@ -34,6 +34,10 @@ import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 
 import java.io.ByteArrayOutputStream;
+import java.io.FileInputStream;
+import java.io.File;
+import java.io.IOException;
+import java.io.FileNotFoundException;
 
 import java.util.LinkedList;
 
@@ -158,11 +162,7 @@ public class ImageCache extends SQLiteOpenHelper
         }
         else {
           // Apparently it didn't, so fetch the item.
-          byte[] data = Globals.get().mAPI.fetchRawSynchronous(
-              item.mImageUri, mHandler);
-          if (null != data) {
-            fetchItemResult(item, mHandler, data);
-          }
+          processItem(item, mHandler);
         }
       }
 
@@ -366,7 +366,45 @@ public class ImageCache extends SQLiteOpenHelper
 
 
 
-  private void fetchItemResult(CacheItem item, Handler resultHandler, byte[] data)
+  /**
+   * Fetch item either via API or filesystem
+   **/
+  private void processItem(CacheItem item, Handler resultHandler)
+  {
+    byte[] data = null;
+
+    if ("file".equals(item.mImageUri.getScheme())) {
+      // Load data manually
+      File f = new File(item.mImageUri.getPath());
+      if (!f.exists() || !f.canRead()) {
+        Log.e(LTAG, "File specified by URI '" + item.mImageUri + "' does not exist or is not readable.");
+        return;
+      }
+
+      try {
+        FileInputStream fis = new FileInputStream(f);
+        data = API.readStreamRaw(fis);
+      } catch (IOException ex) {
+        Log.e(LTAG, "Read error when reading '" + item.mImageUri + "': " + ex.getMessage());
+      }
+    }
+    else {
+      // Delegate to API
+      data = Globals.get().mAPI.fetchRawSynchronous(item.mImageUri, resultHandler);
+    }
+
+    // Process results
+    if (null != data) {
+      processItemResult(item, resultHandler, data);
+    }
+  }
+
+
+
+  /**
+   * Process an item's result, writing it into cache and scaling it, etc.
+   **/
+  private void processItemResult(CacheItem item, Handler resultHandler, byte[] data)
   {
     // Log.d(LTAG, "Got: " + item.mImageUri);
 
