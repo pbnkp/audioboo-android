@@ -72,15 +72,23 @@
 
 
       <!-- Player view -->
-      <!-- FIXME swap this out. -->
-      <fm.audioboo.widget.BooPlayerView
-          android:id="@+id/record_player"
+      <ViewAnimator android:id="@+id/record_player_flipper"
           android:layout_width="fill_parent"
           android:layout_height="wrap_content"
           android:layout_alignParentBottom="true"
           android:layout_marginBottom="5dp"
-          audioboo:showDisclosure="false"
-        />
+          android:inAnimation="@anim/fade_in"
+          android:outAnimation="@anim/fade_out"
+        >
+        <fm.audioboo.widget.BooPlayerView
+            android:id="@+id/record_player"
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            audioboo:showDisclosure="false"
+          />
+        <!-- FIXME -->
+        <TextView android:layout_width="fill_parent" android:layout_height="wrap_content" android:text="placeholder" />
+      </ViewAnimator>
     </RelativeLayout>
 
     <!-- 3. Disabled overlay -->
@@ -117,10 +125,21 @@
           android:layout_width="fill_parent"
           android:layout_height="wrap_content"
           android:layout_marginTop="5dp"
-          android:gravity="center"
-          audioboo:textInitial="Start"
-          audioboo:textOn="Pause"
-          audioboo:textOff="Resume"
+          android:paddingLeft="15dp"
+          android:paddingRight="15dp"
+          android:textColor="@android:color/white"
+          android:textStyle="bold"
+          android:textSize="@dimen/text_huge"
+          android:shadowColor="@color/text_shadow"
+          android:shadowRadius="1"
+          android:shadowDx="0"
+          android:shadowDy="-1"
+          audioboo:textInitial="Record"
+          android:textOn="Pause"
+          android:textOff="Resume"
+          android:background="@drawable/btn_red"
+          audioboo:backgroundOn="@drawable/btn_blue"
+          audioboo:backgroundOff="@drawable/btn_red"
         />
     </TableRow>
 
