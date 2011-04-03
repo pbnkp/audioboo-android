@@ -112,19 +112,19 @@
 
   <TableLayout
       android:layout_width="fill_parent"
-      android:layout_height="wrap_content"
+      android:layout_height="fill_parent"
       android:gravity="center"
       android:stretchColumns="0,1"
     >
     <TableRow
         android:layout_height="wrap_content"
-        android:layout_span="2"
       >
       <!-- Record button -->
       <fm.audioboo.widget.RecordButton android:id="@+id/record_button"
           android:layout_width="fill_parent"
           android:layout_height="wrap_content"
-          android:layout_marginTop="5dp"
+          android:layout_margin="10dp"
+          android:layout_span="2"
           android:paddingLeft="15dp"
           android:paddingRight="15dp"
           android:textColor="@android:color/white"
@@ -134,15 +134,57 @@
           android:shadowRadius="1"
           android:shadowDx="0"
           android:shadowDy="-1"
-          audioboo:textInitial="Record"
-          android:textOn="Pause"
-          android:textOff="Resume"
+          audioboo:textInitial="@string/record_label_record"
+          android:textOn="@string/record_label_pause"
+          android:textOff="@string/record_label_resume"
           android:background="@drawable/btn_red"
           audioboo:backgroundOn="@drawable/btn_blue"
           audioboo:backgroundOff="@drawable/btn_red"
         />
     </TableRow>
 
-    <!-- TODO upload button. I thought there was another one; we don't need the table if there isn't -->
+    <TableRow android:layout_height="wrap_content"
+      >
+      <!-- Reset button -->
+      <Button android:id="@+id/record_restart"
+          android:layout_width="fill_parent"
+          android:layout_height="wrap_content"
+          android:layout_margin="10dp"
+          android:layout_marginRight="5dp"
+          android:paddingLeft="15dp"
+          android:paddingRight="15dp"
+          android:text="@string/record_label_restart"
+          android:background="@drawable/btn_red"
+          android:textColor="@android:color/white"
+          android:textStyle="bold"
+          android:textSize="@dimen/text_large"
+          android:shadowColor="@color/text_shadow"
+          android:shadowRadius="1"
+          android:shadowDx="0"
+          android:shadowDy="-1"
+          android:enabled="false"
+        />
+
+      <!-- Publish button -->
+      <Button android:id="@+id/record_publish"
+          android:layout_width="fill_parent"
+          android:layout_height="wrap_content"
+          android:layout_margin="10dp"
+          android:layout_marginLeft="5dp"
+          android:paddingLeft="15dp"
+          android:paddingRight="15dp"
+          android:text="@string/record_label_publish"
+          android:background="@drawable/btn_green"
+          android:textColor="@android:color/white"
+          android:textStyle="bold"
+          android:textSize="@dimen/text_large"
+          android:shadowColor="@color/text_shadow"
+          android:shadowRadius="1"
+          android:shadowDx="0"
+          android:shadowDy="-1"
+          android:enabled="false"
+        />
+
+    </TableRow>
   </TableLayout>
 </LinearLayout>

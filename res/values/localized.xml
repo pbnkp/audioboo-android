@@ -78,6 +78,13 @@
   <!-- Adressee field -->
   <string name="record_addressee">To: %1$s</string>
 
+  <!-- Button labels -->
+  <string name="record_label_record">Record</string>
+  <string name="record_label_pause">Pause</string>
+  <string name="record_label_resume">Resume</string>
+  <string name="record_label_restart">Restart</string>
+  <string name="record_label_publish">Publish</string>
+
   <!--
     Boo player view
   -->
