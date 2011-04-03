@@ -70,6 +70,14 @@
   <color name="group_label">@color/bb_black_80</color>
 
   <!--
+    Label colors for the big, coloured buttons (used in res/color/button_label.xml)
+  -->
+  <color name="button_label_normal">@android:color/white</color>
+  <color name="button_label_normal_disable">@color/bb_gray_80</color>
+  <color name="button_label_pressed">@color/bb_white_69</color>
+  <color name="button_label_selected">@android:color/white</color>
+
+  <!--
     Colors for the lists of boos. Also see res/color
   -->
   <color name="boo_list_image_background">#a1a7b2</color>

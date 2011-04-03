@@ -99,7 +99,7 @@
         android:paddingRight="15dp"
         android:text="@string/main_record"
         android:background="@drawable/btn_green"
-        android:textColor="@android:color/white"
+        android:textColor="@color/button_label"
         android:textStyle="bold"
         android:textSize="@dimen/text_huge"
         android:shadowColor="@color/text_shadow"
