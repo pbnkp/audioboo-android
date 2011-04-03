@@ -16,7 +16,6 @@ import java.util.Timer;
 
 import java.lang.ref.WeakReference;
 
-import fm.audioboo.data.PersistentPlaybackState; // FIXME PlayerState
 import fm.audioboo.data.PlayerState;
 import fm.audioboo.application.Boo;
 
@@ -43,8 +42,7 @@ public class BooPlayer extends Thread
   private static final int TIMER_TASK_INTERVAL  = 500;
 
   // State machine transitions.
-  private static final int T_ERROR              = -3;
-  private static final int T_IGNORE             = -2;
+  private static final int T_ERROR              = -2;
   private static final int T_NONE               = -1;
   private static final int T_PREPARE            = 0;
   private static final int T_RESUME             = 1;
@@ -60,7 +58,7 @@ public class BooPlayer extends Thread
   // the desired state.
   private static final int STATE_DECISION_MATRIX[][] = {
     { T_NONE,   T_PREPARE,  T_PREPARE,  T_START,  },
-    { T_IGNORE, T_NONE,     T_IGNORE,   T_RESUME, },
+    { T_NONE,   T_NONE,     T_NONE,     T_NONE,   },
     { T_STOP,   T_RESET,    T_NONE,     T_RESUME, },
     { T_STOP,   T_RESET,    T_PAUSE,    T_NONE,   },
   };
@@ -92,7 +90,7 @@ public class BooPlayer extends Thread
 
   // Internal player state
   private volatile int          mState        = Constants.STATE_NONE;
-  private volatile int          mPendingState = Constants.STATE_NONE;
+  private volatile int          mTargetState  = Constants.STATE_NONE;
   private volatile boolean      mResetState;
 
   // Boo that's currently being played
@@ -105,7 +103,7 @@ public class BooPlayer extends Thread
 
 
   /***************************************************************************
-   * Implementation
+   * Public Interface
    **/
   public BooPlayer(Context ctx)
   {
@@ -137,13 +135,14 @@ public class BooPlayer extends Thread
     // Log.d(LTAG, "Asked to play: " + boo + " / " + playImmediately);
     synchronized (mLock)
     {
+      mPlaybackProgress = 0f;
       if (null == boo || null == boo.mData) {
         mBoo = null;
-        mPendingState = Constants.STATE_NONE;
+        mTargetState = Constants.STATE_ERROR;
       }
       else {
         mBoo = boo;
-        mPendingState = playImmediately ? Constants.STATE_PLAYING : Constants.STATE_PAUSED;
+        mTargetState = playImmediately ? Constants.STATE_PLAYING : Constants.STATE_PAUSED;
       }
       mResetState = true;
     }
@@ -160,7 +159,7 @@ public class BooPlayer extends Thread
     // Log.d(LTAG, "stop from outside");
     synchronized (mLock)
     {
-      mPendingState = Constants.STATE_NONE;
+      mTargetState = Constants.STATE_FINISHED;
     }
     interrupt();
   }
@@ -172,9 +171,10 @@ public class BooPlayer extends Thread
    **/
   public void pausePlaying()
   {
+    // Log.d(LTAG, "pause playing?");
     synchronized (mLock)
     {
-      mPendingState = Constants.STATE_PAUSED;
+      mTargetState = Constants.STATE_PAUSED;
     }
     interrupt();
   }
@@ -185,19 +185,9 @@ public class BooPlayer extends Thread
   {
     synchronized (mLock)
     {
-      mPendingState = Constants.STATE_PLAYING;
+      mTargetState = Constants.STATE_PLAYING;
     }
     interrupt();
-  }
-
-
-
-  public int getPlaybackState()
-  {
-    synchronized (mLock)
-    {
-      return getPlaybackStateUnlocked();
-    }
   }
 
 
@@ -209,11 +199,14 @@ public class BooPlayer extends Thread
     synchronized (mLock) {
       s.mState = mState;
       s.mProgress = mPlaybackProgress;
-      s.mTotal = getDuration();
-      s.mBooId = getBooIdInternal();
-      s.mBooTitle = getTitleInternal();
-      s.mBooUsername = getUsernameInternal();
-      s.mBooIsMessage = getIsMessageInternal();
+
+      if (null != mBoo && null != mBoo.mData) {
+        s.mTotal = mBoo.getDuration();
+        s.mBooId = mBoo.mData.mId;
+        s.mBooTitle = mBoo.mData.mTitle;
+        s.mBooUsername = null == mBoo.mData.mUser ? null : mBoo.mData.mUser.mUsername;
+        s.mBooIsMessage = mBoo.mData.mIsMessage;
+      }
     }
 
     return s;
@@ -221,46 +214,83 @@ public class BooPlayer extends Thread
 
 
 
-  private String getTitleInternal()
+  /**
+   * Used internally, but safe to use from the outside.
+   **/
+  public void setErrorState()
   {
-    if (null == mBoo || null == mBoo.mData) {
-      return null;
+    // Log.d(LTAG, "setting error state");
+    synchronized (mLock) {
+      mTargetState = Constants.STATE_ERROR;
     }
-    return mBoo.mData.mTitle;
+    interrupt();
   }
 
 
 
-  private String getUsernameInternal()
+  /**
+   * Flip STATE_PLAYING to STATE_BUFFERING and vice versa. Only has an effect
+   * if the given state is either one of the two, the current state is either
+   * one of the two, and the current and given states differ.
+   **/
+  public void flipBufferingState(int state)
   {
-    if (null == mBoo || null == mBoo.mData || null == mBoo.mData.mUser) {
-      return null;
+    if (Constants.STATE_PLAYING != state
+        && Constants.STATE_BUFFERING != state)
+    {
+      Log.e(LTAG, "Invalid parameter for flipBufferingState: " + state);
+      return;
     }
-    return mBoo.mData.mUser.mUsername;
+
+    boolean doInterrupt = false;
+    synchronized (mLock) {
+      if (Constants.STATE_PLAYING != mState
+          && Constants.STATE_BUFFERING != mState)
+      {
+        return;
+      }
+
+      if (mState != state) {
+        mState = state;
+        doInterrupt = true;
+      }
+    }
+    if (doInterrupt) {
+      interrupt();
+    }
   }
 
 
 
-  private int getBooIdInternal()
+  /***************************************************************************
+   * Private implementation
+   **/
+
+  /**
+   * XXX Used internally, don't use from the outside. IF the current state is
+   * STATE_PREPARING, advances the state into STATE_PAUSED.
+   **/
+  public void prepareSucceeded()
   {
-    if (null == mBoo || null == mBoo.mData) {
-      return -1;
+    synchronized (mLock) {
+      prepareSucceededUnlocked();
     }
-    return mBoo.mData.mId;
+    interrupt();
+  }
+
+  public void prepareSucceededUnlocked()
+  {
+    if (Constants.STATE_PREPARING != mState) {
+      return;
+    }
+
+    mState = Constants.STATE_PAUSED;
   }
 
 
 
-  private boolean getIsMessageInternal()
-  {
-    if (null == mBoo || null == mBoo.mData) {
-      return false;
-    }
-    return mBoo.mData.mIsMessage;
-  }
-
-
-
+  // FIXME
+ /*
   public PersistentPlaybackState getPersistentState()
   {
     synchronized (mLock)
@@ -276,29 +306,7 @@ public class BooPlayer extends Thread
     }
   }
 
-
-
-  public void setPendingState(int state)
-  {
-    synchronized (mLock)
-    {
-      setPendingStateUnlocked(state);
-    }
-  }
-
-
-
-  public int getPlaybackStateUnlocked()
-  {
-    return mState;
-  }
-
-
-
-  public void setPendingStateUnlocked(int state)
-  {
-    mPendingState = state;
-  }
+  */
 
 
 
@@ -313,105 +321,59 @@ public class BooPlayer extends Thread
     while (mShouldRun)
     {
       try {
-        // Figure out the action to take from here. This needs to be done under lock
-        // so relevant data won't change under our noses.
-        Boo currentBoo = null;
-        int currentState = Constants.STATE_ERROR;
-        int pendingState = Constants.STATE_NONE;
-        int action = T_NONE;
-
-        boolean reset = false;
+        // The result of the action performed will influence sleep time.
+        boolean sleep_long;
 
         synchronized (mLock)
         {
-          currentBoo = mBoo;
-          currentState = mState;
-          pendingState = mPendingState;
-          reset = mResetState;
-          if (reset) {
+          // 1. Get current state
+          Boo currentBoo = mBoo;
+          int currentState = mState;
+          int targetState = mTargetState;
+          int action = T_NONE;
+          // Log.d(LTAG, "#1 currentBoo: " + currentBoo + " - currentState: " + currentState + " - targetState: " + targetState + " - action: " + action);
+
+          // 2. If we're supposed to reset the state machine, let's do so now.
+          //    We also set the current state to STATE_NONE so that the rest
+          //    of the state machine can function normally.
+          if (mResetState) {
+            stopUnlocked();
             mResetState = false;
+
+            // If the target state is the error state, we'll also pre-empt any
+            // further processing in this loop, and skip right to the next
+            // iteration. Note that this leaves the pending state in the
+            // error condition, too, meaning we can only exit the error state
+            // through a reset from the outside, i.e. a call to play().
+            if (Constants.STATE_ERROR == targetState) {
+              mState = Constants.STATE_ERROR;
+              continue;
+            }
+
+            // If the pending state is anything else, we'll assume that the
+            // current state is STATE_NONE, for simplicity's sake.
             currentState = Constants.STATE_NONE;
           }
 
-          // Log.d(LTAG, "#1 currentBoo: " + currentBoo + " - currentState: " + currentState + " - pendingState: " + pendingState);
-          // Log.d(LTAG, "Reset? " + reset);
+          // Log.d(LTAG, "#2 currentBoo: " + currentBoo + " - currentState: " + currentState + " - targetState: " + targetState + " - action: " + action);
 
-          // If the next state is to be an error state, let's not bother with
-          // trying to find out what to do next - we want to stop.
-          if (Constants.STATE_ERROR == pendingState) {
-            action = T_STOP;
-          }
-          else {
-            action = STATE_DECISION_MATRIX[normalizeState(currentState)][normalizeState(pendingState)];
-          }
-          // Log.d(LTAG, "#1 Current: " + currentState + " Pending: " + pendingState + " Action: " + action);
+          // 3. Figure out the action that might take us to the target state
+          //    (this doesn't have to happen immediately.)
+          //    If the target state is STATE_ERROR, we'll take a shortcut and
+          //    ignore this part completely.
+          action = STATE_DECISION_MATRIX[normalizeState(currentState)][normalizeState(targetState)];
+          // Log.d(LTAG, "#3 currentBoo: " + currentBoo + " - currentState: " + currentState + " - targetState: " + targetState + " - action: " + action);
 
-          // We also set the new state here. This is primarily done because
-          // STATE_PREPARING should be set as soon as possible, but it doesn't
-          // hurt for the others either.
-          // Strictly speaking, we're inviting a race here: once mLock has been
-          // released, the thread could be interrupted before the appropriate action
-          // to effect the state change can be taken. That, however, does not matter
-          // because the next time the decision matrix is consulted, this "lost"
-          // state is recovered.
-          // By setting the pendingState (in most cases) to be identical to mState,
-          // we effectively achieve that the next interrupt() should result in
-          // T_NONE.
-          switch (action) {
-            case T_IGNORE:
-            case T_NONE:
-              break;
-
-            case T_PREPARE:
-            case T_RESET:
-              mState = mPendingState = Constants.STATE_PREPARING;
-              break;
-
-            case T_RESUME:
-              // State and pending state are determined by whether the resume
-              // action succeeds.
-              break;
-
-            case T_STOP:
-              mState = mPendingState = Constants.STATE_NONE;
-              break;
-
-            case T_PAUSE:
-              mState = mPendingState = Constants.STATE_PAUSED;
-              break;
-
-            case T_START:
-              // For this action only, we set a new pending state. Once
-              // preparing has finished, interrupt() will be invoked.
-              mState = Constants.STATE_PREPARING;
-              mPendingState = Constants.STATE_PLAYING;
-              break;
-
-            default:
-              Log.e(LTAG, "Unknown action: " + action);
-              pendingState = Constants.STATE_ERROR;
-              mShouldRun = false;
-              continue;
-          }
-        }
-        // Log.d(LTAG, String.format("State change: %d -> %d : %d", currentState, pendingState, action));
-
-        // If we need to reset the state machine, let's do so now.
-        if (reset) {
-          stopInternal(false);
+          // 4. Perform the action. Note that all action functions will
+          //    change mState if
+          //    a) They successfully changed state (which not every function must
+          //       do), or
+          //    b) They encountered an error.
+          sleep_long = performAction(action, targetState, currentBoo);
         }
 
-        // If the pending state is an error state, also send an error state
-        // to listeners.
-        if (Constants.STATE_ERROR == pendingState) {
-          sendState(Constants.STATE_ERROR);
-        }
-
-        // Now perform the appropriate action to attain the new state.
-        boolean ares = performAction(action, currentBoo);
-        // Log.d(LTAG, "#2 Current: " + currentState + " Pending: " + pendingState + " Action: " + action);
-
-        if (ares) {
+        // Now we're back out of the lock, we'll sleep.
+        if (sleep_long) {
           // Sleep until the next interrupt occurs.
           sleep(SLEEP_TIME_LONG);
         }
@@ -425,42 +387,40 @@ public class BooPlayer extends Thread
     }
 
     // Finally we have to transition to an ended state.
-    int action = T_NONE;
     synchronized (mLock)
     {
-      action = STATE_DECISION_MATRIX[normalizeState(mState)][Constants.STATE_NONE];
-      mState = mPendingState = Constants.STATE_NONE;
+      int action = STATE_DECISION_MATRIX[normalizeState(mState)][Constants.STATE_NONE];
+      performAction(action, Constants.STATE_NONE, null);
     }
-    performAction(action, null);
   }
 
 
 
-  private boolean performAction(int action, Boo boo)
+  private boolean performAction(int action, int targetState, Boo boo)
   {
-    boolean result = true;
+    boolean sleep_long = true;
 
     switch (action) {
-      case T_IGNORE:
       case T_NONE:
-        // T_IGNORE and T_NONE are technically different actions: in T_NONE
-        // the pending and current state are identical, whereas T_IGNORE
-        // simply ignores the state change for now. Either way, we do nothing
-        // here.
+        // Do nothing. We're pretty much waiting for stuff to happen.
         break;
 
       case T_PREPARE:
       case T_START:
         // We need to prepare the player. For that, boo needs to be non-null.
         prepareInternal(boo);
+        sleep_long = false;
         break;
 
       case T_RESUME:
-        result = resumeInternal();
+        sleep_long = resumeInternal();
         break;
 
       case T_STOP:
-        stopInternal(true);
+        stopUnlocked();
+        mState = targetState;
+        mPlaybackProgress = 0f;
+        mBoo = null; // FIXME
         break;
 
       case T_PAUSE:
@@ -468,10 +428,9 @@ public class BooPlayer extends Thread
         break;
 
       case T_RESET:
-        // A reset is identical to stop followed by prepare. The boo needs
-        // to be non-null.
-        stopInternal(false);
+        stopUnlocked();
         prepareInternal(boo);
+        sleep_long = false;
         break;
 
       default:
@@ -479,7 +438,7 @@ public class BooPlayer extends Thread
         break;
     }
 
-    return result;
+    return sleep_long;
   }
 
 
@@ -493,7 +452,9 @@ public class BooPlayer extends Thread
     if (Constants.STATE_BUFFERING == state) {
       return Constants.STATE_PLAYING;
     }
-    if (Constants.STATE_ERROR == state) {
+    if (Constants.STATE_ERROR == state
+        || Constants.STATE_FINISHED == state)
+    {
       return Constants.STATE_NONE;
     }
     return state;
@@ -504,104 +465,76 @@ public class BooPlayer extends Thread
 
   private void prepareInternal(Boo boo)
   {
+    // Log.d(LTAG, "prepare internal: " + boo);
     if (null == boo || null == boo.mData) {
       Log.e(LTAG, "Prepare without boo!");
-      synchronized (mLock)
-      {
-        mPendingState = Constants.STATE_ERROR;
-      }
-      interrupt();
+      mState = Constants.STATE_ERROR;
+      return;
+    }
+    mState = Constants.STATE_PREPARING;
+
+    // Local Boos are treated via the FLACPlayerWrapper.
+    if (boo.isLocal()) {
+      mPlayer = new FLACPlayerWrapper(this);
+    }
+    else if (boo.isRemote()) {
+      // Handle everything else via the APIPlayer
+      mPlayer = new APIPlayer(this);
+    }
+    else {
+      // Not sure what to do here, exactly.
+      Log.e(LTAG, "Boo " + boo + " appears to be neither local nor remote. Huh.");
+      mState = Constants.STATE_ERROR;
       return;
     }
 
-    sendState(Constants.STATE_PREPARING);
-
-    // Local Boos are treated via the FLACPlayerWrapper.
-    synchronized (mLock) {
-      if (boo.isLocal()) {
-        mPlayer = new FLACPlayerWrapper(this);
-      }
-      else if (boo.isRemote()) {
-        // Handle everything else via the APIPlayer
-        mPlayer = new APIPlayer(this);
-      }
-      else {
-        // Not sure what to do here, exactly.
-        Log.e(LTAG, "Boo " + boo + " appears to be neither local nor remote. Huh.");
-        return;
-      }
-
-      // Now we can use the base API to start playback.
-      boolean result = mPlayer.prepare(boo);
-      if (result) {
-        // Once that returns, we set the current state to PAUSED. While we were in
-        // PREPARING state, no other state changes could be effected, so that's safe.
-        // We also interrupt() again, to let the thread figure out if there's a
-        // pending state after this.
-        mState = Constants.STATE_PAUSED;
-      }
-      else {
-        mPendingState = Constants.STATE_ERROR;
-      }
+    // Now we can use the base API to start playback.
+    boolean result = mPlayer.prepare(boo);
+    if (!result) {
+      mState = Constants.STATE_ERROR;
     }
-    interrupt();
   }
 
 
 
   private void pauseInternal()
   {
-    synchronized (mLock) {
-      mPlayer.pause();
-    }
+    mPlayer.pause();
+    mState = Constants.STATE_PAUSED;
 
-    sendState(Constants.STATE_PAUSED);
+    if (null != mTimer) {
+      mTimer.cancel();
+      mTimer = null;
+    }
   }
 
 
 
   private boolean resumeInternal()
   {
-    synchronized (mLock) {
-      if (mPlayer.resume()) {
-        mState = mPendingState = Constants.STATE_PLAYING;
-      }
-      else {
-        return false;
-      }
+    // Log.d(LTAG, "resume internal");
+    if (mPlayer.resume()) {
+      // Log.d(LTAG, "resume succeeded");
+      mState = Constants.STATE_PLAYING;
+      return resumeCountingProgress();
     }
+    // Log.d(LTAG, "resume failed");
 
-    if (null == mTimer) {
-      startPlaybackState();
-    }
-    else {
-      sendState(Constants.STATE_PLAYING);
-    }
-
-    return true;
+    mState = Constants.STATE_ERROR;
+    return false;
   }
 
 
-
-  private void stopInternal(boolean sendState)
+  private void stopUnlocked()
   {
-    // Log.d(LTAG, "Stop internal: " + sendState);
-    synchronized (mLock) {
-      if (null != mPlayer) {
-        mPlayer.stop();
-        mPlayer = null;
-      }
-
-      if (null != mTimer) {
-        mTimer.cancel();
-        mTimer = null;
-      }
+    if (null != mPlayer) {
+      mPlayer.stop();
+      mPlayer = null;
     }
 
-    if (sendState) {
-      // Log.d(LTAG, "sending State ended: " + sendState);
-      sendState(Constants.STATE_FINISHED);
-      mBoo = null; // Reset *after* sending end state.
+    if (null != mTimer) {
+      mTimer.cancel();
+      mTimer = null;
     }
   }
 
@@ -611,15 +544,13 @@ public class BooPlayer extends Thread
    * Switches the progress listener to playback state, and starts the timer
    * that'll inform the listener on a regular basis that progress is being made.
    **/
-  private void startPlaybackState()
+  private boolean resumeCountingProgress()
   {
     //Log.d(LTAG, "Starting playback state.");
 
     // If we made it here, then we'll start a tick timer for sending
     // continuous progress to the users of this class.
-    mPlaybackProgress = 0f;
     mTimestamp = System.currentTimeMillis();
-    sendState(Constants.STATE_PLAYING);
 
     try {
       mTimer = new Timer();
@@ -633,15 +564,11 @@ public class BooPlayer extends Thread
       mTimer.scheduleAtFixedRate(task, 0, TIMER_TASK_INTERVAL);
     } catch (java.lang.IllegalStateException ex) {
       Log.e(LTAG, "Could not start timer: " + ex);
-      sendState(Constants.STATE_ERROR);
+      mState = Constants.STATE_ERROR;
+      return false;
     }
-  }
 
-
-
-  private void sendState(int state)
-  {
-    // FIXME not doing anything, it seems
+    return true;
   }
 
 
@@ -669,8 +596,6 @@ public class BooPlayer extends Thread
       // Log.d(LTAG, "progress: " + mPlaybackProgress);
       mPlaybackProgress += (double) diff / 1000.0;
     }
-
-    sendState(state);
   }
 
 

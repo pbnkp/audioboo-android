@@ -87,22 +87,7 @@ public class APIPlayer extends PlayerBase
           state = Constants.STATE_BUFFERING;
         }
 
-        boolean doInterrupt = false;
-        synchronized (player.getLock())
-        {
-          // Strictly speaking, the getState() != state check happens in the
-          // run() function, but why interrupt more than we really need?
-          if (player.getPlaybackStateUnlocked() != state
-            && ((Constants.STATE_PLAYING == player.getPlaybackStateUnlocked())
-              || (Constants.STATE_BUFFERING == player.getPlaybackStateUnlocked())))
-          {
-            player.setPendingStateUnlocked(state);
-            doInterrupt = true;
-          }
-        }
-        if (doInterrupt) {
-          player.interrupt();
-        }
+        player.flipBufferingState(state);
       }
     });
 
@@ -117,8 +102,7 @@ public class APIPlayer extends PlayerBase
     mMediaPlayer.setOnErrorListener(new MediaPlayer.OnErrorListener() {
       public boolean onError(MediaPlayer mp, int what, int extra)
       {
-        player.setPendingState(Constants.STATE_ERROR);
-        player.interrupt();
+        player.setErrorState();
         return true;
       }
     });
@@ -126,7 +110,9 @@ public class APIPlayer extends PlayerBase
     mMediaPlayer.setOnPreparedListener(new MediaPlayer.OnPreparedListener() {
         public void onPrepared(MediaPlayer mp)
         {
+          // XXX Make sure to set mPrepared FIRST.
           mPrepared = true;
+          player.prepareSucceeded();
         }
     });
 

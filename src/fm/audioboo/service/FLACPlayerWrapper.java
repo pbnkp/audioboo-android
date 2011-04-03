@@ -70,8 +70,7 @@ public class FLACPlayerWrapper extends PlayerBase
     mFlacPlayer.setListener(new FLACPlayer.PlayerListener() {
       public void onError()
       {
-        player.setPendingState(Constants.STATE_ERROR);
-        player.interrupt();
+        player.setErrorState();
       }
 
 
@@ -83,6 +82,7 @@ public class FLACPlayerWrapper extends PlayerBase
 
     mFlacPlayer.start();
 
+    player.prepareSucceededUnlocked();
     return true;
   }
 
