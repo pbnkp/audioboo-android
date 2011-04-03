@@ -56,6 +56,7 @@ public class RecordButton extends NotifyingToggleButton
   private String                  mTextInitial;
 
   // Drawables for on/off states.
+  private Drawable                mBackgroundInitial;
   private Drawable                mBackgroundOn;
   private Drawable                mBackgroundOff;
 
@@ -101,6 +102,7 @@ public class RecordButton extends NotifyingToggleButton
     super.onFinishInflate();
 
     setText(mTextInitial);
+    setBackgroundDrawable(mBackgroundInitial);
 
     super.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
         public void onCheckedChanged(CompoundButton buttonView, boolean isChecked)
@@ -112,6 +114,15 @@ public class RecordButton extends NotifyingToggleButton
           }
         }
     });
+  }
+
+
+
+  public void resetState()
+  {
+    setChecked(false);
+    setText(mTextInitial);
+    setBackgroundDrawable(mBackgroundInitial);
   }
 
 
@@ -129,6 +140,7 @@ public class RecordButton extends NotifyingToggleButton
 
     mTextInitial = a.getString(R.styleable.RecordButton_textInitial);
 
+    mBackgroundInitial = a.getDrawable(R.styleable.RecordButton_backgroundInitial);
     mBackgroundOn = a.getDrawable(R.styleable.RecordButton_backgroundOn);
     mBackgroundOff = a.getDrawable(R.styleable.RecordButton_backgroundOff);
 

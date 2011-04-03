@@ -13,6 +13,7 @@
     <!-- The initial text for the button. -->
     <attr name="textInitial" format="string" />
     <!-- Drawables -->
+    <attr name="backgroundInitial" format="reference" />
     <attr name="backgroundOn" format="reference" />
     <attr name="backgroundOff" format="reference" />
   </declare-styleable>
