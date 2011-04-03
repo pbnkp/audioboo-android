@@ -11,9 +11,6 @@
 
 package fm.audioboo.widget;
 
-import android.os.Handler;
-import android.os.SystemClock;
-
 import android.content.Context;
 import android.content.res.TypedArray;
 import android.content.Intent;
@@ -44,9 +41,6 @@ import fm.audioboo.data.PlayerState;
 
 import fm.audioboo.application.R;
 
-import java.util.TimerTask;
-import java.util.Timer;
-
 import java.lang.ref.WeakReference;
 
 import android.util.Log;
@@ -70,9 +64,6 @@ public class BooPlayerView
   // Scale for the seek bar
   private static final int  PROGRESS_MAX        = 10000;
 
-  // Delay for updating the progress bar (msec).
-  private static final int  PROGRESS_UPDATE_MS  = 500;
-
 
   /***************************************************************************
    * Data members
@@ -92,30 +83,6 @@ public class BooPlayerView
 
   // Configurables
   private boolean                 mShowDisclosure;
-
-  // Progress polling
-  private long                    mNextUpdate;
-  private Handler                 mHandler = new Handler();
-  private Runnable                mUpdateTask = new Runnable()
-  {
-    public void run()
-    {
-      // Log.d(LTAG, "[" + this + "]: update");
-      PlayerState state = null;
-      BooPlayerClient client = Globals.get().mPlayer;
-      if (null != client) {
-        state = client.getState();
-      }
-      if (null != state) {
-        onProgress(state);
-      }
-
-      mNextUpdate += PROGRESS_UPDATE_MS;
-      // Log.d(LTAG, "#2 Posting at: " + mNextUpdate);
-      mHandler.postAtTime(this, mNextUpdate);
-    }
-  };
-
 
 
   /***************************************************************************
@@ -354,7 +321,7 @@ public class BooPlayerView
     }
 
     // Be informed of whatever player state exists.
-    startPollingProgress();
+    client.addProgressListener(this);
 
     updateVisualState();
   }
@@ -474,29 +441,15 @@ public class BooPlayerView
     super.onWindowFocusChanged(hasWindowFocus);
 
     if (!hasWindowFocus) {
-      stopPollingProgress();
+      BooPlayerClient client = Globals.get().mPlayer;
+      if (null != client) {
+        client.removeProgressListener(this);
+      }
       return;
     }
 
     // Ensure that the view always has the latest state.
     initialize();
-  }
-
-
-
-  private void startPollingProgress()
-  {
-    mHandler.removeCallbacks(mUpdateTask);
-    mNextUpdate = SystemClock.uptimeMillis() + PROGRESS_UPDATE_MS;
-    // Log.d(LTAG, "#1 Posting at: " + mNextUpdate);
-    mHandler.postAtTime(mUpdateTask, mNextUpdate);
-  }
-
-
-
-  private void stopPollingProgress()
-  {
-    mHandler.removeCallbacks(mUpdateTask);
   }
 
 

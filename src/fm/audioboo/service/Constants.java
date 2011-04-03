@@ -39,12 +39,6 @@ public class Constants
   public static final int STATE_BUFFERING       = 5;
   public static final int STATE_ERROR           = 6;
 
-  // Events
-  public static final String EVENT_PROGRESS     = "fm.audioboo.service.events.progress";
-
-  // Event data.
-  public static final String PROGRESS_STATE     = "fm.audioboo.service.event.data.progress-state";
-
   // Upload chunk size.
   public static final int UPLOAD_CHUNK_SIZE     = 8192;
 }

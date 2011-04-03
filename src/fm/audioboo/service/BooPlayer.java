@@ -66,15 +66,6 @@ public class BooPlayer extends Thread
   };
 
 
-  /***************************************************************************
-   * Listener to state changes
-   **/
-  public static interface ProgressListener
-  {
-    public void onProgress(PlayerState state);
-  }
-
-
 
   /***************************************************************************
    * Public data
@@ -95,9 +86,6 @@ public class BooPlayer extends Thread
 
   // Player instance.
   private volatile PlayerBase   mPlayer;
-
-  // Listener for state changes
-  private ProgressListener      mListener;
 
   // Tick timer, for tracking progress
   private volatile Timer        mTimer;
@@ -136,16 +124,6 @@ public class BooPlayer extends Thread
   public Object getLock()
   {
     return mLock;
-  }
-
-
-
-  /**
-   * Set progress listener
-   **/
-  void setProgressListener(ProgressListener listener)
-  {
-    mListener = listener;
   }
 
 
@@ -637,10 +615,6 @@ public class BooPlayer extends Thread
   {
     //Log.d(LTAG, "Starting playback state.");
 
-    if (null == mListener) {
-      return;
-    }
-
     // If we made it here, then we'll start a tick timer for sending
     // continuous progress to the users of this class.
     mPlaybackProgress = 0f;
@@ -667,15 +641,7 @@ public class BooPlayer extends Thread
 
   private void sendState(int state)
   {
-    if (null == mListener) {
-      return;
-    }
-
-    // Overwrite numeric state.
-    PlayerState s = getPlayerState();
-    s.mState = state;
-
-    mListener.onProgress(s);
+    // FIXME not doing anything, it seems
   }
 
 

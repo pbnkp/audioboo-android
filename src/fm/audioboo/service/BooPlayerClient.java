@@ -18,6 +18,8 @@ import android.content.ComponentName;
 import android.content.BroadcastReceiver;
 import android.content.IntentFilter;
 
+import android.os.Handler;
+import android.os.SystemClock;
 import android.os.IBinder;
 import android.os.RemoteException;
 
@@ -41,6 +43,9 @@ public class BooPlayerClient
    * Private constants
    **/
   private static final String LTAG = "BooPlayerClient";
+
+  // Delay for updating the progress bar (msec).
+  private static final int  PROGRESS_UPDATE_MS  = 331;
 
 
   /***************************************************************************
@@ -72,21 +77,31 @@ public class BooPlayerClient
   // Service stub
   private volatile IBooPlaybackService  mStub = null;
 
+  // Progress polling
+  private long                    mNextUpdate;
+  private Handler                 mHandler = new Handler();
+  private Runnable                mUpdateTask = new Runnable()
+  {
+    public void run()
+    {
+      // Log.d(LTAG, "[" + this + "]: update");
+      PlayerState state = null;
+      BooPlayerClient client = Globals.get().mPlayer;
+      if (null != client) {
+        state = client.getState();
+      }
+      sendState(state);
+
+      mNextUpdate += PROGRESS_UPDATE_MS;
+      // Log.d(LTAG, "#2 Posting at: " + mNextUpdate);
+      mHandler.postAtTime(this, mNextUpdate);
+    }
+  };
+
+
   // Progress listener
   private Object                        mListenerLock = new Object();
   private List<WeakReference<ProgressListener>>  mListeners = new LinkedList<WeakReference<ProgressListener>>();
-
-  private BroadcastReceiver             mReceiver = new BroadcastReceiver() {
-    @Override
-    public void onReceive(Context context, Intent intent)
-    {
-      if (intent.getAction().equals(Constants.EVENT_PROGRESS)) {
-        PlayerState state = (PlayerState) intent.getParcelableExtra(Constants.PROGRESS_STATE);
-        // Log.d(LTAG, String.format("State: %d ... %f/%f", state, progress, total));
-        sendProgress(state);
-      }
-    }
-  };
 
   // Service connection
   private ServiceConnection             mConnection = new ServiceConnection() {
@@ -99,25 +114,12 @@ public class BooPlayerClient
       if (null != listener) {
         listener.onBound(BooPlayerClient.this);
       }
-
-      // Register a broadcast receiver for state updates
-      Context ctx = mContext.get();
-      if (null == ctx) {
-        return;
-      }
-      ctx.registerReceiver(mReceiver, new IntentFilter(Constants.EVENT_PROGRESS));
     }
 
 
     public void onServiceDisconnected(ComponentName className)
     {
       mStub = null;
-
-      Context ctx = mContext.get();
-      if (null == ctx) {
-        return;
-      }
-      ctx.registerReceiver(null, new IntentFilter(Constants.EVENT_PROGRESS));
     }
   };
 
@@ -186,6 +188,8 @@ public class BooPlayerClient
   public void addProgressListener(ProgressListener listener)
   {
     synchronized (mListenerLock) {
+      int oldSize = mListeners.size();
+
       List<WeakReference<ProgressListener>> toRemove = new LinkedList<WeakReference<ProgressListener>>();
 
       boolean add = true;
@@ -204,6 +208,8 @@ public class BooPlayerClient
       }
 
       mListeners.removeAll(toRemove);
+
+      decideOnPolling(oldSize);
     }
   }
 
@@ -212,6 +218,8 @@ public class BooPlayerClient
   public void removeProgressListener(ProgressListener listener)
   {
     synchronized (mListenerLock) {
+      int oldSize = mListeners.size();
+
       List<WeakReference<ProgressListener>> toRemove = new LinkedList<WeakReference<ProgressListener>>();
 
       for (WeakReference<ProgressListener> ref : mListeners) {
@@ -225,12 +233,14 @@ public class BooPlayerClient
       }
 
       mListeners.removeAll(toRemove);
+
+      decideOnPolling(oldSize);
     }
   }
 
 
 
-  private void sendProgress(PlayerState state)
+  private void sendState(PlayerState state)
   {
     List<ProgressListener> targets = new LinkedList<ProgressListener>();
 
@@ -251,9 +261,33 @@ public class BooPlayerClient
     }
 
 
+    Log.d(LTAG, "Dispatching " + state + " to " + targets.size());
     for (ProgressListener listener : targets) {
       // Log.d(LTAG, "Dispatching to listener: " + listener);
       listener.onProgress(state);
+    }
+  }
+
+
+
+  private void decideOnPolling(int oldSize)
+  {
+    // Decisions are made on the basis of whether or not there were listeners
+    // before and there are listeners now; the number of listeners doesn't
+    // matter.
+    boolean oldHasListeners = oldSize > 0;
+    boolean curHasListeners = mListeners.size() > 0;
+
+    // If that hasn't chnaged, we don't need to do anything.
+    if (oldHasListeners == curHasListeners) {
+      return;
+    }
+
+    // Otherwise we need to go by the current contents.
+    mHandler.removeCallbacks(mUpdateTask);
+    if (curHasListeners) {
+      mNextUpdate = SystemClock.uptimeMillis() + PROGRESS_UPDATE_MS;
+      mHandler.postAtTime(mUpdateTask, mNextUpdate);
     }
   }
 
@@ -274,7 +308,7 @@ public class BooPlayerClient
     state.mBooId = boo.mData.mId;
     state.mBooTitle = boo.mData.mTitle;
     state.mBooUsername = (null == boo.mData.mUser ? null : boo.mData.mUser.mUsername);
-    sendProgress(state);
+    sendState(state);
 
     // Before sending stuff off to the service, make sure the mp3 uri (if it
     // exists) is absolute.
