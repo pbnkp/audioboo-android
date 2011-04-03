@@ -330,7 +330,6 @@ public class BooPlayer extends Thread
           Boo currentBoo = mBoo;
           int currentState = mState;
           int targetState = mTargetState;
-          int action = T_NONE;
           // Log.d(LTAG, "#1 currentBoo: " + currentBoo + " - currentState: " + currentState + " - targetState: " + targetState + " - action: " + action);
 
           // 2. If we're supposed to reset the state machine, let's do so now.
@@ -359,9 +358,16 @@ public class BooPlayer extends Thread
 
           // 3. Figure out the action that might take us to the target state
           //    (this doesn't have to happen immediately.)
-          //    If the target state is STATE_ERROR, we'll take a shortcut and
-          //    ignore this part completely.
-          action = STATE_DECISION_MATRIX[normalizeState(currentState)][normalizeState(targetState)];
+          //    If the current state is STATE_ERROR, we'll ignore this part and
+          //    don't do anything. That forces the caller to use play() to reset
+          //    the state machine.
+          int action = T_NONE;
+          if (Constants.STATE_ERROR == currentState) {
+            action = T_NONE;
+          }
+          else {
+            action = STATE_DECISION_MATRIX[normalizeState(currentState)][normalizeState(targetState)];
+          }
           // Log.d(LTAG, "#3 currentBoo: " + currentBoo + " - currentState: " + currentState + " - targetState: " + targetState + " - action: " + action);
 
           // 4. Perform the action. Note that all action functions will
