@@ -20,23 +20,16 @@ public class Constants
   // that pending state is entered.
   //
   // Some of these states are pseudo-states in that they do not affect
-  // state transitions. In particular, STATE_ERROR and STATE_NONE are both
-  // states from which the same transitions can be made. The same applies to
-  // STATE_PLAYING and STATE_BUFFERING.
-  //
-  // Those states exist because they are of interest to the ProgressListener.
-  // The ProgressListener will be sent the following states as they are entered
-  // - STATE_PLAYING
-  // - STATE_BUFFERING
-  // - STATE_FINISHED aka STATE_NONE
-  // - STATE_ERROR
+  // state transitions.
   public static final int STATE_NONE            = 0;
   public static final int STATE_PREPARING       = 1;
   public static final int STATE_PAUSED          = 2;
   public static final int STATE_PLAYING         = 3;
+  public static final int STATE_FINISHED        = 4; // Similar to STATE_PAUSED in that resume() works, but
+                                                     // internally, things are quite different.
 
-  public static final int STATE_FINISHED        = 4;
-  public static final int STATE_BUFFERING       = 5;
+  // Pseudo-states
+  public static final int STATE_BUFFERING       = 5; // Same as STATE_PLAYING; temporary state.
   public static final int STATE_ERROR           = 6;
 
   // Upload chunk size.
