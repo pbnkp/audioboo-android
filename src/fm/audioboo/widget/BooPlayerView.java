@@ -491,7 +491,8 @@ public class BooPlayerView
 
     boolean shouldBeChecked = (null == state)
       || (Constants.STATE_PAUSED == state.mState)
-      || (Constants.STATE_ERROR == state.mState);
+      || (Constants.STATE_ERROR == state.mState)
+      || (Constants.STATE_FINISHED == state.mState);
 
     // Log.d(LTAG, "State: " + state);
     // Log.d(LTAG, "Is checked: " + isChecked + " - should be? " + shouldBeChecked);
@@ -504,7 +505,9 @@ public class BooPlayerView
       Globals.get().mPlayer.pause();
     }
     else {
-      if (null != state && Constants.STATE_PAUSED == state.mState) {
+      if (null != state && (Constants.STATE_PAUSED == state.mState
+           || Constants.STATE_FINISHED == state.mState))
+      {
         Globals.get().mPlayer.resume();
       }
     }

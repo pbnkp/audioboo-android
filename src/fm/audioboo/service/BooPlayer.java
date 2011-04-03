@@ -49,7 +49,6 @@ public class BooPlayer extends Thread
   private static final int T_STOP               = 2;
   private static final int T_PAUSE              = 3;
   private static final int T_RESET              = 4;
-  private static final int T_START              = 5;
 
   // Decision matrix - how to get from one state to the other.
   // XXX The indices correspond to values of the first four STATE_ constants,
@@ -57,10 +56,11 @@ public class BooPlayer extends Thread
   // Read row index (first) as the current state, column index (second) as
   // the desired state.
   private static final int STATE_DECISION_MATRIX[][] = {
-    { T_NONE,   T_PREPARE,  T_PREPARE,  T_START,  },
-    { T_NONE,   T_NONE,     T_NONE,     T_NONE,   },
-    { T_STOP,   T_RESET,    T_NONE,     T_RESUME, },
-    { T_STOP,   T_RESET,    T_PAUSE,    T_NONE,   },
+    { T_NONE,   T_PREPARE,  T_PREPARE,  T_PREPARE,  T_STOP, },
+    { T_NONE,   T_NONE,     T_NONE,     T_NONE,     T_NONE, },
+    { T_STOP,   T_RESET,    T_NONE,     T_RESUME,   T_STOP, },
+    { T_STOP,   T_RESET,    T_PAUSE,    T_NONE,     T_STOP, },
+    { T_STOP,   T_RESET,    T_RESET,    T_RESET,    T_NONE, },
   };
 
 
@@ -412,7 +412,6 @@ public class BooPlayer extends Thread
         break;
 
       case T_PREPARE:
-      case T_START:
         // We need to prepare the player. For that, boo needs to be non-null.
         prepareInternal(boo);
         sleep_long = false;
@@ -426,7 +425,6 @@ public class BooPlayer extends Thread
         stopUnlocked();
         mState = targetState;
         mPlaybackProgress = 0f;
-        mBoo = null; // FIXME
         break;
 
       case T_PAUSE:
@@ -455,15 +453,16 @@ public class BooPlayer extends Thread
    **/
   private int normalizeState(int state)
   {
-    if (Constants.STATE_BUFFERING == state) {
-      return Constants.STATE_PLAYING;
+    switch (state) {
+      case Constants.STATE_BUFFERING:
+        return Constants.STATE_PLAYING;
+
+      case Constants.STATE_ERROR:
+        return Constants.STATE_NONE;
+
+      default:
+        return state;
     }
-    if (Constants.STATE_ERROR == state
-        || Constants.STATE_FINISHED == state)
-    {
-      return Constants.STATE_NONE;
-    }
-    return state;
   }
 
 
