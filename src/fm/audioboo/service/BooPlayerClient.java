@@ -261,7 +261,7 @@ public class BooPlayerClient
     }
 
 
-    Log.d(LTAG, "Dispatching " + state + " to " + targets.size());
+    // Log.d(LTAG, "Dispatching " + state + " to " + targets.size());
     for (ProgressListener listener : targets) {
       // Log.d(LTAG, "Dispatching to listener: " + listener);
       listener.onProgress(state);
