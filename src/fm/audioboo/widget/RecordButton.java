@@ -1,6 +1,8 @@
 /**
  * This file is part of AudioBoo, an android program for audio blogging.
- * Copyright (C) 2009 BestBefore Media Ltd. All rights reserved.
+ * Copyright (C) 2009 BestBefore Media Ltd.
+ * Copyright (C) 2010,2011 AudioBoo Ltd.
+ * All rights reserved.
  *
  * Author: Jens Finkhaeuser <jens@finkhaeuser.de>
  *
@@ -12,7 +14,7 @@ package fm.audioboo.widget;
 import android.view.View;
 import android.view.KeyEvent;
 
-import android.graphics.Canvas;
+import android.graphics.drawable.Drawable;
 
 import android.widget.RelativeLayout;
 import android.widget.CompoundButton;
@@ -23,6 +25,8 @@ import android.util.AttributeSet;
 import android.content.res.TypedArray;
 
 import fm.audioboo.application.R;
+
+import java.lang.ref.WeakReference;
 
 import android.util.Log;
 
@@ -36,7 +40,7 @@ import android.util.Log;
  * - It's got a background graphic changing depending on state, two other
  *   graphics and two text labels.
  **/
-public class RecordButton extends RelativeLayout
+public class RecordButton extends NotifyingToggleButton
 {
   /***************************************************************************
    * Private constants
@@ -49,25 +53,18 @@ public class RecordButton extends RelativeLayout
    * Data members
    **/
   // Text label for initial state, on state and off state.
-  private String                mTextInitial;
-  private String                mTextOn;
-  private String                mTextOff;
+  private String                  mTextInitial;
 
-  private int                   mProgressMax = 100;
-  private int                   mProgressCurrent;
+  // Drawables for on/off states.
+  private Drawable                mBackgroundOn;
+  private Drawable                mBackgroundOff;
 
   // Context
-  private Context               mContext;
-
-  // Contained elements
-  private View                  mOverlay;
-  private NotifyingToggleButton mToggle;
-  private TextView              mLabel;
-  private PieProgressView       mProgress;
-  private TextView              mProgressLabel;
+  private WeakReference<Context>  mContext;
 
   // Listener to toggle button presses
   private CompoundButton.OnCheckedChangeListener  mListener;
+
 
   /***************************************************************************
    * Implementation
@@ -75,11 +72,7 @@ public class RecordButton extends RelativeLayout
   public RecordButton(Context context)
   {
     super(context);
-    mContext = context;
-
-    setClickable(true);
-    setFocusable(true);
-    setFocusableInTouchMode(true);
+    mContext = new WeakReference<Context>(context);
   }
 
 
@@ -87,12 +80,8 @@ public class RecordButton extends RelativeLayout
   public RecordButton(Context context, AttributeSet attrs)
   {
     super(context, attrs);
-    mContext = context;
-    initWithAttrs(attrs);
-
-    setClickable(true);
-    setFocusable(true);
-    setFocusableInTouchMode(true);
+    mContext = new WeakReference<Context>(context);
+    initWithAttrs(context, attrs);
   }
 
 
@@ -100,73 +89,8 @@ public class RecordButton extends RelativeLayout
   public RecordButton(Context context, AttributeSet attrs, int defStyle)
   {
     super(context, attrs, defStyle);
-    mContext = context;
-    initWithAttrs(attrs);
-
-    setClickable(true);
-    setFocusable(true);
-    setFocusableInTouchMode(true);
-  }
-
-
-
-  /**
-   * In contrast to Android's stock progress widgets, this one treats both the
-   * maximum and current progress to be in units of seconds. The label next to
-   * the pie view is updated accordingly.
-   **/
-  public void setProgress(int progress)
-  {
-    mProgressCurrent = progress;
-    if (null != mProgress) {
-      mProgress.setProgress(progress);
-    }
-
-    if (null != mProgressLabel) {
-      // Split progress into minutes and seconds
-      int minutes = progress / 60;
-      int seconds = progress % 60;
-
-      mProgressLabel.setText(String.format("%d:%02d", minutes, seconds));
-    }
-  }
-
-
-
-  /**
-   * @see setProgress
-   **/
-  public void setMax(int max)
-  {
-    mProgressMax = max;
-    if (null != mProgress) {
-      mProgress.setMax(max);
-    }
-  }
-
-
-
-  /**
-   * Sets checked state of the button. @See isChecked below.
-   **/
-  public void setChecked(boolean checked)
-  {
-    if (null != mToggle) {
-      mToggle.setChecked(checked);
-    }
-  }
-
-
-
-  /**
-   * @see setChecked above
-   **/
-  public boolean isChecked()
-  {
-    if (null == mToggle) {
-      return false;
-    }
-    return mToggle.isChecked();
+    mContext = new WeakReference<Context>(context);
+    initWithAttrs(context, attrs);
   }
 
 
@@ -176,45 +100,18 @@ public class RecordButton extends RelativeLayout
   {
     super.onFinishInflate();
 
-    RelativeLayout content = (RelativeLayout) inflate(mContext, R.layout.record_button, this);
-    mOverlay = content.findViewById(R.id.record_button_overlay);
+    setText(mTextInitial);
 
-    mLabel = (TextView) content.findViewById(R.id.record_button_label);
-    if (null != mLabel) {
-      mLabel.setText(mTextInitial);
-    }
-
-    mToggle = (NotifyingToggleButton) content.findViewById(R.id.record_button_toggle);
-    if (null != mToggle) {
-      mToggle.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+    super.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
         public void onCheckedChanged(CompoundButton buttonView, boolean isChecked)
         {
-          if (isChecked) {
-            onChecked();
-          }
-          else {
-            onUnchecked();
+          setBackgroundDrawable(isChecked ? mBackgroundOn : mBackgroundOff);
+
+          if (null != mListener) {
+            mListener.onCheckedChanged(buttonView, isChecked);
           }
         }
-      });
-
-      mToggle.setOnPressedListener(new NotifyingToggleButton.OnPressedListener() {
-        public void onPressed(NotifyingToggleButton btn, boolean pressed)
-        {
-          // Propagate the toggle's pressed state to the overlay
-          mOverlay.setPressed(pressed);
-        }
-      });
-    }
-
-    mProgress = (PieProgressView) content.findViewById(R.id.record_button_progress);
-    if (null != mProgress) {
-      mProgress.setMax(mProgressMax);
-    }
-
-    mProgressLabel = (TextView) content.findViewById(R.id.record_button_progress_label);
-
-    setProgress(0);
+    });
   }
 
 
@@ -226,38 +123,15 @@ public class RecordButton extends RelativeLayout
 
 
 
-  private void initWithAttrs(AttributeSet attrs)
+  private void initWithAttrs(Context ctx, AttributeSet attrs)
   {
-    TypedArray a = mContext.obtainStyledAttributes(attrs, R.styleable.RecordButton);
+    TypedArray a = ctx.obtainStyledAttributes(attrs, R.styleable.RecordButton);
+
     mTextInitial = a.getString(R.styleable.RecordButton_textInitial);
-    mTextOn = a.getString(R.styleable.RecordButton_textOn);
-    mTextOff = a.getString(R.styleable.RecordButton_textOff);
+
+    mBackgroundOn = a.getDrawable(R.styleable.RecordButton_backgroundOn);
+    mBackgroundOff = a.getDrawable(R.styleable.RecordButton_backgroundOff);
+
     a.recycle();
-  }
-
-
-
-  private void onChecked()
-  {
-    if (null != mLabel) {
-      mLabel.setText(mTextOn);
-    }
-
-    if (null != mListener) {
-      mListener.onCheckedChanged(mToggle, true);
-    }
-  }
-
-
-
-  private void onUnchecked()
-  {
-    if (null != mLabel) {
-      mLabel.setText(mTextOff);
-    }
-
-    if (null != mListener) {
-      mListener.onCheckedChanged(mToggle, false);
-    }
   }
 }

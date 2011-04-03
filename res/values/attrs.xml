@@ -12,10 +12,9 @@
   <declare-styleable name="RecordButton">
     <!-- The initial text for the button. -->
     <attr name="textInitial" format="string" />
-    <!-- The text for the button when it is checked. -->
-    <attr name="textOn" format="string" />
-    <!-- The text for the button when it is not checked. -->
-    <attr name="textOff" format="string" />
+    <!-- Drawables -->
+    <attr name="backgroundOn" format="reference" />
+    <attr name="backgroundOff" format="reference" />
   </declare-styleable>
 
   <!-- Custom PieProgressView attributes -->
