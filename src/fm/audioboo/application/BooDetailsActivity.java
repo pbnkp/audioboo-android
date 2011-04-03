@@ -490,6 +490,19 @@ public class BooDetailsActivity
 
 
 
+  @Override
+  public void onPause()
+  {
+    super.onPause();
+
+    BooPlayerClient client = Globals.get().mPlayer;
+    if (null != client) {
+      client.removeProgressListener(this);
+    }
+  }
+
+
+
   private void showPlayerContainer()
   {
     final View player = findViewById(R.id.boo_player_container);
