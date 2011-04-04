@@ -96,43 +96,69 @@
             android:orientation="vertical"
             android:padding="3dp"
           >
-          <!-- Progress Pie -->
-          <RelativeLayout
-              android:layout_width="55dp"
-              android:layout_height="55dp"
-            >
-            <ImageView
-                android:layout_width="55dp"
-                android:layout_height="55dp"
-                android:src="@drawable/pie_shadow"
-              />
-
-            <fm.audioboo.widget.PieProgressView android:id="@+id/record_pie_progress"
-                android:layout_width="51dp"
-                android:layout_height="51dp"
-                android:layout_centerInParent="true"
-                audioboo:pieColor="@android:color/white"
-              />
-          </RelativeLayout>
-
-          <!-- Title -->
-          <TextView android:id="@+id/record_title"
+          <LinearLayout
               android:layout_width="fill_parent"
               android:layout_height="wrap_content"
-              android:layout_marginTop="15dp"
-              android:layout_marginLeft="5dp"
-              android:layout_marginRight="5dp"
-              android:textSize="@dimen/boo_player_title"
-              android:textStyle="bold"
-              android:textColor="@color/boo_player_title"
-              android:ellipsize="end"
-              android:lines="1"
-              android:singleLine="true"
-            />
+              android:orientation="horizontal"
+              android:gravity="center"
+            >
+            <!-- Progress Pie -->
+            <RelativeLayout
+                android:layout_width="55dp"
+                android:layout_height="55dp"
+              >
+              <ImageView
+                  android:layout_width="55dp"
+                  android:layout_height="55dp"
+                  android:src="@drawable/pie_shadow"
+                />
 
-          <!-- FIXME -->
-          <!-- 1. Label: time remaining -->
-          <!-- 2. time remaining -->
+              <fm.audioboo.widget.PieProgressView android:id="@+id/record_pie_progress"
+                  android:layout_width="51dp"
+                  android:layout_height="51dp"
+                  android:layout_centerInParent="true"
+                  audioboo:pieColor="@android:color/white"
+                />
+            </RelativeLayout>
+
+            <LinearLayout
+                android:layout_width="fill_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+              >
+              <!-- Title -->
+              <TextView android:id="@+id/record_title"
+                  android:layout_width="fill_parent"
+                  android:layout_height="wrap_content"
+                  android:layout_marginTop="15dp"
+                  android:layout_marginLeft="5dp"
+                  android:layout_marginRight="5dp"
+                  android:textSize="@dimen/boo_player_title"
+                  android:textStyle="bold"
+                  android:textColor="@color/boo_player_title"
+                  android:ellipsize="end"
+                  android:lines="1"
+                  android:singleLine="true"
+                />
+
+              <!-- Remaining label -->
+              <TextView
+                  android:layout_width="fill_parent"
+                  android:layout_height="wrap_content"
+                  android:layout_weight="1"
+                  android:layout_marginTop="2dp"
+                  android:text="Time remaining:"
+                  android:textSize="@dimen/boo_player_author"
+                  android:textStyle="bold"
+                  android:textColor="@color/boo_player_author"
+                  android:ellipsize="end"
+                  android:lines="1"
+                  android:singleLine="true"
+                />
+
+                <!-- TODO remaining -->
+            </LinearLayout>
+          </LinearLayout>
         </LinearLayout>
       </ViewAnimator>
     </RelativeLayout>
