@@ -206,9 +206,9 @@ public class Boo
   /**
    * Deletes the Boo file and it's data files.
    **/
-  public void delete()
+  public boolean delete()
   {
-    Globals.get().getBooManager().deleteBoo(this);
+    return Globals.get().getBooManager().deleteBoo(this);
   }
 
 

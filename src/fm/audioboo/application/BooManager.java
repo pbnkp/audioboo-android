@@ -363,7 +363,7 @@ public class BooManager
 
 
 
-  public void deleteBoo(Boo boo)
+  public boolean deleteBoo(Boo boo)
   {
     String data_dir = ensureDataDir(boo);
     if (null != data_dir) {
@@ -377,6 +377,6 @@ public class BooManager
     }
 
     File f = new File(boo.mData.mFilename);
-    f.delete();
+    return f.delete();
   }
 }
