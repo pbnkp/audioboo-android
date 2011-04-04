@@ -82,19 +82,18 @@ public class PublishActivity extends Activity
   private static final int IMAGE_OPT_CREATE     = 1;
   private static final int IMAGE_OPT_REMOVE     = 2;
 
-  // Result codes:
-  // - RESULT_CANCELED  - nothing done.
-  // - RESULT_OK        - edited.
-  // - RESULT_PUBLISHED - in publishing queue.
-  private static final int RESULT_PUBLISHED     = Activity.RESULT_FIRST_USER;
-
-
 
   /***************************************************************************
    * Public constants
    **/
   // Extra names
   public static final String EXTRA_BOO_FILENAME = "fm.audioboo.extras.boo-filename";
+
+  // Result codes:
+  // - RESULT_CANCELED  - nothing done.
+  // - RESULT_OK        - edited.
+  // - RESULT_PUBLISHED - in publishing queue.
+  public static final int RESULT_PUBLISHED      = Activity.RESULT_FIRST_USER;
 
 
   /***************************************************************************
@@ -242,13 +241,17 @@ public class PublishActivity extends Activity
     EditText edit_text = (EditText) findViewById(R.id.publish_title);
     if (null != edit_text) {
       String title = edit_text.getText().toString();
-      if (useHint && (null == title || 0 == title.length())) {
-        title = edit_text.getHint().toString();
+      if (null == title || 0 == title.length()) {
+        if (useHint) {
+          title = edit_text.getHint().toString();
+        }
       }
-
-      if (null == mBoo.mData.mTitle || !mBoo.mData.mTitle.equals(title)) {
-        mBoo.mData.mTitle = title;
-        retval = true;
+      else {
+        if (null == mBoo.mData.mTitle || !mBoo.mData.mTitle.equals(title)) {
+          // Log.d(LTAG, "title changed");
+          mBoo.mData.mTitle = title;
+          retval = true;
+        }
       }
     }
 
@@ -257,6 +260,7 @@ public class PublishActivity extends Activity
     if (null != tags_view) {
       List<Tag> tags = tags_view.getTags();
       if (tagsChanged(mBoo.mData.mTags, tags)) {
+        // Log.d(LTAG, "tags changed");
         mBoo.mData.mTags = tags;
         retval = true;
       }
@@ -266,6 +270,7 @@ public class PublishActivity extends Activity
     if (null == mBoo.mData.mLocation) {
       Location loc = Globals.get().mLocation;
       if (null == mBoo.mData.mLocation && null != loc) {
+        // Log.d(LTAG, "location changed");
         mBoo.mData.mLocation = new BooLocation(this, loc);
         retval = true;
       }
