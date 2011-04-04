@@ -15,13 +15,15 @@ import android.app.Activity;
 
 import android.content.Context;
 import android.content.Intent;
+import android.content.DialogInterface;
+import android.content.res.Configuration;
 
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
 import android.os.Vibrator;
 
-import android.content.res.Configuration;
+import android.media.MediaPlayer;
 
 import android.view.View;
 import android.view.Menu;
@@ -29,14 +31,17 @@ import android.view.MenuItem;
 
 import android.widget.CompoundButton;
 import android.widget.TextView;
-
+import android.widget.ViewAnimator;
 import android.widget.Toast;
+import android.widget.Button;
 
 import fm.audioboo.widget.RecordButton;
 import fm.audioboo.widget.SpectralView;
 import fm.audioboo.widget.BooPlayerView;
+import fm.audioboo.widget.PieProgressView;
 
 import fm.audioboo.data.BooLocation;
+import fm.audioboo.data.DestinationInfo;
 
 import android.view.animation.Animation;
 import android.view.animation.AnimationUtils;
@@ -73,17 +78,17 @@ public class RecordActivity extends Activity
   private static final String LTAG  = "RecordActivity";
 
   // Limit for the recording time we allow, in seconds.
-  private static final int    RECORDING_TIME_LIMIT        = 1200;
-
-  // Options menu IDs
-  private static final int  MENU_RESTART                  = 0;
-  private static final int  MENU_PUBLISH                  = 1;
+  private static final int    RECORDING_TIME_LIMIT        = 300;
 
   // Dialog IDs.
   private static final int  DIALOG_RECORDING_ERROR        = 0;
+  private static final int  DIALOG_DRAFT                  = 1;
 
   // Vibration duration in msec - half a second seems about right.
   private static final long VIBRATE_DURATION              = 500;
+
+  // Activity codes
+  private static final int  ACTIVITY_PUBLISH              = 0;
 
 
   /***************************************************************************
@@ -91,7 +96,6 @@ public class RecordActivity extends Activity
    **/
   // Extra names
   public static final String EXTRA_BOO_FILENAME = "fm.audioboo.extras.boo-filename";
-
 
 
   /***************************************************************************
@@ -103,26 +107,49 @@ public class RecordActivity extends Activity
   // The record activity essentially represents a Boo, even though it's not
   // filled with all possible bits of information yet. We (re-)create this
   // Boo whenever we reset the recorder.
-  private Boo           mBoo;
+  private DestinationInfo mDestinationInfo;
+  private String          mNewTitle;
+  private Boo             mBoo;
 
-  // Reference to the record button
-  private RecordButton  mRecordButton;
-
-  // Reference to the spectral view
-  private SpectralView  mSpectralView;
+  // Reference to UI elements
+  private RecordButton    mRecordButton;
+  private SpectralView    mSpectralView;
+  private PieProgressView mPieProgress;
+  private Button          mRestartButton;
+  private Button          mPublishButton;
 
   // Last error. Used and cleared in onCreateDialog
-  private int           mErrorCode = -1;
+  private int             mErrorCode = -1;
 
-  // Request code - sent to PublishActivity so it can respond appropriately.
-  private int           mRequestCode;
+  // Recording callbacks
+  private Handler         mRecordingHandler = new Handler(new Handler.Callback()
+  {
+    public boolean handleMessage(Message m)
+    {
+      switch (m.what) {
+        case FLACRecorder.MSG_AMPLITUDES:
+          FLACRecorder.Amplitudes amp = (FLACRecorder.Amplitudes) m.obj;
+          updateRecordingState(amp);
+          break;
 
-  // Destination-related data. If the destination id is -1, then we're not
-  // recording to a destination.
-  private int           mDestinationId = -1;
-  private String        mDestinationName;
-  private boolean       mIsChannel;           // channel or user
-  private int           mInReplyToId;         // -1, or message id
+        case FLACRecorder.MSG_OK:
+          // Ignore
+          break;
+
+        case BooRecorder.MSG_END_OF_RECORDING:
+          updateButtons();
+          break;
+
+        default:
+          mBooRecorder.stop();
+          mErrorCode = m.what;
+          showDialog(DIALOG_RECORDING_ERROR);
+          break;
+      }
+
+      return true;
+    }
+  });
 
 
   /***************************************************************************
@@ -139,66 +166,108 @@ public class RecordActivity extends Activity
     // See if we perhaps are launched via ACTION_VIEW;
     Uri dataUri = intent.getData();
     if (null != dataUri) {
+      DestinationInfo info = new DestinationInfo();
+
       List<NameValuePair> params = UriUtils.getQuery(dataUri);
       for (NameValuePair pair : params) {
         String name = pair.getName();
         if (name.equals("destination[stream_id]")) {
           try {
-            mDestinationId = Integer.valueOf(pair.getValue());
-            mIsChannel = true;
+            info.mDestinationId = Integer.valueOf(pair.getValue());
+            info.mIsChannel = true;
           } catch (NumberFormatException ex) {
-            mDestinationId = -1;
+            info.mDestinationId = -1;
           }
         }
 
         else if (name.equals("destination[recipient_id]")) {
           try {
-            mDestinationId = Integer.valueOf(pair.getValue());
-            mIsChannel = false;
+            info.mDestinationId = Integer.valueOf(pair.getValue());
+            info.mIsChannel = false;
           } catch (NumberFormatException ex) {
-            mDestinationId = -1;
+            info.mDestinationId = -1;
           }
         }
 
         else if (name.equals("destination[parent_id]")) {
           try {
-            mInReplyToId = Integer.valueOf(pair.getValue());
+            info.mInReplyTo = Integer.valueOf(pair.getValue());
           } catch (NumberFormatException ex) {
-            mInReplyToId = -1;
+            info.mInReplyTo = -1;
           }
         }
 
+        else if (name.equals("destination[title]")) {
+          mNewTitle = pair.getValue();
+        }
+
         else if (name.equals("destination_name")) {
-          mDestinationName = pair.getValue();
+          info.mDestinationName = pair.getValue();
         }
       }
 
-      if (-1 == mDestinationId || null == mDestinationName) {
+      if (-1 == info.mDestinationId || null == info.mDestinationName) {
         Toast.makeText(this, R.string.record_invalid_uri, Toast.LENGTH_LONG).show();
         finish();
         return;
       }
+
+      mDestinationInfo = info;
     }
+
+    // If we're not getting a data URI, we're not recording a boo with a
+    // destination. We might still be recording a fresh boo, or we might be
+    // adding to an existing one. We'll know by whether or not the
+    // EXTRA_BOO_FILENAME parameter is given.
+    Bundle extras = intent.getExtras();
+    if (null != extras) {
+      String filename = extras.getString(EXTRA_BOO_FILENAME);
+      Boo boo = Boo.constructFromFile(filename);
+      if (null == boo) {
+        throw new IllegalArgumentException("Boo file '" + filename + "' could "
+            + "not be loaded.");
+      }
+      mBoo = boo;
+    }
+
+    if (null == mBoo) {
+      mBoo = Globals.get().getBooManager().createBoo();
+      mBoo.mData.mTitle = mNewTitle;
+    }
+  }
+
+
+
+  private void writeBoo()
+  {
+    // We only have destination info if we're creating a new boo anyway.
+    if (null != mDestinationInfo) {
+      mBoo.mData.mDestinationInfo = mDestinationInfo;
+    }
+
+    // Always overwrite the user. We're dealing with drafts, after all...
+    mBoo.mData.mUser = Globals.get().mAccount;
+
+    mBoo.writeToFile();
   }
 
 
 
   private void startRecording()
   {
-    if (null == mBooRecorder) {
-      initBooRecorder();
-    }
+    // Stop playback & hide player.
+    Globals.get().mPlayer.stop();
+    hidePlayer();
 
     // Force screen to stay on.
     mRecordButton.setKeepScreenOn(true);
 
-    // Stop playback, regardless where it's been started from.
-    // FIXME Globals.get().mPlayer.stopPlaying();
-    stopPlayer();
-
     // Log.d(LTAG, "Resume recording!");
     mBooRecorder.start();
     mSpectralView.startAnimation();
+
+    // Update button availability.
+    disableSecondaryButtons();
   }
 
 
@@ -208,33 +277,65 @@ public class RecordActivity extends Activity
     // Release the lock if we're holding it.
     mRecordButton.setKeepScreenOn(false);
 
-    if (null != mSpectralView) {
-      // Log.d(LTAG, "Stop animating.");
-      mSpectralView.stopAnimation();
-    }
+    // Log.d(LTAG, "Stop animating.");
+    mSpectralView.stopAnimation();
 
-    if (null != mBooRecorder) {
-      // Log.d(LTAG, "Pause recording.");
-      mBooRecorder.stop();
-    }
+    // Log.d(LTAG, "Pause recording.");
+    mBooRecorder.stop();
 
-    // Show player.
+    // Show & initialize player.
     showPlayer();
+    Globals.get().mPlayer.play(mBoo, false);
+  }
+
+
+
+  private void disableSecondaryButtons()
+  {
+    if (null != mRestartButton) {
+      mRestartButton.setEnabled(false);
+    }
+    if (null != mPublishButton) {
+      mPublishButton.setEnabled(false);
+    }
+  }
+
+
+
+  private void updateButtons()
+  {
+    // Update button availability.
+    double duration = mBoo.getDuration();
+    if (null != mRestartButton) {
+      mRestartButton.setEnabled(duration > 0.0f);
+    }
+    if (null != mPublishButton) {
+      mPublishButton.setEnabled(duration > 0.0f);
+    }
+    if (null != mRecordButton) {
+      mRecordButton.setEnabled(duration < RECORDING_TIME_LIMIT);
+    }
   }
 
 
 
   @Override
-  public void onPause()
+  public void onStop()
   {
-    super.onPause();
+    super.onStop();
 
-    stopRecording();
-    mRecordButton.setChecked(false);
-    stopPlayer();
+    // Definitely stop playback. We don't exactly know what Boo was playing
+    // before, and we don't really care.
+    Globals.get().mPlayer.stop();
+  }
 
-    // Write Boo
-    mBoo.writeToFile();
+
+
+  @Override
+  public void onBackPressed()
+  {
+    // Save/discard dialogue.
+    showDialog(DIALOG_DRAFT);
   }
 
 
@@ -244,49 +345,23 @@ public class RecordActivity extends Activity
   {
     super.onResume();
 
-    Globals.get().getBooManager().rebuildIndex();
-
-    // If no Boo exists, this might be the first start of the Activity. We're
-    // best served if we just grab the latest Boo, if any.
-    if (null == mBoo) {
-      mBoo = Globals.get().getBooManager().getLatestDraft();
-    }
-    else {
-      // If on the other hand we have a boo, we'll try to reload it. If that fails,
-      // we still need to reset the boo.
-      if (!mBoo.reload()) {
-        mBoo = Globals.get().getBooManager().getLatestDraft();
-      }
-    }
-
-    // We might still end up having no Boo here if there's none on disk, so
-    // let's create a new one if that's the case.
-    if (null == mBoo) {
-      mBoo = Globals.get().getBooManager().createBoo();
-      mBoo.writeToFile();
-    }
-
-    // The next thing to do is to initialize the BooRecorder.
-    initBooRecorder();
-
-    // Last, update the UI accordingly
-    initUI();
-    hideOrShowPlayer();
+    reInitialize();
   }
 
 
 
-  private void hideOrShowPlayer()
+  private void reInitialize()
   {
-    // Show the player view, if there's a Boo to match.
-    if (null != mBoo) {
-      // Only show the player if the Boo has a duration. Otherwise there's
-      // nothing to play back.
-      // Log.d(LTAG, "Boo: " + mBoo);
-      if (0.0 != mBoo.getDuration()) {
-        showPlayer();
-      }
-    }
+    // The next thing to do is to initialize the BooRecorder.
+    initBooRecorder();
+
+    // Last, update the UI accordingly
+    populateViews();
+
+    // Show & initialize player. (also stops playback if something was already
+    // playing)
+    Globals.get().mPlayer.play(mBoo, false);
+    showPlayer();
   }
 
 
@@ -303,9 +378,9 @@ public class RecordActivity extends Activity
 
   private void startCountdown()
   {
-    // Stop playback, regardless where it's been started from.
-    // FIXME Globals.get().mPlayer.stopPlaying();
-    stopPlayer();
+    // Stop playback & hide player.
+    Globals.get().mPlayer.stop();
+    hidePlayer();
 
     // Start countdown.
     View v = findViewById(R.id.record_overlay);
@@ -313,6 +388,10 @@ public class RecordActivity extends Activity
 
     TextView tv = (TextView) findViewById(R.id.record_countdown);
     v.setVisibility(View.VISIBLE);
+
+    // Play countdown
+    MediaPlayer mp = MediaPlayer.create(this, R.raw.countdown);
+    mp.start();
 
     countDownStep(3);
   }
@@ -366,7 +445,7 @@ public class RecordActivity extends Activity
 
 
 
-  private void initUI()
+  private void populateViews()
   {
     // This function is called either from onStart() or from
     // onConfigurationChanged(). Either way, we need to reconstruct the
@@ -378,13 +457,7 @@ public class RecordActivity extends Activity
       Log.e(LTAG, "No record button found!");
       return;
     }
-    mRecordButton.setMax(RECORDING_TIME_LIMIT);
-    double duration = mBoo.getDuration();
-    if (duration > 0.0) {
-      mRecordButton.setProgress((int) duration);
-      mRecordButton.setChecked(true);
-      mRecordButton.setChecked(false);
-    }
+
     mRecordButton.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
       public void onCheckedChanged(CompoundButton buttonView, boolean isChecked)
       {
@@ -397,6 +470,14 @@ public class RecordActivity extends Activity
       }
     });
 
+    mPieProgress = (PieProgressView) findViewById(R.id.record_pie_progress);
+    if (null != mPieProgress) {
+      mPieProgress.setMax(RECORDING_TIME_LIMIT);
+      double duration = mBoo.getDuration();
+      if (duration > 0.0) {
+        mPieProgress.setProgress((int) duration);
+      }
+    }
 
     mSpectralView = (SpectralView) findViewById(R.id.record_spectral_view);
     if (null == mSpectralView) {
@@ -409,7 +490,7 @@ public class RecordActivity extends Activity
     int gridBackgroundColor = R.color.record_grid_background;
     int gridBarColor = R.color.record_grid_bar;
     int backgroundColor = R.color.record_background;
-    if (-1 != mDestinationId) {
+    if (null != mDestinationInfo) {
       gridColor = R.color.record_to_grid_color;
       gridBackgroundColor = R.color.record_to_grid_background;
       gridBarColor = R.color.record_to_grid_bar;
@@ -418,7 +499,6 @@ public class RecordActivity extends Activity
 
     View view = findViewById(R.id.record_background);
     if (null != view) {
-      Log.d(LTAG, "Set background resource!");
       view.setBackgroundResource(backgroundColor);
     }
 
@@ -438,8 +518,8 @@ public class RecordActivity extends Activity
       }
       else {
         FLACRecorder.Amplitudes amp = mBooRecorder.getAmplitudes();
-        if (null != amp) {
-          mRecordButton.setProgress((int) (amp.mPosition / 1000));
+        if (null != amp && null != mPieProgress) {
+          mPieProgress.setProgress((int) (amp.mPosition / 1000f));
         }
       }
     }
@@ -447,15 +527,56 @@ public class RecordActivity extends Activity
     // Show/Hide addressee field.
     TextView text_view = (TextView) findViewById(R.id.record_addressee);
     if (null != text_view) {
-      if (-1 == mDestinationId) {
+      if (null != mDestinationInfo) {
+        String addressee = String.format(getResources().getString(R.string.record_addressee),
+            mDestinationInfo.mDestinationName);
+        text_view.setText(addressee);
+      }
+      else {
         // Making it invisible messes up the layout, so let's just set an empty
         // text.
         text_view.setText(" ");
       }
-      else {
-        String addressee = String.format(getResources().getString(R.string.record_addressee), mDestinationName);
-        text_view.setText(addressee);
-      }
+    }
+
+
+    // Other buttons.
+    mRestartButton = (Button) findViewById(R.id.record_restart);
+    if (null != mRestartButton) {
+      mRestartButton.setOnClickListener(new View.OnClickListener() {
+          public void onClick(View v)
+          {
+            mBoo.delete();
+            mBoo = Globals.get().getBooManager().createBoo();
+            mBoo.mData.mTitle = mNewTitle;
+            reInitialize();
+
+            // Update buttons.
+            disableSecondaryButtons();
+            if (null != mRecordButton) {
+              mRecordButton.resetState();
+              mRecordButton.setEnabled(true);
+            }
+
+            // Reset progress.
+            if (null != mPieProgress) {
+              mPieProgress.setProgress(0);
+            }
+          }
+      });
+    }
+
+    mPublishButton = (Button) findViewById(R.id.record_publish);
+    if (null != mPublishButton) {
+      mPublishButton.setOnClickListener(new View.OnClickListener() {
+          public void onClick(View v)
+          {
+            writeBoo();
+            Intent i = new Intent(RecordActivity.this, PublishActivity.class);
+            i.putExtra(PublishActivity.EXTRA_BOO_FILENAME, mBoo.mData.mFilename);
+            startActivityForResult(i, ACTIVITY_PUBLISH);
+          }
+      });
     }
   }
 
@@ -463,12 +584,13 @@ public class RecordActivity extends Activity
 
   private void updateRecordingState(FLACRecorder.Amplitudes amp)
   {
-    if (null == mBoo.mData.mRecordedAt) {
-      mBoo.mData.mRecordedAt = new Date();
-    }
+    int position = (int) (amp.mPosition / 1000f);
 
+    // Update UI
     mSpectralView.setAmplitudes(amp.mAverage, amp.mPeak);
-    mRecordButton.setProgress((int) (amp.mPosition / 1000));
+    if (null != mPieProgress) {
+      mPieProgress.setProgress(position);
+    }
 
     // If the Boo has no location, but Globals does, update the Boo's location.
     // By doing that here, we'll get the location as early on in the recording
@@ -481,35 +603,37 @@ public class RecordActivity extends Activity
         mBoo.mData.mLocation = new BooLocation(this, Globals.get().mLocation);
       }
     }
+
+    if (null == mBoo.mData.mRecordedAt) {
+      mBoo.mData.mRecordedAt = new Date();
+    }
+
+    // We may have reason to stop recording here.
+    if (position >= RECORDING_TIME_LIMIT) {
+      stopRecording();
+    }
   }
 
 
 
   private void showPlayer()
   {
-    // Fade in player
-    BooPlayerView player = (BooPlayerView) findViewById(R.id.record_player);
-    if (null != player) {
-      Animation animation = AnimationUtils.loadAnimation(this, R.anim.fade_in);
-      player.startAnimation(animation);
-      player.setVisibility(View.VISIBLE);
-
-      // Tell the player to lay the boo we remember.
-      // player.play(mBoo, false); FIXME
+    ViewAnimator anim = (ViewAnimator) findViewById(R.id.record_player_flipper);
+    if (null != anim) {
+      anim.setDisplayedChild(0);
     }
+
+    View player = findViewById(R.id.record_player);
+    player.setEnabled(mBoo.getDuration() > 0.0f);
   }
 
 
 
-  private void stopPlayer()
+  private void hidePlayer()
   {
-    // If the player view is showing, fade it out.
-    BooPlayerView player = (BooPlayerView) findViewById(R.id.record_player);
-    if (null != player && View.VISIBLE == player.getVisibility()) {
-      Animation animation = AnimationUtils.loadAnimation(this, R.anim.fade_out);
-      player.startAnimation(animation);
-
-      // FIXME player.stop();
+    ViewAnimator anim = (ViewAnimator) findViewById(R.id.record_player_flipper);
+    if (null != anim) {
+      anim.setDisplayedChild(1);
     }
   }
 
@@ -522,125 +646,33 @@ public class RecordActivity extends Activity
       mBooRecorder = null;
     }
 
-    if (null == mBoo) {
-      Log.e(LTAG, "Cannot instanciate BooRecorder, Boo does not exist.");
-      return;
-    }
-
     // Instanciate recorder.
-    mBooRecorder = new BooRecorder(this, mBoo,
-      new Handler(new Handler.Callback()
-      {
-        public boolean handleMessage(Message m)
-        {
-          switch (m.what) {
-            case FLACRecorder.MSG_AMPLITUDES:
-              FLACRecorder.Amplitudes amp = (FLACRecorder.Amplitudes) m.obj;
-              updateRecordingState(amp);
-              break;
-
-            case FLACRecorder.MSG_OK:
-              // Ignore.
-              break;
-
-            case BooRecorder.MSG_END_OF_RECORDING:
-              // Alright, let's write that Boo to disk!
-              mBoo.writeToFile();
-              break;
-
-            default:
-              mBooRecorder.stop();
-              mErrorCode = m.what;
-              showDialog(DIALOG_RECORDING_ERROR);
-              break;
-          }
-
-          return true;
-        }
-      }
-    ));
-  }
-
-
-
-  @Override
-  public boolean onCreateOptionsMenu(Menu menu)
-  {
-    String[] menu_titles = getResources().getStringArray(R.array.record_menu_titles);
-    final int[] menu_icons = {
-      android.R.drawable.ic_menu_revert,
-      android.R.drawable.ic_menu_share,
-    };
-    for (int i = 0 ; i < menu_titles.length ; ++i) {
-      menu.add(0, i, 0, menu_titles[i]).setIcon(menu_icons[i]);
-    }
-    return true;
-  }
-
-
-
-  @Override
-  public boolean onPrepareOptionsMenu(Menu menu)
-  {
-    MenuItem publish = menu.getItem(MENU_PUBLISH);
-    publish.setEnabled(0.0 != mBoo.getDuration());
-    return true;
-  }
-
-
-
-  @Override
-  public boolean onOptionsItemSelected(MenuItem item)
-  {
-    switch (item.getItemId()) {
-      case MENU_RESTART:
-        mBoo.delete();
-        mBoo = Globals.get().getBooManager().createBoo();
-        mBoo.writeToFile();
-
-        initBooRecorder();
-        initUI();
-        hideOrShowPlayer();
-        break;
-
-      case MENU_PUBLISH:
-        Intent i = new Intent(this, PublishActivity.class);
-        mBoo.writeToFile();
-        i.putExtra(PublishActivity.EXTRA_BOO_FILENAME, mBoo.mData.mFilename);
-        startActivityForResult(i, ++mRequestCode);
-        break;
-
-      default:
-        Log.e(LTAG, "Unknown menu id: " + item.getItemId());
-        return false;
-    }
-
-    return true;
+    mBooRecorder = new BooRecorder(this, mBoo, mRecordingHandler);
   }
 
 
 
   protected void onActivityResult(int requestCode, int resultCode, Intent data)
   {
-    if (mRequestCode != requestCode) {
-      return;
-    }
+    switch (resultCode) {
+      case Activity.RESULT_CANCELED:
+        // Nothing to do.
+        break;
 
-    // If the activity got cancelled, we'll not do anything. If an error occurred
-    // during publishing, that will end up sending the cancel error code, but
-    // the publish activity is responsible for displaying errors itself.
-    if (Activity.RESULT_CANCELED == resultCode) {
-      return;
-    }
+      case Activity.RESULT_OK: // Stuff has been changed
+        mBoo.reload();
+        reInitialize();
+        break;
 
-    // For anything but RESULT_OK, let's log an error - that's unexpected.
-    if (Activity.RESULT_OK != resultCode) {
-      Log.e(LTAG, "Unexpected result code: " + resultCode + " - " + data);
-      return;
-    }
+      case PublishActivity.RESULT_PUBLISHED:
+        setResult(PublishActivity.RESULT_PUBLISHED);
+        finish();
+        break;
 
-    // Toast that we're done.
-    Toast.makeText(this, R.string.record_publish_success_toast, Toast.LENGTH_LONG).show();
+      default:
+        Log.e(LTAG, "Unexpected result code: " + resultCode + " - " + data);
+        break;
+    }
   }
 
 
@@ -659,9 +691,33 @@ public class RecordActivity extends Activity
           AlertDialog.Builder builder = new AlertDialog.Builder(this);
           builder.setMessage(content)
             .setCancelable(false)
-            .setPositiveButton(getResources().getString(R.string.record_error_ack), null);
+            .setPositiveButton(R.string.record_error_ack, null);
           dialog = builder.create();
         }
+        break;
+
+      case DIALOG_DRAFT:
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setMessage(R.string.record_draft_dialog_content)
+          .setPositiveButton(R.string.record_draft_dialog_save, new DialogInterface.OnClickListener() {
+              public void onClick(DialogInterface d, int which)
+              {
+                writeBoo();
+                setResult(Activity.RESULT_OK);
+                finish();
+              }
+          })
+          .setNegativeButton(R.string.record_draft_dialog_delete, new DialogInterface.OnClickListener() {
+              public void onClick(DialogInterface d, int which)
+              {
+                Globals.get().mPlayer.stop();
+                int res = mBoo.delete() ? Activity.RESULT_OK : Activity.RESULT_CANCELED;
+                setResult(res);
+                finish();
+              }
+          })
+        ;
+        dialog = builder.create();
         break;
     }
 

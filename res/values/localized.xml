@@ -85,6 +85,11 @@
   <string name="record_label_restart">Restart</string>
   <string name="record_label_publish">Publish</string>
 
+  <!-- Draft dialog -->
+  <string name="record_draft_dialog_content">Save or delete draft?</string>
+  <string name="record_draft_dialog_save">Save</string>
+  <string name="record_draft_dialog_delete">Delete</string>
+
   <!--
     Boo player view
   -->
