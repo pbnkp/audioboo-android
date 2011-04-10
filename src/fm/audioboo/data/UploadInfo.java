@@ -27,12 +27,24 @@ import fm.audioboo.service.Constants;
 public class UploadInfo implements Parcelable, Serializable
 {
   /***************************************************************************
+   * Public constants
+   **/
+  // Upload stage; first the audio is uploaded, then the image, then metadata.
+  public static final int UPLOAD_STAGE_AUDIO    = 0;
+  public static final int UPLOAD_STAGE_IMAGE    = 1;
+  public static final int UPLOAD_STAGE_METADATA = 2;
+
+
+  /***************************************************************************
    * Public data
    **/
-  // Chunk size and last chunk successfully processed. Offsets into the data
-  // can be calculated from there.
-  public int      mChunkSize          = Constants.UPLOAD_CHUNK_SIZE;
-  public int      mLastFinishedChunk  = 0;
+  // Chunk/attachment IDs we already know, and how much of each we've already
+  // uploaded.
+  public int      mAudioChunkId     = -1;
+  public int      mAudioUploaded    = 0;
+  public int      mImageChunkId     = -1;
+  public int      mImageUploaded    = 0;
+  public int      mUploadStage      = UPLOAD_STAGE_AUDIO;
 
 
   public UploadInfo()
@@ -52,8 +64,11 @@ public class UploadInfo implements Parcelable, Serializable
 
   public void writeToParcel(Parcel out, int flags)
   {
-    out.writeInt(mChunkSize);
-    out.writeInt(mLastFinishedChunk);
+    out.writeInt(mAudioChunkId);
+    out.writeInt(mAudioUploaded);
+    out.writeInt(mImageChunkId);
+    out.writeInt(mImageUploaded);
+    out.writeInt(mUploadStage);
   }
 
 
@@ -75,7 +90,10 @@ public class UploadInfo implements Parcelable, Serializable
 
   private UploadInfo(Parcel in)
   {
-    mChunkSize = in.readInt();
-    mLastFinishedChunk = in.readInt();
+    mAudioChunkId = in.readInt();
+    mAudioUploaded = in.readInt();
+    mImageChunkId = in.readInt();
+    mImageUploaded = in.readInt();
+    mUploadStage = in.readInt();
   }
 }
