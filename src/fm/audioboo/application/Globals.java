@@ -296,9 +296,6 @@ public class Globals
   public void onBound(UploadClient client)
   {
     mUploader = client;
-
-    // Start uploading immediately.
-    mUploader.processQueue();
   }
 
 
