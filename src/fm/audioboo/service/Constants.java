@@ -33,5 +33,8 @@ public class Constants
   public static final int STATE_ERROR           = 6;
 
   // Upload chunk size.
-  public static final int UPLOAD_CHUNK_SIZE     = 8192;
+  public static final int MIN_UPLOAD_CHUNK_SIZE = 1024 * 50;
+  public static final int MAX_UPLOAD_CHUNK_SIZE = 1024 * 1000;
+  public static final int MIN_UPLOAD_TIME       = 10000; // msec
+  public static final int MAX_UPLOAD_TIME       = 40000; // msec
 }
