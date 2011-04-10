@@ -50,9 +50,15 @@ public class MessagesActivity extends BooListActivity
   private static final int ACTIVITY_RECORD  = ACTIVITY_DETAILS + 1;
   private static final int ACTIVITY_PUBLISH = ACTIVITY_DETAILS + 2;
 
+
+  /***************************************************************************
+   * Public constants
+   **/
+  public static final String EXTRA_DISPLAY_MODE = "fm.audioboo.extras.display-mode";
+
   // Display modes
-  private static final int DISPLAY_MODE_INBOX   = 0;
-  private static final int DISPLAY_MODE_OUTBOX  = 1;
+  public static final int DISPLAY_MODE_INBOX    = 0;
+  public static final int DISPLAY_MODE_OUTBOX   = 1;
 
 
   /***************************************************************************
@@ -154,6 +160,26 @@ public class MessagesActivity extends BooListActivity
   public void onCreate(Bundle savedInstanceState)
   {
     super.onCreate(savedInstanceState);
+
+    Bundle extras = getIntent().getExtras();
+    if (null != extras) {
+      int mode = extras.getInt(EXTRA_DISPLAY_MODE, -1);
+      switch (mode) {
+        case DISPLAY_MODE_INBOX:
+          mDisplayMode = mode;
+          mApiType = API.BOOS_INBOX;
+          break;
+
+        case DISPLAY_MODE_OUTBOX:
+          mDisplayMode = mode;
+          mApiType = API.BOOS_OUTBOX;
+          break;
+
+        default:
+          // Not set or invalid - we'll just ignore it.
+          break;
+      }
+    }
   }
 
 
