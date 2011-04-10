@@ -25,6 +25,7 @@ import java.nio.ByteBuffer;
 
 import java.util.Date;
 import java.util.LinkedList;
+import java.util.Comparator;
 
 import fm.audioboo.jni.FLACStreamEncoder;
 import fm.audioboo.jni.FLACStreamDecoder;
@@ -33,6 +34,8 @@ import fm.audioboo.data.BooData;
 import fm.audioboo.data.BooLocation;
 import fm.audioboo.data.Tag;
 import fm.audioboo.data.User;
+
+import fm.audioboo.service.Constants;
 
 import android.util.Log;
 
@@ -49,8 +52,28 @@ public class Boo
 
 
   /***************************************************************************
+   * Comparators
+   **/
+  public static class RecordingDateComparator implements Comparator<Boo>
+  {
+    public int compare(Boo boo1, Boo boo2)
+    {
+      return boo1.mData.mRecordedAt.compareTo(boo2.mData.mRecordedAt);
+    }
+
+
+    public boolean equals(Object obj)
+    {
+      return (obj instanceof RecordingDateComparator);
+    }
+  }
+
+
+  /***************************************************************************
    * Public constants
    **/
+  // Comparator
+  public static final RecordingDateComparator RECORDING_DATE_COMPARATOR = new RecordingDateComparator();
   // Serialized file extension.
   public static final String EXTENSION = ".boo";
   // Data dir extension
@@ -407,5 +430,35 @@ public class Boo
 
     // Right, persist this flattened URL
     writeToFile();
+  }
+
+
+
+  /**
+   * Returns upload progress as a percentage, or a negative value if this
+   * Boo is not being uploaded.
+   **/
+  public double uploadProgress()
+  {
+    if (null == mData.mUploadInfo) {
+      return -1;
+    }
+
+    int finished = mData.mUploadInfo.mAudioUploaded + mData.mUploadInfo.mImageUploaded;
+
+    String filename = mData.mHighMP3Url.getPath();
+    double progress = new File(filename).length();
+
+    if (null != mData.mImageUrl) {
+      filename = mData.mImageUrl.getPath();
+      progress += new File(filename).length();
+    }
+
+    // Add some for metadata. The /4 is arbitrary, just because the chunk size
+    // is fairly large and metadata isn't.
+    progress += Constants.MIN_UPLOAD_CHUNK_SIZE / 4;
+
+    progress = (finished / progress) * 100;
+    return progress;
   }
 }
