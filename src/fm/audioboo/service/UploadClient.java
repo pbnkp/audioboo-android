@@ -38,16 +38,6 @@ public class UploadClient
 
 
   /***************************************************************************
-   * Progress listener
-   **/
-  public static interface ProgressListener
-  {
-    public void onProgress(int id, double progress);
-  }
-
-
-
-  /***************************************************************************
    * Implement BindListener to receive a UploadClient instance that's
    * bound to IUploadService.
    **/
@@ -66,27 +56,6 @@ public class UploadClient
   // Service stub
   private volatile IUploadService       mStub = null;
 
-  // Progress listener
-  private ProgressListener              mListener;
-  private BroadcastReceiver             mReceiver = new BroadcastReceiver() {
-    @Override
-    public void onReceive(Context context, Intent intent)
-    {
-      // FIXME
-//      if (intent.getAction().equals(Constants.EVENT_PROGRESS)) {
-//        int state = intent.getIntExtra(Constants.PROGRESS_STATE, 0);
-//        double progress = intent.getDoubleExtra(Constants.PROGRESS_PROGRESS, 0f);
-//        double total = intent.getDoubleExtra(Constants.PROGRESS_TOTAL, 0f);
-//
-//        // Log.d(LTAG, String.format("State: %d ... %f/%f", state, progress, total));
-//
-//        if (null != mListener) {
-//          mListener.onProgress(state, progress, total);
-//        }
-//      }
-    }
-  };
-
   // Service connection
   private ServiceConnection             mConnection = new ServiceConnection() {
     public void onServiceConnected(ComponentName className, IBinder service)
@@ -98,25 +67,12 @@ public class UploadClient
       if (null != listener) {
         listener.onBound(UploadClient.this);
       }
-
-      // Register a broadcast receiver for state updates
-      Context ctx = mContext.get();
-      if (null == ctx) {
-        return;
-      }
-      ctx.registerReceiver(mReceiver, new IntentFilter(Constants.EVENT_PROGRESS));
     }
 
 
     public void onServiceDisconnected(ComponentName className)
     {
       mStub = null;
-
-      Context ctx = mContext.get();
-      if (null == ctx) {
-        return;
-      }
-      ctx.registerReceiver(null, new IntentFilter(Constants.EVENT_PROGRESS));
     }
   };
 
@@ -178,13 +134,6 @@ public class UploadClient
     return ctx.bindService(
         new Intent(IUploadService.class.getName()),
         mConnection, Context.BIND_AUTO_CREATE);
-  }
-
-
-
-  public void setProgressListener(ProgressListener listener)
-  {
-    mListener = listener;
   }
 
 
