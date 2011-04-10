@@ -349,8 +349,22 @@ public class RecordActivity extends Activity
 
   public void onBackPressedManual()
   {
-    // Save/discard dialogue.
-    showDialog(DIALOG_DRAFT);
+    if (mBoo.getDuration() > 0.0) {
+      // Save/discard dialogue.
+      showDialog(DIALOG_DRAFT);
+    }
+    else {
+      deleteAndQuit();
+    }
+  }
+
+
+  private void deleteAndQuit()
+  {
+    Globals.get().mPlayer.stop();
+    int res = mBoo.delete() ? Activity.RESULT_OK : Activity.RESULT_CANCELED;
+    setResult(res);
+    finish();
   }
 
 
@@ -736,10 +750,7 @@ public class RecordActivity extends Activity
           .setNegativeButton(R.string.record_draft_dialog_delete, new DialogInterface.OnClickListener() {
               public void onClick(DialogInterface d, int which)
               {
-                Globals.get().mPlayer.stop();
-                int res = mBoo.delete() ? Activity.RESULT_OK : Activity.RESULT_CANCELED;
-                setResult(res);
-                finish();
+                deleteAndQuit();
               }
           })
         ;
