@@ -52,7 +52,11 @@ public class DispatchActivity extends Activity
   static {
     // Match path prefixes to Activities
     DISPATCH_MAP.add(new Pair<String, Class>("/record_to", RecordActivity.class));
+    DISPATCH_MAP.add(new Pair<String, Class>("/send_message", RecordActivity.class));
     DISPATCH_MAP.add(new Pair<String, Class>("/boo_details", BooDetailsActivity.class));
+    DISPATCH_MAP.add(new Pair<String, Class>("/play_boo", BooDetailsActivity.class));
+    DISPATCH_MAP.add(new Pair<String, Class>("/play_boo", BooDetailsActivity.class));
+    DISPATCH_MAP.add(new Pair<String, Class>("/messages", MessagesActivity.class));
   }
 
 
