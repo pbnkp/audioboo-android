@@ -144,6 +144,15 @@ public class BooPlayer extends Thread
 
 
 
+  public Boo getBoo()
+  {
+    synchronized (mLock) {
+      return mBoo;
+    }
+  }
+
+
+
   /**
    * Prepares the internal player with the given Boo. Starts playback
    * immediately.
@@ -165,6 +174,15 @@ public class BooPlayer extends Thread
       mResetState = true;
     }
     interrupt();
+  }
+
+
+
+  /**
+   * Seek to given position. Must be >= 0 and < getDuration()
+   **/
+  public void seek(double position)
+  {
   }
 
 
@@ -304,27 +322,6 @@ public class BooPlayer extends Thread
 
     mState = Constants.STATE_PAUSED;
   }
-
-
-
-  // FIXME
- /*
-  public PersistentPlaybackState getPersistentState()
-  {
-    synchronized (mLock)
-    {
-      if (null == mBoo || null == mBoo.mData) {
-        return null;
-      }
-      PersistentPlaybackState state = new PersistentPlaybackState();
-      state.mBooData = mBoo.mData;
-      state.mState = mState;
-      state.mProgress = mPlaybackProgress;
-      return state;
-    }
-  }
-
-  */
 
 
 

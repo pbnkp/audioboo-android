@@ -81,10 +81,6 @@ public class AudiobooService
     else if (IUploadService.class.getName().equals(intent.getAction())) {
       return mUploadServiceBinder;
     }
-//    else if (INotificationService.class.getName().equals(intent.getAction())) {
-//    FIXME
-//      return mNotificationServiceBinder;
-//    }
     return null;
   }
 
@@ -97,27 +93,12 @@ public class AudiobooService
       mPlayer = new BooPlayer(this, this);
       mPlayer.start();
 
-      mPlayer.play(Boo.createIntroBoo(this), false);
-//      // Search for and read state.
-//      String path = getStateFilename();
-//      File statefile = new File(path);
-//      if (statefile.exists()) {
-//        PersistentPlaybackState state = null;
-//        try {
-//          ObjectInputStream is = new ObjectInputStream(new FileInputStream(statefile));
-//          state = (PersistentPlaybackState) is.readObject();
-//          is.close();
-//        } catch (FileNotFoundException ex) {
-//          Log.e(LTAG, "File not found: " + path);
-//        } catch (ClassNotFoundException ex) {
-//          Log.e(LTAG, "Class not found: " + path);
-//        } catch (IOException ex) {
-//          Log.e(LTAG, "Error reading file: " + path);
-//        }
-//
-//        // FIXME
-//        // Restore state
-//      }
+      // Initialize player.
+      Boo boo = Boo.constructFromFile(getStateFilename());
+      if (null == boo) {
+        boo = Boo.createIntroBoo(this);
+      }
+      mPlayer.play(boo, false);
     }
 
     if (null == mUploader) {
@@ -131,30 +112,11 @@ public class AudiobooService
   public void onDestroy()
   {
     if (null != mPlayer) {
-      // FIXME
-//      // Get state
-//      PersistentPlaybackState state = mPlayer.getPersistentState();
-
       // Stop player
       cancelPlaybackNotification();
       mPlayer.mShouldRun = false;
       mPlayer.interrupt();
       mPlayer = null;
-
-//      // Write playback state.
-//      if (null != state) {
-//        String path = getStateFilename();
-//        try {
-//          ObjectOutputStream os = new ObjectOutputStream(new FileOutputStream(new File(path)));
-//          os.writeObject(state);
-//          os.flush();
-//          os = null;
-//        } catch (FileNotFoundException ex) {
-//          Log.e(LTAG, "File not found: " + path);
-//        } catch (IOException ex) {
-//          Log.e(LTAG, "Error writing file '" + path + "': " + ex.getMessage());
-//        }
-//      }
     }
 
     if (null != mUploader) {
@@ -226,7 +188,10 @@ public class AudiobooService
   {
     public void play(BooData boo, boolean playImmediately)
     {
-      mPlayer.play(new Boo(boo), playImmediately);
+      Boo b = new Boo(boo);
+      b.writeToFile(getStateFilename());
+
+      mPlayer.play(b, playImmediately);
     }
 
 
