@@ -42,11 +42,14 @@ import org.apache.http.params.BasicHttpParams;
 import org.apache.http.params.HttpConnectionParams;
 import org.apache.http.params.HttpProtocolParams;
 import org.apache.http.HttpVersion;
+import org.apache.http.Header;
 
 import org.apache.http.client.methods.HttpRequestBase;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpDelete;
 import org.apache.http.client.methods.HttpPost;
+import org.apache.http.client.methods.HttpPut;
+import org.apache.http.client.methods.HttpEntityEnclosingRequestBase;
 import org.apache.http.HttpResponse;
 
 import org.apache.http.HttpEntity;
@@ -71,9 +74,10 @@ import java.util.Locale;
 
 import java.util.Map;
 import java.util.HashMap;
-import java.util.TreeMap;
 import java.util.List;
 import java.util.LinkedList;
+import java.util.Collections;
+import java.util.concurrent.ConcurrentLinkedQueue;
 
 import java.math.BigInteger;
 import java.security.MessageDigest;
@@ -82,6 +86,8 @@ import android.content.SharedPreferences;
 
 import fm.audioboo.data.Tag;
 import fm.audioboo.data.User;
+
+import fm.audioboo.service.UploadManager;
 
 import android.util.Log;
 
@@ -107,6 +113,7 @@ public class API
   public static final int ERR_INVALID_STATE         = 10006;
   public static final int ERR_UNKNOWN               = 10007;
   public static final int ERR_LOCATION_REQUIRED     = 10008;
+  public static final int ERR_METHOD_NOT_ALLOWED    = 10009;
 
   // Boo types - XXX same order as recent_boos_filters
   public static final int BOOS_FEATURED             = 0;
@@ -187,8 +194,7 @@ public class API
 
   // Default API host. Used as a fallback if SRV lookup fails.
   private static final String DEFAULT_API_HOST            = "api.audioboo.fm";
-  // XXX
-  // private static final String DEFAULT_API_HOST            = "api.staging.audioboo.fm";
+//  private static final String DEFAULT_API_HOST            = "api.staging.audioboo.fm";
 
   // Scheme for API requests.
   private static final String API_REQUEST_URI_SCHEME      = "http";
@@ -219,8 +225,8 @@ public class API
     "account/outbox",                 // BOOS_OUTBOX
   };
 
-  //private static final String API_UPLOAD                  = "account/audio_clips";
-  private static final String API_UPLOAD                  = "boos";
+  private static final String API_BOO_UPLOAD              = "account/audio_clips";
+  private static final String API_MESSAGE_UPLOAD          = "account/outbox";
 
   private static final String API_REGISTER                = "sources/register";
   private static final String API_STATUS                  = "sources/status";
@@ -231,6 +237,7 @@ public class API
   private static final String API_USER                    = "users/%d";
   private static final String API_BOO_DETAILS             = "audio_clips/%d";
   private static final String API_MESSAGE_DETAILS         = "account/messages/%d";
+  private static final String API_ATTACHMENTS             = "attachments";
 
   // API version, format parameter
   private static final String KEY_API_VERSION             = "version";
@@ -255,8 +262,9 @@ public class API
   // Request types: we have GET, FORM and MULTIPART.
   private static final int RT_GET                         = 0;
   private static final int RT_FORM                        = 1;
-  private static final int RT_MULTIPART                   = 2;
-  private static final int RT_DELETE                      = 3;
+  private static final int RT_MULTIPART_POST              = 2;
+  private static final int RT_MULTIPART_PUT               = 3;
+  private static final int RT_DELETE                      = 4;
 
   // Map of APIs to request types.
   private static final HashMap<String, Integer> REQUEST_TYPES;
@@ -265,12 +273,13 @@ public class API
     for (int i = 0 ; i < API_BOO_URLS.length ; ++i) {
       REQUEST_TYPES.put(API_BOO_URLS[i], RT_GET);
     }
-    REQUEST_TYPES.put(API_UPLOAD,   RT_MULTIPART);
-    REQUEST_TYPES.put(API_REGISTER, RT_FORM);
-    REQUEST_TYPES.put(API_STATUS,   RT_GET);
-    REQUEST_TYPES.put(API_UNLINK,   RT_FORM);
-    REQUEST_TYPES.put(API_CONTACTS, RT_GET);
-    REQUEST_TYPES.put(API_ACCOUNT,  RT_GET);
+    REQUEST_TYPES.put(API_REGISTER,       RT_FORM);
+    REQUEST_TYPES.put(API_STATUS,         RT_GET);
+    REQUEST_TYPES.put(API_UNLINK,         RT_FORM);
+    REQUEST_TYPES.put(API_CONTACTS,       RT_GET);
+    REQUEST_TYPES.put(API_ACCOUNT,        RT_GET);
+    REQUEST_TYPES.put(API_BOO_UPLOAD,     RT_MULTIPART_POST);
+    REQUEST_TYPES.put(API_MESSAGE_UPLOAD, RT_MULTIPART_POST);
     // XXX Add request types for different API calls; if they're not specified
     //     here, the default is RT_GET.
     // XXX API_USER varies in form, can't be easily matched like this, but wants
@@ -283,7 +292,7 @@ public class API
   private static final HttpVersion  HTTP_VERSION            = HttpVersion.HTTP_1_1;
 
   // Requester startup delay. Avoids high load at startup that could impact UX.
-  private static final int          REQUESTER_STARTUP_DELAY = 1000;
+  private static final int          REQUESTER_SLEEP_TIME    = 300 * 1000;
 
   // Chunk size to read responses in (in Bytes).
   private static final int          READ_CHUNK_SIZE         = 8192;
@@ -295,104 +304,108 @@ public class API
   protected static ThreadSafeClientConnManager  sConnectionManager;
 
 
-  /***************************************************************************
-   * Helper class for fetching API responses in the background.
-   **/
-  private class Requester extends Thread
-  {
-    public volatile boolean keepRunning = true;
 
+  /***************************************************************************
+   * Context for each request
+   **/
+  public class Request
+  {
     private String                  mApi;
     private HashMap<String, Object> mParams;
     private HashMap<String, Object> mSignedParams;
-    private HashMap<String, String> mFileParams;
-    private Handler                 mHandler;
+    private Handler.Callback        mCallback;
     private int                     mRequestType;
+    private Object                  mBaton;
 
-    public Requester(String api,
+
+    public Request(String api,
         HashMap<String, Object> params,
         HashMap<String, Object> signedParams,
-        HashMap<String, String> fileParams,
-        Handler handler)
+        Handler.Callback callback)
     {
-      super();
-      mApi = api;
-      mParams = params;
-      mSignedParams = signedParams;
-      mFileParams = fileParams;
-      mHandler = handler;
-      mRequestType = -1;
+      this(api, params, signedParams, callback, -1);
     }
 
 
-    public Requester(String api,
+    public Request(String api,
         HashMap<String, Object> params,
         HashMap<String, Object> signedParams,
-        HashMap<String, String> fileParams,
-        Handler handler,
+        Handler.Callback callback,
         int requestType)
     {
       super();
       mApi = api;
       mParams = params;
       mSignedParams = signedParams;
-      mFileParams = fileParams;
-      mHandler = handler;
+      mCallback = callback;
       mRequestType = requestType;
     }
+  }
+
+
+  /***************************************************************************
+   * Helper class for fetching API responses in the background.
+   **/
+  private class Requester extends Thread
+  {
+    public volatile boolean mKeepRunning = true;
 
 
     @Override
     public void run()
     {
-      // Delay before starting to fetch stuff.
-      if (mDelayStartup) {
+      while (mKeepRunning) {
         try {
-          sleep(REQUESTER_STARTUP_DELAY);
-          mDelayStartup = false;
+          sleep(REQUESTER_SLEEP_TIME);
         } catch (java.lang.InterruptedException ex) {
-          return;
+          // pass
         }
-      }
 
-      // The loop ensures that external interrrupts don't mean the request is
-      // never executed..
-      while (keepRunning) {
-        // Resolve API host. Should return immediately after the first time
-        // it's run.
-        resolveAPIHost();
+        do {
+          // Log.d(LTAG, "Current queue: " + mRequestQueue.size());
 
-        // After resolving the API host, we need to obtain the appropriate
-        // key(s) for API calls. This should return immediately after the
-        // first time it's run.
-        initializeAPIKeys(mHandler);
-
-        // Update status. This should return immediately after the first time
-        // it's run. If the API requested is in fact the status update API, then
-        // the Requester will terminate after this call.
-        if (mApi.equals(API_STATUS)) {
-          updateStatus(mHandler, true);
-          keepRunning = false;
-          break;
-        }
-        else {
-          if (!updateStatus(mHandler, false)) {
-            keepRunning = false;
+          // Resolve API host. Should return immediately after the first time
+          // it's run.
+          if (!resolveAPIHost()) {
+            // Go back to sleep
             break;
           }
-        }
 
-        // Construct request.
-        HttpRequestBase request = constructRequest(mApi, mParams, mSignedParams,
-            mFileParams, mRequestType);
+          // Grab the next request off the queue.
+          Request req = mRequestQueue.poll();
+          if (null == req) {
+            // Go back to sleep
+            break;
+          }
 
-        // Perform request.
-        byte[] data = fetchRawSynchronous(request, mHandler);
-        if (null != data) {
-          mHandler.obtainMessage(ERR_SUCCESS, new String(data)).sendToTarget();
-        }
+          // After resolving the API host, we need to obtain the appropriate
+          // key(s) for API calls. This should return immediately after the
+          // first time it's run.
+          initializeAPIKeys(req);
 
-        keepRunning = false;
+          // Update status. This should return immediately after the first time
+          // it's run. If the API requested is in fact the status update API, then
+          // the Requester will terminate after this call.
+          if (req.mApi.equals(API_STATUS)) {
+            updateStatus(req, true);
+            break;
+          }
+          else {
+            if (!updateStatus(req, false)) {
+              Log.e(LTAG, "Could not update status, going back to sleep.");
+              break;
+            }
+          }
+
+          // Construct request.
+          HttpRequestBase request = constructRequest(req);
+
+          // Perform request.
+          byte[] data = fetchRawSynchronous(request, req);
+          if (null != data) {
+            sendMessage(req, ERR_SUCCESS, new String(data));
+          }
+        } while (true);
       }
     }
   }
@@ -405,7 +418,15 @@ public class API
   // Requester. There's only one instance, so only one API call can be scheduled
   // at a time.
   private Requester     mRequester;
-  private boolean       mDelayStartup = true;
+  private ConcurrentLinkedQueue<Request> mRequestQueue = new ConcurrentLinkedQueue<Request>();
+  private Handler       mHandler = new Handler(new Handler.Callback() {
+      public boolean handleMessage(Message msg)
+      {
+        Request req = (Request) msg.obj;
+        msg.obj = req.mBaton;
+        return req.mCallback.handleMessage(msg);
+      }
+  });
 
   // API host to use in requests.
   private String        mAPIHost;
@@ -448,6 +469,10 @@ public class API
       sConnectionManager = new ThreadSafeClientConnManager(params, registry);
       sClient = new DefaultHttpClient(sConnectionManager, params);
     }
+
+    // Start requester.
+    mRequester = new Requester();
+    mRequester.start();
   }
 
 
@@ -541,11 +566,6 @@ public class API
   public void fetchBooDetails(int booId, final Handler result_handler,
       final boolean isMessage)
   {
-    if (null != mRequester) {
-      mRequester.keepRunning = false;
-      mRequester.interrupt();
-    }
-
     String api = null;
     HashMap<String, Object> signedParams = null;
 
@@ -558,8 +578,8 @@ public class API
     }
 
     // This request has no parameters.
-    mRequester = new Requester(api, null, signedParams, null,
-        new Handler(new Handler.Callback() {
+    mRequestQueue.add(new Request(api, null, signedParams,
+        new Handler.Callback() {
           public boolean handleMessage(Message msg)
           {
             if (ERR_SUCCESS == msg.what) {
@@ -576,9 +596,7 @@ public class API
           }
         }
     ));
-    mRequester.start();
-
-
+    mRequester.interrupt();
   }
 
 
@@ -590,11 +608,6 @@ public class API
   public void fetchBoos(final int type, final Handler result_handler, int page,
       int amount, Date timestamp)
   {
-    if (null != mRequester) {
-      mRequester.keepRunning = false;
-      mRequester.interrupt();
-    }
-
     // Honor pagination
     HashMap<String, Object> signedParams = new HashMap<String, Object>();
     signedParams.put("page[items]", String.format("%d", amount));
@@ -624,8 +637,8 @@ public class API
     }
 
     // This request has no parameters.
-    mRequester = new Requester(API_BOO_URLS[type], null, signedParams, null,
-        new Handler(new Handler.Callback() {
+    mRequestQueue.add(new Request(API_BOO_URLS[type], null, signedParams,
+        new Handler.Callback() {
           public boolean handleMessage(Message msg)
           {
             if (ERR_SUCCESS == msg.what) {
@@ -644,7 +657,7 @@ public class API
           }
         }
     ));
-    mRequester.start();
+    mRequester.interrupt();
   }
 
 
@@ -654,17 +667,12 @@ public class API
    **/
   public void fetchContacts(final Handler result_handler)
   {
-    if (null != mRequester) {
-      mRequester.keepRunning = false;
-      mRequester.interrupt();
-    }
-
     // Must force signature.
     HashMap<String, Object> signedParams = new HashMap<String, Object>();
 
     // This request has no parameters.
-    mRequester = new Requester(API_CONTACTS, null, signedParams, null,
-        new Handler(new Handler.Callback() {
+    mRequestQueue.add(new Request(API_CONTACTS, null, signedParams,
+        new Handler.Callback() {
           public boolean handleMessage(Message msg)
           {
             if (ERR_SUCCESS == msg.what) {
@@ -683,7 +691,7 @@ public class API
           }
         }
     ));
-    mRequester.start();
+    mRequester.interrupt();
   }
 
 
@@ -693,17 +701,12 @@ public class API
    **/
   public void fetchAccount(final Handler result_handler)
   {
-    if (null != mRequester) {
-      mRequester.keepRunning = false;
-      mRequester.interrupt();
-    }
-
     // Must force signature.
     HashMap<String, Object> signedParams = new HashMap<String, Object>();
 
     // This request has no parameters.
-    mRequester = new Requester(API_ACCOUNT, null, signedParams, null,
-        new Handler(new Handler.Callback() {
+    mRequestQueue.add(new Request(API_ACCOUNT, null, signedParams,
+        new Handler.Callback() {
           public boolean handleMessage(Message msg)
           {
             if (ERR_SUCCESS == msg.what) {
@@ -722,7 +725,7 @@ public class API
           }
         }
     ));
-    mRequester.start();
+    mRequester.interrupt();
   }
 
 
@@ -732,16 +735,11 @@ public class API
    **/
   public void fetchAccount(int userId, final Handler result_handler)
   {
-    if (null != mRequester) {
-      mRequester.keepRunning = false;
-      mRequester.interrupt();
-    }
-
     String api = String.format(API_USER, userId);
 
     // This request has no parameters.
-    mRequester = new Requester(api, null, null, null,
-        new Handler(new Handler.Callback() {
+    mRequestQueue.add(new Request(api, null, null,
+        new Handler.Callback() {
           public boolean handleMessage(Message msg)
           {
             if (ERR_SUCCESS == msg.what) {
@@ -760,7 +758,7 @@ public class API
           }
         }
     ));
-    mRequester.start();
+    mRequester.interrupt();
   }
 
 
@@ -771,11 +769,6 @@ public class API
    **/
   public void unlinkDevice(final Handler result_handler)
   {
-    if (null != mRequester) {
-      mRequester.keepRunning = false;
-      mRequester.interrupt();
-    }
-
     if (null == mStatus) {
       // Can't unlink if we don't know our status.
       result_handler.obtainMessage(ERR_INVALID_STATE).sendToTarget();
@@ -791,8 +784,8 @@ public class API
     // This request has no parameters. We pass empty signed parameters to force
     // singing.
     HashMap<String, Object> signedParams = new HashMap<String, Object>();
-    mRequester = new Requester(API_UNLINK, null, signedParams, null,
-        new Handler(new Handler.Callback() {
+    mRequestQueue.add(new Request(API_UNLINK, null, signedParams,
+        new Handler.Callback() {
           public boolean handleMessage(Message msg)
           {
             if (ERR_SUCCESS == msg.what) {
@@ -816,7 +809,7 @@ public class API
           }
         }
     ));
-    mRequester.start();
+    mRequester.interrupt();
   }
 
 
@@ -827,19 +820,19 @@ public class API
    **/
   public void updateStatus(final Handler result_handler)
   {
-    if (null != mRequester) {
-      mRequester.keepRunning = false;
-      mRequester.interrupt();
-    }
-
     // Set status to null, otherwise nothing will be fetched.
     mStatus = null;
 
     // This request has no parameters. The result handler also handles
     // any responses itself.
-    mRequester = new Requester(API_STATUS, null, null, null,
-        result_handler);
-    mRequester.start();
+    mRequestQueue.add(new Request(API_STATUS, null, null, new Handler.Callback() {
+          public boolean handleMessage(Message msg)
+          {
+            result_handler.obtainMessage(msg.what, msg.obj).sendToTarget();
+            return true;
+          }
+    }));
+    mRequester.interrupt();
   }
 
 
@@ -860,18 +853,13 @@ public class API
   private void followUserInternal(User user, final Handler result_handler,
       int requestType)
   {
-    if (null != mRequester) {
-      mRequester.keepRunning = false;
-      mRequester.interrupt();
-    }
-
     // Must force signature.
     HashMap<String, Object> signedParams = new HashMap<String, Object>();
     signedParams.put("following_user_id", String.format("%d", user.mId));
 
     // This request has no parameters.
-    mRequester = new Requester(API_CONTACTS, null, signedParams, null,
-        new Handler(new Handler.Callback() {
+    mRequestQueue.add(new Request(API_CONTACTS, null, signedParams,
+        new Handler.Callback() {
           public boolean handleMessage(Message msg)
           {
             if (ERR_SUCCESS == msg.what) {
@@ -884,9 +872,8 @@ public class API
             }
             return true;
           }
-        }
-    ), requestType);
-    mRequester.start();
+        }, requestType));
+    mRequester.interrupt();
   }
 
 
@@ -902,7 +889,7 @@ public class API
     signedParams.put("callback[failure]", "audioboo:///link_failure");
 
     HttpRequestBase request = constructRequestInternal(
-        mStatus.mLinkUri.toString(), RT_GET, null, signedParams, null);
+        mStatus.mLinkUri.toString(), RT_GET, null, signedParams);
 
     return request.getURI().toString();
   }
@@ -910,15 +897,22 @@ public class API
 
 
   /**
-   * Uploads a Boo.
+   * Uploads a Boo. Technically uploads metadata for a Boo; if any audio and
+   * video is attached to the Boo, it must be in the Boo's upload info already.
    * On success, the message object will contain an Integer representing the
    * ID of the newly uploaded Boo.
    **/
   public void uploadBoo(Boo boo, final Handler result_handler)
   {
-    if (null != mRequester) {
-      mRequester.keepRunning = false;
-      mRequester.interrupt();
+    if (null == boo.mData || null == boo.mData.mUploadInfo) {
+      Log.e(LTAG, "Invalid Boo data for upload.");
+      result_handler.obtainMessage(ERR_API_ERROR, null).sendToTarget();
+      return;
+    }
+
+    String prefix = "audio_clip";
+    if (boo.mData.mIsMessage) {
+      prefix = "message";
     }
 
     // Prepare parameters.
@@ -928,9 +922,10 @@ public class API
 
     // Prepare signed parameters
     HashMap<String, Object> signedParams = new HashMap<String, Object>();
-    signedParams.put("audio_clip[title]", boo.mData.mTitle);
-    signedParams.put("audio_clip[local_recorded_at]", boo.mData.mRecordedAt.toString());
-    signedParams.put("audio_clip[author_locale]", Locale.getDefault().toString());
+    signedParams.put(String.format("%s[title]", prefix), boo.mData.mTitle);
+    signedParams.put(String.format("%s[local_recorded_at]", prefix), boo.mData.mRecordedAt.toString());
+    // signedParams.put(String.format("%s[recorded_at]", prefix), boo.mData.mRecordedAt.toString());
+    signedParams.put(String.format("%s[author_locale]", prefix), Locale.getDefault().toString());
 
     // Tags
     if (null != boo.mData.mTags) {
@@ -938,32 +933,69 @@ public class API
       for (Tag t : boo.mData.mTags) {
         tags.add(t.mNormalised);
       }
-      signedParams.put("audio_clip[tags]", tags);
+      signedParams.put(String.format("%s[tags]", prefix), tags);
     }
 
     if (null != boo.mData.mLocation) {
-      signedParams.put("audio_clip[public_location]", "1");
-      signedParams.put("audio_clip[location_latitude]",
+      signedParams.put(String.format("%s[public_location]", prefix), "1");
+      signedParams.put(String.format("%s[location_latitude]", prefix),
           String.format("%f", boo.mData.mLocation.mLatitude));
-      signedParams.put("audio_clip[location_longitude]",
+      signedParams.put(String.format("%s[location_longitude]", prefix),
           String.format("%f", boo.mData.mLocation.mLongitude));
-      signedParams.put("audio_clip[location_accuracy]",
+      signedParams.put(String.format("%s[location_accuracy]", prefix),
           String.format("%f", boo.mData.mLocation.mAccuracy));
     }
 
     if (null != boo.mData.mUUID) {
-      signedParams.put("audio_clip[uuid]", boo.mData.mUUID);
+      signedParams.put(String.format("%s[uuid]", prefix), boo.mData.mUUID);
     }
 
-    // Prepare files.
-    HashMap<String, String> fileParams = new HashMap<String, String>();
-    fileParams.put("audio_clip[uploaded_data]", boo.mData.mHighMP3Url.getPath());
-    if (null != boo.mData.mImageUrl) {
-      fileParams.put("audio_clip[uploaded_image]", boo.mData.mImageUrl.getPath());
+    // Attachments
+    signedParams.put(String.format("%s[uploaded_data][chunked_attachment_id]", prefix),
+        boo.mData.mUploadInfo.mAudioChunkId);
+    if (-1 != boo.mData.mUploadInfo.mImageChunkId) {
+      signedParams.put(String.format("%s[uploaded_image][chunked_attachment_id]", prefix),
+          boo.mData.mUploadInfo.mImageChunkId);
     }
 
-    mRequester = new Requester(API_UPLOAD, params, signedParams, fileParams,
-        new Handler(new Handler.Callback() {
+    // Destination
+    if (null != boo.mData.mDestinationInfo) {
+      if (boo.mData.mIsMessage) {
+        // Messages
+        signedParams.put("message[recipient_id]", boo.mData.mDestinationInfo.mDestinationId);
+        if (-1 != boo.mData.mDestinationInfo.mInReplyTo) {
+          signedParams.put("message[parent_id]", boo.mData.mDestinationInfo.mInReplyTo);
+        }
+      }
+      else {
+        // Channels
+        signedParams.put("audio_clip[destination][stream_id]", boo.mData.mDestinationInfo.mDestinationId);
+      }
+
+// record_to:
+//   destination[X] -> audio_clip[destination][X]
+// 
+// send_message:
+//   title -> setTitle()
+//   recipient_id -> message[recipient_id]
+//   parent_id -> message[parent_id]
+
+    // FIXME
+    }
+
+    // API
+    String api = API_BOO_UPLOAD;
+    if (boo.mData.mIsMessage) {
+      api = API_MESSAGE_UPLOAD;
+    }
+
+    Log.d(LTAG, "API: " + api);
+    for (String key : signedParams.keySet()) {
+      Log.d(LTAG, "P: " + key + " = " + signedParams.get(key));
+    }
+
+    mRequestQueue.add(new Request(api, params, signedParams,
+        new Handler.Callback() {
           public boolean handleMessage(Message msg)
           {
             if (ERR_SUCCESS == msg.what) {
@@ -981,7 +1013,64 @@ public class API
           }
         }
     ));
-    mRequester.start();
+    mRequester.interrupt();
+  }
+
+
+
+  /**
+   * Create/add to attachments.
+   **/
+  public void createAttachment(String filename, int offset, int size,
+      final Handler result_handler)
+  {
+    attachmentRequest(-1, filename, offset, size, result_handler);
+  }
+
+
+  public void appendToAttachment(int attachmentId, String filename, int offset,
+      int size, final Handler result_handler)
+  {
+    attachmentRequest(attachmentId, filename, offset, size, result_handler);
+  }
+
+
+  private void attachmentRequest(int attachmentId, String filename, int offset,
+      int size, final Handler result_handler)
+  {
+    File file = new File(filename);
+
+    HashMap<String, Object> signedParams = new HashMap<String, Object>();
+    signedParams.put("attachment[chunk_offset]", String.format("%d", offset));
+    signedParams.put("attachment[size]", String.format("%d", file.length()));
+    signedParams.put("attachment[chunk]", new FilePartBody(file, offset, size));
+
+    int request_type = RT_MULTIPART_POST;
+    String api = API_ATTACHMENTS;
+    if (-1 != attachmentId) {
+      request_type = RT_MULTIPART_PUT;
+      api = String.format("%s/%d", API_ATTACHMENTS, attachmentId);
+    }
+
+    // Log.d(LTAG, "Creating attachment request: " + api);
+    mRequestQueue.add(new Request(api, null, signedParams,
+        new Handler.Callback() {
+          public boolean handleMessage(Message msg)
+          {
+            if (ERR_SUCCESS == msg.what) {
+              ResponseParser.Response<UploadManager.UploadResult> result
+                  = ResponseParser.parseAttachmentResponse((String) msg.obj, result_handler);
+              if (null != result)  {
+                result_handler.obtainMessage(ERR_SUCCESS, result.mContent).sendToTarget();
+              }
+            }
+            else {
+              result_handler.obtainMessage(msg.what, msg.obj).sendToTarget();
+            }
+            return true;
+          }
+        }, request_type));
+    mRequester.interrupt();
   }
 
 
@@ -1020,51 +1109,13 @@ public class API
 
 
   /**
-   * Concatenates parameters into a string without URL encoding.
-   **/
-  private String concatenateParametersSorted(HashMap<String, Object> params)
-  {
-    String result = "";
-
-    if (null != params) {
-      // Create a sorted map.
-      TreeMap<String, Object> sorted = new TreeMap<String, Object>();
-      for (Map.Entry<String, Object> param : params.entrySet()) {
-        sorted.put(param.getKey(), param.getValue());
-      }
-
-      // Now concatenate the sorted values.
-      for (Map.Entry<String, Object> param : sorted.entrySet()) {
-        Object obj = param.getValue();
-        if (obj instanceof String) {
-          result += String.format("%s=%s&", param.getKey(), (String) obj);
-        }
-        else if (obj instanceof LinkedList<?>) {
-          @SuppressWarnings("unchecked")
-          LinkedList<String> cast_obj = (LinkedList<String>) obj;
-          for (String s : cast_obj) {
-            result += String.format("%s[]=%s&", param.getKey(), s);
-          }
-        }
-      }
-      if (0 < result.length()) {
-        result = result.substring(0, result.length() - 1);
-      }
-    }
-
-    return result;
-  }
-
-
-
-  /**
    * Helper function for fetching API responses.
    **/
-  public void fetch(String uri_string, Handler handler)
+  public void fetch(String uri_string, Request req)
   {
-    byte[] data = fetchRawSynchronous(uri_string, handler);
+    byte[] data = fetchRawSynchronous(uri_string, req);
     if (null != data) {
-      handler.obtainMessage(ERR_SUCCESS, new String(data)).sendToTarget();
+      sendMessage(req, ERR_SUCCESS, new String(data));
     }
   }
 
@@ -1073,11 +1124,11 @@ public class API
   /**
    * Helper function for fetching raw response data.
    **/
-  public void fetchRaw(String uri_string, Handler handler)
+  public void fetchRaw(String uri_string, Request req)
   {
-    byte[] data = fetchRawSynchronous(uri_string, handler);
+    byte[] data = fetchRawSynchronous(uri_string, req);
     if (null != data) {
-      handler.obtainMessage(ERR_SUCCESS, data).sendToTarget();
+      sendMessage(req, ERR_SUCCESS, data);
     }
   }
 
@@ -1087,51 +1138,74 @@ public class API
    * send error messages, if the Handler is non-null, but always returns the
    * result as a parameter.
    **/
-  public byte[] fetchRawSynchronous(Uri uri, Handler handler)
+  public byte[] fetchRawSynchronous(Uri uri, Request req)
   {
-    return fetchRawSynchronous(makeAbsoluteUriString(uri.toString()), handler);
+    return fetchRawSynchronous(makeAbsoluteUriString(uri.toString()), req);
   }
 
 
 
-  public byte[] fetchRawSynchronous(String uri_string, Handler handler)
+  public byte[] fetchRawSynchronous(String uri_string, Request req)
   {
     HttpGet request = new HttpGet(uri_string);
-    return fetchRawSynchronous(request, handler);
+    return fetchRawSynchronous(request, req);
   }
 
 
 
-  public byte[] fetchRawSynchronous(HttpRequestBase request, Handler handler)
+  public byte[] fetchRawSynchronous(Uri uri, final Handler handler)
+  {
+    return fetchRawSynchronous(uri, new Request(null, null, null, new Handler.Callback() {
+            public boolean handleMessage(Message msg)
+            {
+              handler.obtainMessage(msg.what, msg.obj).sendToTarget();
+              return true;
+            }
+          }));
+  }
+
+
+
+  public byte[] fetchRawSynchronous(HttpRequestBase request, Request req)
   {
     HttpResponse response;
     try {
       response = sClient.execute(request);
 
+      int code = response.getStatusLine().getStatusCode();
+      switch (code) {
+        case 405:
+          Log.d(LTAG, "Request method not allowed: " + request.getRequestLine().getMethod());
+          sendMessage(req, ERR_METHOD_NOT_ALLOWED);
+          return null;
+
+        default:
+          break;
+      }
+
+      // Log.d(LTAG, "Status code: " + code);
+
       // Read response
       HttpEntity entity = response.getEntity();
       if (null == entity) {
         Log.e(LTAG, "Response is empty: " + request.getURI().toString());
-        if (null != handler) {
-          handler.obtainMessage(ERR_EMPTY_RESPONSE).sendToTarget();
-        }
+        sendMessage(req, ERR_EMPTY_RESPONSE);
         return null;
       }
 
-      return readStreamRaw(entity.getContent());
+      // Log.d(LTAG, "reading stream response");
+      byte[] res = readStreamRaw(entity.getContent());
+      // Log.d(LTAG, "bytes: " + res.length);
+      return res;
 
     } catch (IOException ex) {
       Log.e(LTAG, "An exception occurred when reading the API response: "
           + "(" + request.getURI().toString() + "|" + ex + ") " + ex.getMessage());
-      if (null != handler) {
-        handler.obtainMessage(ERR_TRANSMISSION).sendToTarget();
-      }
+      sendMessage(req, ERR_TRANSMISSION);
     } catch (Exception ex) {
       Log.e(LTAG, "An exception occurred when reading the API response: "
           + "(" + request.getURI().toString() + "|" + ex + ") " + ex.getMessage());
-      if (null != handler) {
-        handler.obtainMessage(ERR_UNKNOWN).sendToTarget();
-      }
+      sendMessage(req, ERR_UNKNOWN);
     }
 
     return null;
@@ -1142,18 +1216,21 @@ public class API
   /**
    * Construct an HTTP request based on the API and parameters to query.
    **/
+  private HttpRequestBase constructRequest(Request req)
+  {
+    return constructRequest(req.mApi, req.mParams, req.mSignedParams, req.mRequestType);
+  }
+
   private HttpRequestBase constructRequest(String api,
       HashMap<String, Object> params,
-      HashMap<String, Object> signedParams,
-      HashMap<String, String> fileParams)
+      HashMap<String, Object> signedParams)
   {
-    return constructRequest(api, params, signedParams, fileParams, -1);
+    return constructRequest(api, params, signedParams, -1);
   }
 
   private HttpRequestBase constructRequest(String api,
       HashMap<String, Object> params,
       HashMap<String, Object> signedParams,
-      HashMap<String, String> fileParams,
       int requestType)
   {
     // Construct request URI.
@@ -1169,12 +1246,9 @@ public class API
     else {
       request_type = requestType;
     }
-    if (null != fileParams) {
-      request_type = RT_MULTIPART;
-    }
 
     return constructRequestInternal(request_uri, request_type,
-        params, signedParams, fileParams);
+        params, signedParams);
   }
 
 
@@ -1182,8 +1256,7 @@ public class API
   private HttpRequestBase constructRequestInternal(String request_uri,
       int request_type,
       HashMap<String, Object> params,
-      HashMap<String, Object> signedParams,
-      HashMap<String, String> fileParams)
+      HashMap<String, Object> signedParams)
   {
     // 1. Initialize params map. We always send the API version, and the API key
     if (null == params) {
@@ -1206,41 +1279,47 @@ public class API
         break;
 
 
-      case RT_MULTIPART:
+      case RT_MULTIPART_PUT:
+      case RT_MULTIPART_POST:
         {
-          HttpPost post = new HttpPost(request_uri);
+          // POST or PUT, depending on request_type
+          HttpEntityEnclosingRequestBase enclosing = null;
+          if (RT_MULTIPART_PUT == request_type) {
+            enclosing = new HttpPut(request_uri);
+          }
+          else {
+            enclosing = new HttpPost(request_uri);
+          }
           MultipartEntity content = new MultipartEntity();
 
           // Append all parameters as parts.
           for (Map.Entry<String, Object> param : params.entrySet()) {
             Object obj = param.getValue();
             try {
-              if (obj instanceof String) {
-                content.addPart(param.getKey(), new StringBody((String) obj));
-              }
-              else if (obj instanceof LinkedList<?>) {
-                String key = param.getKey() + "[]";
-                @SuppressWarnings("unchecked")
-                LinkedList<String> cast_obj = (LinkedList<String>) obj;
-                for (String s : cast_obj) {
-                  content.addPart(key, new StringBody(s));
+              if (obj instanceof List) {
+                List cast = (List) obj;
+                String key = String.format("%s[]", param.getKey());
+                for (Object o : cast) {
+                  content.addPart(key, new StringBody(o.toString()));
                 }
               }
+
+              else if (obj instanceof FilePartBody) {
+                content.addPart(param.getKey(), (FilePartBody) obj);
+              }
+
+              else {
+                content.addPart(param.getKey(), new StringBody(obj.toString()));
+              }
+
             } catch (java.io.UnsupportedEncodingException ex) {
               Log.e(LTAG, "Unsupported encoding, skipping parameter: "
-                  + param.getKey() + "=" + param.getValue());
+                  + param.getKey());
             }
           }
 
-          // Append all files as parts.
-          if (null != fileParams) {
-            for (Map.Entry<String, String> param : fileParams.entrySet()) {
-              content.addPart(param.getKey(), new FileBody(new File(param.getValue())));
-            }
-          }
-
-          post.setEntity(content);
-          request = post;
+          enclosing.setEntity(content);
+          request = enclosing;
         }
         break;
 
@@ -1254,16 +1333,16 @@ public class API
           LinkedList<BasicNameValuePair> p = new LinkedList<BasicNameValuePair>();
           for (Map.Entry<String, Object> param : params.entrySet()) {
             Object obj = param.getValue();
-            if (obj instanceof String) {
-              p.add(new BasicNameValuePair(param.getKey(), (String) obj));
-            }
-            else if (obj instanceof LinkedList<?>) {
-              String key = param.getKey() + "[]";
-              @SuppressWarnings("unchecked")
-              LinkedList<String> cast_obj = (LinkedList<String>) obj;
-              for (String s : cast_obj) {
-                p.add(new BasicNameValuePair(key, s));
+            if (obj instanceof List) {
+              List cast = (List) obj;
+              String key = String.format("%s[]", param.getKey());
+              for (Object o : cast) {
+                p.add(new BasicNameValuePair(key, o.toString()));
               }
+            }
+
+            else {
+              p.add(new BasicNameValuePair(param.getKey(), obj.toString()));
             }
           }
 
@@ -1315,8 +1394,6 @@ public class API
 
   public Uri makeAbsoluteUri(Uri relative)
   {
-    // FIXME is this used?
-    Log.d(LTAG, "***********************************************************************");
     if (null == relative.getAuthority()) {
       return Uri.parse(String.format("%s://%s%s",
           API_REQUEST_URI_SCHEME, mAPIHost, relative));
@@ -1377,15 +1454,24 @@ public class API
    * background. May exit immediately if the API host has already been
    * resolved.
    **/
-  private void resolveAPIHost()
+  private boolean resolveAPIHost()
   {
     // Exit if already resolved.
     if (null != mAPIHost) {
-      return;
+      return true;
+    }
+
+    Globals glob = Globals.get();
+    if (null == glob) {
+      return false;
     }
 
     // Resolve host name with client ID part to use for API requests.
-    String srv_lookup = String.format(SRV_LOOKUP_FORMAT, Globals.get().getClientID());
+    String id = glob.getClientID();
+    if (null == id) {
+      return false;
+    }
+    String srv_lookup = String.format(SRV_LOOKUP_FORMAT, id);
 
     Record[] records = null;
     int result = Lookup.TRY_AGAIN;
@@ -1413,7 +1499,7 @@ public class API
     // default API host.
     if (null == records) {
       mAPIHost = DEFAULT_API_HOST;
-      return;
+      return true;
     }
 
     // On the other hand, if there are records, we want to use the first
@@ -1421,6 +1507,8 @@ public class API
     // trying to look at more records than the first.
     SRVRecord srv = (SRVRecord) records[0];
     mAPIHost = String.format("%s:%d", srv.getTarget(), srv.getPort());
+
+    return true;
   }
 
 
@@ -1450,14 +1538,50 @@ public class API
             param.getValue());
     }
 
-    // 4. Create the signature.
-    String signature = String.format("%s:%s:%s", request_uri,
-        concatenateParametersSorted(signedParams), mAPISecret);
-    // Log.d(LTAG, "signature pre signing: " + signature);
+    // 4. Sort keys of signed parameters.
+    List<String> keys = new LinkedList<String>();
+    keys.addAll(signedParams.keySet());
+    Collections.sort(keys, String.CASE_INSENSITIVE_ORDER);
+
+    // 5. Create the signature.
     try {
       MessageDigest m = MessageDigest.getInstance("SHA-1");
-      m.update(signature.getBytes());
-      signature = new BigInteger(1, m.digest()).toString(16);
+      m.update(String.format("%s:", request_uri).getBytes());
+
+      for (int i = 0 ; i < keys.size() ; ++i) {
+        String key = keys.get(i);
+        Object obj = signedParams.get(key);
+
+        if (obj instanceof List) {
+          List cast = (List) obj;
+          for (int j = 0 ; j < cast.size() ; ++j) {
+            m.update(String.format("%s[]=%s", key, cast.get(j).toString()).getBytes());
+
+            if (j < (keys.size() - 1)) {
+              m.update("&".getBytes());
+            }
+          }
+        }
+
+        else if (obj instanceof FilePartBody) {
+          m.update(String.format("%s=", key).getBytes());
+          FilePartBody part = (FilePartBody) obj;
+          part.updateHash(m);
+        }
+
+        else {
+          m.update(String.format("%s=%s", key, obj.toString()).getBytes());
+        }
+
+
+
+        if (i < (keys.size() - 1)) {
+          m.update("&".getBytes());
+        }
+      }
+
+      m.update(String.format(":%s", mAPISecret).getBytes());
+      String signature = new BigInteger(1, m.digest()).toString(16);
       // Log.d(LTAG, "signature: " + signature);
       params.put(mParamNameSignature, signature);
     } catch (java.security.NoSuchAlgorithmException ex) {
@@ -1470,11 +1594,11 @@ public class API
   /**
    * If no status is known, performs a status request.
    **/
-  private boolean updateStatus(Handler handler, boolean signalSuccess)
+  private boolean updateStatus(final Request req, boolean signalSuccess)
   {
     if (null != getStatus()) {
       if (signalSuccess) {
-        handler.obtainMessage(ERR_SUCCESS).sendToTarget();
+        sendMessage(req, ERR_SUCCESS);
       }
       return true;
     }
@@ -1486,16 +1610,16 @@ public class API
 
     // Construct status request. We pass an signedParams map to force signing
     HashMap<String, Object> signedParams = new HashMap<String, Object>();
-    HttpRequestBase request = constructRequest(API_STATUS, params, signedParams,
-        null);
-    byte[] data = fetchRawSynchronous(request, handler);
+    HttpRequestBase request = constructRequest(API_STATUS, params, signedParams);
+    byte[] data = fetchRawSynchronous(request, req);
     if (null == data) {
       Log.e(LTAG, "No response to status update call.");
       return false;
     }
 
     ResponseParser.Response<Status> status
-        = ResponseParser.parseStatusResponse(new String(data), handler);
+        = ResponseParser.parseStatusResponse(new String(data), req);
+
     if (null != status) {
       mStatus = status.mContent;
       mStatusTimeout = System.currentTimeMillis() + (status.mWindow * 1000);
@@ -1503,12 +1627,12 @@ public class API
     }
 
     if (null == mStatus) {
-      handler.obtainMessage(ERR_EMPTY_RESPONSE).sendToTarget();
+      sendMessage(req, ERR_EMPTY_RESPONSE);
       return false;
     }
     else {
       if (signalSuccess) {
-        handler.obtainMessage(ERR_SUCCESS).sendToTarget();
+        sendMessage(req, ERR_SUCCESS);
       }
     }
 
@@ -1522,7 +1646,7 @@ public class API
    * - If not, attempt to read it from disk.
    * - If that fails, fetch it from the API.
    **/
-  private void initializeAPIKeys(Handler handler)
+  private void initializeAPIKeys(final Request req)
   {
     // We can check any of the mAPI* or mParamName* fields to determine
     // whether or not we need to do anything here. Let's stick to the first.
@@ -1571,8 +1695,8 @@ public class API
           Build.VERSION.INCREMENTAL));
     signedParams.put("force_mobile", "false");
 
-    HttpRequestBase request = constructRequest(API_REGISTER, null, signedParams, null);
-    byte[] data = fetchRawSynchronous(request, handler);
+    HttpRequestBase request = constructRequest(API_REGISTER, null, signedParams);
+    byte[] data = fetchRawSynchronous(request, req);
     if (data == null) {
       Log.e(LTAG, "Empty response to registration call.");
       return;
@@ -1580,7 +1704,13 @@ public class API
 //    Log.d(LTAG, "registration response: " + new String(data));
 
     ResponseParser.Response<Pair<String, String>> results
-        = ResponseParser.parseRegistrationResponse(new String(data), handler);
+        = ResponseParser.parseRegistrationResponse(new String(data), new Handler(new Handler.Callback() {
+                public boolean handleMessage(Message msg)
+                {
+                  sendMessage(req, msg.what, msg.obj);
+                  return true;
+                }
+              }));
 
     if (null != results) {
       mAPISecret = results.mContent.mFirst;
@@ -1596,5 +1726,32 @@ public class API
       edit.putString(Globals.PREF_API_SECRET, mAPISecret);
       edit.commit();
     }
+  }
+
+
+
+  /**
+   * Handler handling (haha, ohh I'm cracking myself up.)
+   **/
+  public void sendMessage(Request req, int type)
+  {
+    if (null == req) {
+      Log.e(LTAG, "Request is null.");
+      return;
+    }
+    req.mBaton = null;
+    mHandler.obtainMessage(type, req).sendToTarget();
+  }
+
+
+
+  public void sendMessage(Request req, int type, Object obj)
+  {
+    if (null == req) {
+      Log.e(LTAG, "Request is null.");
+      return;
+    }
+    req.mBaton = obj;
+    mHandler.obtainMessage(type, req).sendToTarget();
   }
 }
