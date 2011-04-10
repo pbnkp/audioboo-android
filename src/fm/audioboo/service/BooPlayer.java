@@ -69,7 +69,7 @@ public class BooPlayer extends Thread
    * Public data
    **/
   // Flag that keeps the thread running when true.
-  public boolean mShouldRun;
+  public volatile boolean mShouldRun;
 
 
 
