@@ -23,6 +23,10 @@
     <item name="android:shadowDy">-1</item>
   </style>
 
+  <style name="button_larger" parent="button_huge"> <!-- Default system background -->
+    <item name="android:textSize">@dimen/text_larger</item>
+  </style>
+
   <style name="button_large" parent="button_huge"> <!-- Default system background -->
     <item name="android:textSize">@dimen/text_large</item>
   </style>
@@ -41,6 +45,23 @@
   </style>
 
   <style name="button_huge_blue" parent="button_huge">
+    <item name="android:background">@drawable/btn_blue</item>
+  </style>
+
+  <!-- Larger styles -->
+  <style name="button_larger_default" parent="button_larger">
+    <item name="android:background">@drawable/btn_default</item>
+  </style>
+
+  <style name="button_larger_green" parent="button_larger">
+    <item name="android:background">@drawable/btn_green</item>
+  </style>
+
+  <style name="button_larger_red" parent="button_larger">
+    <item name="android:background">@drawable/btn_red</item>
+  </style>
+
+  <style name="button_larger_blue" parent="button_larger">
     <item name="android:background">@drawable/btn_blue</item>
   </style>
 

@@ -124,13 +124,30 @@
             <LinearLayout
                 android:layout_width="fill_parent"
                 android:layout_height="wrap_content"
-                android:orientation="horizontal"
+                android:layout_marginLeft="5dp"
+                android:layout_marginRight="5dp"
+                android:layout_weight="1"
+                android:orientation="vertical"
+                android:gravity="center"
               >
+              <!-- Author -->
+              <TextView android:id="@+id/record_author"
+                  android:layout_width="fill_parent"
+                  android:layout_height="wrap_content"
+                  android:layout_marginTop="2dp"
+                  android:textSize="@dimen/boo_player_author"
+                  android:textStyle="bold"
+                  android:textColor="@color/boo_player_author"
+                  android:ellipsize="end"
+                  android:lines="1"
+                  android:singleLine="true"
+                />
+
               <!-- Title -->
               <TextView android:id="@+id/record_title"
                   android:layout_width="fill_parent"
                   android:layout_height="wrap_content"
-                  android:layout_marginTop="15dp"
+                  android:layout_marginTop="2dp"
                   android:layout_marginLeft="5dp"
                   android:layout_marginRight="5dp"
                   android:textSize="@dimen/boo_player_title"
@@ -145,7 +162,6 @@
               <TextView
                   android:layout_width="fill_parent"
                   android:layout_height="wrap_content"
-                  android:layout_weight="1"
                   android:layout_marginTop="2dp"
                   android:text="Time remaining:"
                   android:textSize="@dimen/boo_player_author"
@@ -197,21 +213,13 @@
           android:layout_height="wrap_content"
           android:layout_margin="10dp"
           android:layout_span="2"
-          android:paddingLeft="15dp"
-          android:paddingRight="15dp"
-          android:textColor="@color/button_label"
-          android:textStyle="bold"
-          android:textSize="@dimen/text_huge"
-          android:shadowColor="@color/text_shadow"
-          android:shadowRadius="1"
-          android:shadowDx="0"
-          android:shadowDy="-1"
           audioboo:textInitial="@string/record_label_record"
           android:textOn="@string/record_label_pause"
           android:textOff="@string/record_label_resume"
           audioboo:backgroundInitial="@drawable/btn_red"
           audioboo:backgroundOn="@drawable/btn_blue"
           audioboo:backgroundOff="@drawable/btn_red"
+          style="@style/button_huge"
         />
     </TableRow>
 
@@ -223,18 +231,8 @@
           android:layout_height="wrap_content"
           android:layout_margin="10dp"
           android:layout_marginRight="5dp"
-          android:paddingLeft="15dp"
-          android:paddingRight="15dp"
           android:text="@string/record_label_restart"
-          android:background="@drawable/btn_red"
-          android:textColor="@color/button_label"
-          android:textStyle="bold"
-          android:textSize="@dimen/text_large"
-          android:shadowColor="@color/text_shadow"
-          android:shadowRadius="1"
-          android:shadowDx="0"
-          android:shadowDy="-1"
-          android:enabled="false"
+          style="@style/button_large_red"
         />
 
       <!-- Publish button -->
@@ -243,18 +241,8 @@
           android:layout_height="wrap_content"
           android:layout_margin="10dp"
           android:layout_marginLeft="5dp"
-          android:paddingLeft="15dp"
-          android:paddingRight="15dp"
           android:text="@string/record_label_publish"
-          android:background="@drawable/btn_green"
-          android:textColor="@color/button_label"
-          android:textStyle="bold"
-          android:textSize="@dimen/text_large"
-          android:shadowColor="@color/text_shadow"
-          android:shadowRadius="1"
-          android:shadowDx="0"
-          android:shadowDy="-1"
-          android:enabled="false"
+          style="@style/button_large_green"
         />
 
     </TableRow>

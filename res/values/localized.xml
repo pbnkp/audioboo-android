@@ -372,4 +372,7 @@
   <!-- Dispatching -->
   <string name="dispatch_error">This URI is not recognized by Audioboo</string>
 
+  <!-- Uploading -->
+  <string name="upload_progress">Uploading Boo... %1$.0f%%</string>
+
 </resources>

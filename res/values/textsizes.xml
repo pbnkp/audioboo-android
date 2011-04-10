@@ -32,7 +32,6 @@
   <!--
     Record view
   -->
-  <dimen name="record_button_text">@dimen/text_larger</dimen>
   <dimen name="record_initial_countdown">120sp</dimen>
 
   <!--
@@ -69,7 +68,6 @@
   -->
   <dimen name="contact_number">65sp</dimen>
   <dimen name="contact_label">@dimen/text_large</dimen>
-  <dimen name="contact_button">@dimen/text_larger</dimen>
 
   <dimen name="contact_name">@dimen/text_large</dimen>
   <dimen name="contact_description">@dimen/text_standard</dimen>
