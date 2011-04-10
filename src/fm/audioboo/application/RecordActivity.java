@@ -243,6 +243,9 @@ public class RecordActivity extends Activity
     // We only have destination info if we're creating a new boo anyway.
     if (null != mDestinationInfo) {
       mBoo.mData.mDestinationInfo = mDestinationInfo;
+      if (!mDestinationInfo.mIsChannel) {
+        mBoo.mData.mIsMessage = true;
+      }
     }
 
     // Always overwrite the user. We're dealing with drafts, after all...
@@ -536,6 +539,17 @@ public class RecordActivity extends Activity
         // Making it invisible messes up the layout, so let's just set an empty
         // text.
         text_view.setText(" ");
+      }
+    }
+
+    // Set title in the progress views.
+    text_view = (TextView) findViewById(R.id.record_title);
+    if (null != text_view) {
+      if (null == mBoo.mData.mTitle) {
+        text_view.setText(R.string.boo_player_new_title);
+      }
+      else {
+        text_view.setText(mBoo.mData.mTitle);
       }
     }
 
