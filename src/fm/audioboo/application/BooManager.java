@@ -18,6 +18,7 @@ import java.io.FileFilter;
 
 import java.nio.ByteBuffer;
 
+import java.util.Collections;
 import java.util.zip.CRC32;
 
 import android.util.Log;
@@ -327,9 +328,16 @@ public class BooManager
       }
     }
 
+    Collections.sort(booDrafts, Boo.RECORDING_DATE_COMPARATOR);
     mBooDrafts = booDrafts;
+
+    Collections.sort(booUploads, Boo.RECORDING_DATE_COMPARATOR);
     mBooUploads = booUploads;
+
+    Collections.sort(messageDrafts, Boo.RECORDING_DATE_COMPARATOR);
     mMessageDrafts = messageDrafts;
+
+    Collections.sort(messageUploads, Boo.RECORDING_DATE_COMPARATOR);
     mMessageUploads = messageUploads;
   }
 
