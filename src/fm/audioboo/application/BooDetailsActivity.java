@@ -141,7 +141,7 @@ public class BooDetailsActivity
           try {
             id = Integer.valueOf(pair.getValue());
           } catch (NumberFormatException ex) {
-            id = -1; // signal error
+            id = Boo.INVALID_BOO; // signal error
           }
         }
         else if (pair.getName().equals("message")) {
@@ -153,14 +153,19 @@ public class BooDetailsActivity
         }
       }
 
-      if (-1 == id) {
+      if (Boo.INVALID_BOO == id) {
         Toast.makeText(this, R.string.details_invalid_uri, Toast.LENGTH_LONG).show();
         finish();
         return;
       }
+      else if (Boo.INTRO_BOO == id) {
+        mBoo = Boo.createIntroBoo(this);
+      }
 
-      String key = String.format(BOO_KEY_FORMAT, id);
-      mBoo = (Boo) Globals.get().mObjectCache.get(key);
+      if (null == mBoo) {
+        String key = String.format(BOO_KEY_FORMAT, id);
+        mBoo = (Boo) Globals.get().mObjectCache.get(key);
+      }
 
       if (null == mBoo) {
         Globals.get().mAPI.fetchBooDetails(id, mHandler, message);
@@ -210,29 +215,28 @@ public class BooDetailsActivity
     // Thumbnail
     ImageView image_view = (ImageView) findViewById(R.id.boo_thumb);
     if (null != image_view) {
-      if (null != mBoo.mData.mUser) {
+      if (Boo.INTRO_BOO == mBoo.mData.mId) {
+        image_view.setImageResource(R.drawable.icon_flat);
+        image_view.setFocusable(false);
+        image_view.setFocusableInTouchMode(false);
+      }
+      else if (null != mBoo.mData.mUser) {
         Uri uri = mBoo.mData.mUser.getThumbUrl();
         if (null != uri) {
           int size = image_view.getLayoutParams().width - image_view.getPaddingLeft()
             - image_view.getPaddingRight();
           uris.add(new ImageCache.CacheItem(uri, size, new Baton(-1, R.id.boo_thumb, -1)));
         }
-      }
 
-
-      image_view.setOnClickListener(new View.OnClickListener() {
-          public void onClick(View v)
-          {
-            if (null != mBoo.mData.mUser) {
+        image_view.setOnClickListener(new View.OnClickListener() {
+            public void onClick(View v)
+            {
               Intent i = new Intent(BooDetailsActivity.this, ContactDetailsActivity.class);
               i.putExtra(ContactDetailsActivity.EXTRA_CONTACT, (Parcelable) mBoo.mData.mUser);
               startActivity(i);
             }
-            else {
-              Toast.makeText(BooDetailsActivity.this, R.string.details_user_not_available, Toast.LENGTH_LONG).show();
-            }
-          }
-      });
+        });
+      }
     }
 
     // Author

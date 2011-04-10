@@ -97,6 +97,7 @@ public class AudiobooService
       mPlayer = new BooPlayer(this, this);
       mPlayer.start();
 
+      mPlayer.play(Boo.createIntroBoo(this), false);
 //      // Search for and read state.
 //      String path = getStateFilename();
 //      File statefile = new File(path);

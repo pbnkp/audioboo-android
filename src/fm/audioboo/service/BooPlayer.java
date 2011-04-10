@@ -497,7 +497,11 @@ public class BooPlayer extends Thread
     mState = Constants.STATE_PREPARING;
 
     // Local Boos are treated via the FLACPlayerWrapper.
-    if (boo.isLocal()) {
+    if (boo.isIntro()) {
+      // Intro needs the API player.
+      mPlayer = new APIPlayer(this);
+    }
+    else if (boo.isLocal()) {
       mPlayer = new FLACPlayerWrapper(this);
     }
     else if (boo.isRemote()) {

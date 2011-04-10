@@ -375,4 +375,9 @@
   <!-- Uploading -->
   <string name="upload_progress">Uploading Boo... %1$.0f%%</string>
 
+  <!-- Intro boo -->
+  <string name="intro_boo_title">Welcome to AUdioboo</string>
+  <string name="intro_boo_author">The BooBot</string>
+  <string name="intro_boo_location">Audioboo HQ</string>
+
 </resources>

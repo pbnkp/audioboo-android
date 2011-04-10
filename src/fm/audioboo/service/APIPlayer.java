@@ -10,10 +10,12 @@
 package fm.audioboo.service;
 
 import android.content.Context;
+import android.content.res.AssetFileDescriptor;
 
 import android.media.MediaPlayer;
 
 import fm.audioboo.application.Boo;
+import fm.audioboo.application.R;
 
 import android.util.Log;
 
@@ -66,7 +68,20 @@ public class APIPlayer extends PlayerBase
     mPrepared = false;
     mMediaPlayer = new MediaPlayer();
     try {
-      mMediaPlayer.setDataSource(ctx, boo.mData.mHighMP3Url);
+      if (null == boo.mData.mHighMP3Url) {
+        // Must be intro boo.
+        AssetFileDescriptor afd = ctx.getResources().openRawResourceFd(R.raw.intro_boo);
+        if (null == afd) {
+          Log.e(LTAG, "Could not open asset file descriptor.");
+          return false;
+        }
+        mMediaPlayer.setDataSource(afd.getFileDescriptor(), afd.getStartOffset(), afd.getLength());
+        afd.close();
+      }
+      else {
+        // Must be remote.
+        mMediaPlayer.setDataSource(ctx, boo.mData.mHighMP3Url);
+      }
     } catch (java.io.IOException ex) {
       Log.e(LTAG, "Could not start playback of URI: " + boo.mData.mHighMP3Url);
       return false;

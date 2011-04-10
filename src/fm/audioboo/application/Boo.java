@@ -13,6 +13,8 @@ package fm.audioboo.application;
 
 import android.net.Uri;
 
+import android.content.Context;
+
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.ObjectInputStream;
@@ -49,6 +51,16 @@ public class Boo
    **/
   // Log ID
   private static final String LTAG = "Boo";
+
+
+
+  /***************************************************************************
+   * Public constants
+   **/
+  // Magic mId values
+  public static final int INVALID_BOO = -1;
+  public static final int INTRO_BOO   = -42;
+
 
 
   /***************************************************************************
@@ -328,6 +340,21 @@ public class Boo
 
 
 
+  public boolean isIntro()
+  {
+    if (null == mData) {
+      return false;
+    }
+
+    if (null == mData.mRecordings && null == mData.mHighMP3Url) {
+      return true;
+    }
+
+    return false;
+  }
+
+
+
   public boolean isRemote()
   {
     if (null == mData) {
@@ -344,6 +371,29 @@ public class Boo
     }
 
     return false;
+  }
+
+
+
+  public static Boo createIntroBoo(Context ctx)
+  {
+    BooData data = new BooData();
+    data.mId = Boo.INTRO_BOO;
+    data.mTitle = ctx.getResources().getString(R.string.intro_boo_title);
+    data.mDuration = 100f; // XXX intro_boo.mp3 is *currently* 100s long
+
+    data.mUser = new User();
+    data.mUser.mUsername = ctx.getResources().getString(R.string.intro_boo_author);
+
+    data.mRecordedAt = new Date(1295906201000l);
+
+    data.mLocation = new BooLocation();
+    data.mLocation.mDescription = ctx.getResources().getString(R.string.intro_boo_location);
+    data.mLocation.mLatitude = 51.501033;
+    data.mLocation.mLongitude = -0.078691;
+    data.mLocation.mAccuracy = 0f;
+
+    return new Boo(data);
   }
 
 
