@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+ This file is part of AudioBoo, an android program for audio blogging.
+ Copyright (C) 2011 AudioBoo Ltd.
+ All rights reserved.
+
+ Author: Jens Finkhaeuser <jens@finkhaeuser.de>
+
+ $Id$
+-->
+
+<resources>
+  <!-- Button base styles -->
+  <style name="button_huge"> <!-- Default system background -->
+    <item name="android:paddingLeft">15dp</item>
+    <item name="android:paddingRight">15dp</item>
+    <item name="android:textColor">@color/button_label</item>
+    <item name="android:textStyle">bold</item>
+    <item name="android:textSize">@dimen/text_huge</item>
+    <item name="android:shadowColor">@color/text_shadow</item>
+    <item name="android:shadowRadius">1</item>
+    <item name="android:shadowDx">0</item>
+    <item name="android:shadowDy">-1</item>
+  </style>
+
+  <style name="button_large" parent="button_huge"> <!-- Default system background -->
+    <item name="android:textSize">@dimen/text_large</item>
+  </style>
+
+  <!-- Huge styles -->
+  <style name="button_huge_default" parent="button_huge">
+    <item name="android:background">@drawable/btn_default</item>
+  </style>
+
+  <style name="button_huge_green" parent="button_huge">
+    <item name="android:background">@drawable/btn_green</item>
+  </style>
+
+  <style name="button_huge_red" parent="button_huge">
+    <item name="android:background">@drawable/btn_red</item>
+  </style>
+
+  <style name="button_huge_blue" parent="button_huge">
+    <item name="android:background">@drawable/btn_blue</item>
+  </style>
+
+  <!-- Large styles -->
+  <style name="button_large_default" parent="button_large">
+    <item name="android:background">@drawable/btn_default</item>
+  </style>
+
+  <style name="button_large_green" parent="button_large">
+    <item name="android:background">@drawable/btn_green</item>
+  </style>
+
+  <style name="button_large_red" parent="button_large">
+    <item name="android:background">@drawable/btn_red</item>
+  </style>
+
+  <style name="button_large_blue" parent="button_large">
+    <item name="android:background">@drawable/btn_blue</item>
+  </style>
+</resources>
