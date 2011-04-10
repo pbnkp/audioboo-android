@@ -19,6 +19,7 @@ import android.content.Intent;
 
 import android.view.View;
 import android.view.inputmethod.InputMethodManager;
+import android.view.KeyEvent;
 
 import android.widget.Button;
 import android.widget.ImageButton;
@@ -194,7 +195,18 @@ public class PublishActivity extends Activity
 
 
   @Override
-  public void onBackPressed()
+  public boolean onKeyDown(int keyCode, KeyEvent event)
+  {
+    if (KeyEvent.KEYCODE_BACK == keyCode && 0 == event.getRepeatCount()) {
+      onBackPressedManual();
+      return true;
+    }
+    return super.onKeyDown(keyCode, event);
+  }
+
+
+
+  public void onBackPressedManual()
   {
     if (null == mBoo.mData.mUploadInfo) {
       // Not published yet! Save our current progress. The nice part is that

@@ -28,6 +28,7 @@ import android.media.MediaPlayer;
 import android.view.View;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.KeyEvent;
 
 import android.widget.CompoundButton;
 import android.widget.TextView;
@@ -335,7 +336,18 @@ public class RecordActivity extends Activity
 
 
   @Override
-  public void onBackPressed()
+  public boolean onKeyDown(int keyCode, KeyEvent event)
+  {
+    if (KeyEvent.KEYCODE_BACK == keyCode && 0 == event.getRepeatCount()) {
+      onBackPressedManual();
+      return true;
+    }
+    return super.onKeyDown(keyCode, event);
+  }
+
+
+
+  public void onBackPressedManual()
   {
     // Save/discard dialogue.
     showDialog(DIALOG_DRAFT);
