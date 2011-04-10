@@ -30,6 +30,8 @@ import fm.audioboo.data.User;
 import fm.audioboo.data.BooLocation;
 import fm.audioboo.data.BooData;
 
+import fm.audioboo.service.UploadManager;
+
 import android.util.Log;
 
 /**
@@ -144,6 +146,15 @@ class ResponseParser
   // Upload response
   private static final String AUDIO_CLIP              = "audio_clip";
   private static final String CLIP_ID                 = "id";
+  private static final String ATTACHMENT              = "attachment";
+  private static final String ATTACHMENT_SIZE         = "size";
+  private static final String ATTACHMENT_CT           = "content_type";
+  private static final String ATTACHMENT_RECEIVED     = "received";
+  private static final String ATTACHMENT_ID           = "id";
+  private static final String ATTACHMENT_OUTSTANDING  = "outstanding";
+  private static final String ATTACHMENT_COMPLETE     = "complete";
+  private static final String ATTACHMENT_FILENAME     = "filename";
+
 
   /***************************************************************************
    * Implementation
@@ -265,10 +276,10 @@ class ResponseParser
   /**
    * Parses the response to API_STATUS requests.
    **/
-  public static Response<API.Status> parseStatusResponse(String response, Handler handler)
+  public static Response<API.Status> parseStatusResponse(String response, API.Request req)
   {
     try {
-      Response<JSONObject> body = retrieveBody(response, handler);
+      Response<JSONObject> body = retrieveBody(response, req);
       if (null == body) {
         return null;
       }
@@ -299,7 +310,7 @@ class ResponseParser
 
     } catch (JSONException ex) {
       Log.e(LTAG, "Could not parse JSON response: " + ex);
-      handler.obtainMessage(API.ERR_PARSE_ERROR).sendToTarget();
+      Globals.get().mAPI.sendMessage(req, API.ERR_PARSE_ERROR);
       return null;
     }
   }
@@ -324,6 +335,43 @@ class ResponseParser
       result.mTimestamp = body.mTimestamp;
       result.mWindow = body.mWindow;
       result.mContent = clip.getInt(CLIP_ID);
+      return result;
+
+    } catch (JSONException ex) {
+      Log.e(LTAG, "Could not parse JSON response: " + ex);
+      handler.obtainMessage(API.ERR_PARSE_ERROR).sendToTarget();
+      return null;
+    }
+  }
+
+
+
+  /**
+   * Parse the response to an attachment request.
+   **/
+  public static Response<UploadManager.UploadResult> parseAttachmentResponse(String response, Handler handler)
+  {
+    try {
+      Response<JSONObject> body = retrieveBody(response, handler);
+      if (null == body) {
+        return null;
+      }
+
+      JSONObject att = body.mContent.getJSONObject(ATTACHMENT);
+
+      UploadManager.UploadResult ures = new UploadManager.UploadResult();
+      ures.id = att.getInt(ATTACHMENT_ID);
+      ures.contentType = att.getString(ATTACHMENT_CT);
+      ures.size = att.getInt(ATTACHMENT_SIZE);
+      ures.received = att.getInt(ATTACHMENT_RECEIVED);
+      ures.outstanding = att.getInt(ATTACHMENT_OUTSTANDING);
+      ures.complete = att.getBoolean(ATTACHMENT_COMPLETE);
+      ures.filename = att.getString(ATTACHMENT_FILENAME);
+
+      Response<UploadManager.UploadResult> result = new Response<UploadManager.UploadResult>();
+      result.mTimestamp = body.mTimestamp;
+      result.mWindow = body.mWindow;
+      result.mContent = ures;
       return result;
 
     } catch (JSONException ex) {
@@ -662,16 +710,43 @@ class ResponseParser
   }
 
 
+  private static Response<JSONObject> retrieveBody(String response, API.Request req) throws JSONException
+  {
+    Log.d(LTAG, "response: " + response);
+
+    JSONObject object = new JSONObject(response);
+
+    Response<JSONObject> result = new Response<JSONObject>();
+
+    // Parse metadata.
+    result.mWindow = object.getInt(WINDOW);
+    result.mTimestamp = object.getInt(TIMESTAMP);
+
+    if (!checkVersion(object, req)) {
+      return null;
+    }
+
+    result.mContent = object.getJSONObject(BODY);
+
+    if (!handleError(result.mContent, req)) {
+      return null;
+    }
+
+    return result;
+  }
+
+
+
 
   /**
    * Returns true if no error has been reported, otherwise returns false.
    * If false is returned, the handler has already been sent a ERR_API_ERROR
    * message.
    **/
-  private static boolean handleError(JSONObject body, Handler handler) throws JSONException
+  private static API.APIException parseError(JSONObject body) throws JSONException
   {
     if (!body.has(ERROR)) {
-      return true;
+      return null;
     }
 
     JSONObject error = body.getJSONObject(ERROR);
@@ -679,11 +754,32 @@ class ResponseParser
     String message = error.optString(ERROR_DESCRIPTION);
 
     Log.e(LTAG, "Error response [" + code + "]: " + message);
-    handler.obtainMessage(API.ERR_API_ERROR,
-        new API.APIException(message, code)).sendToTarget();
+    return new API.APIException(message, code);
+  }
 
+
+  private static boolean handleError(JSONObject body, Handler handler) throws JSONException
+  {
+    API.APIException ex = parseError(body);
+    if (null == ex) {
+      return true;
+    }
+    handler.obtainMessage(API.ERR_API_ERROR, ex).sendToTarget();
     return false;
   }
+
+
+  private static boolean handleError(JSONObject body, API.Request req) throws JSONException
+  {
+    API.APIException ex = parseError(body);
+    if (null == ex) {
+      return true;
+    }
+
+    Globals.get().mAPI.sendMessage(req, API.ERR_API_ERROR, ex);
+    return false;
+  }
+
 
 
 
@@ -705,4 +801,20 @@ class ResponseParser
 
     return true;
   }
+
+
+  private static boolean checkVersion(JSONObject object, API.Request req) throws JSONException
+  {
+    // Check version of the response first. We expect a particular version
+    // at the moment.
+    int version = object.getInt(VERSION);
+    if (EXPECTED_VERSION != version) {
+      Log.e(LTAG, "Response version did not match our expectations.");
+      Globals.get().mAPI.sendMessage(req, API.ERR_VERSION_MISMATCH);
+      return false;
+    }
+
+    return true;
+  }
+
 }
