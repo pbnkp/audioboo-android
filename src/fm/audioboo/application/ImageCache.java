@@ -17,7 +17,6 @@ import android.net.Uri;
 
 import android.os.Handler;
 import android.os.Message;
-import android.os.Looper;
 
 import android.database.Cursor;
 import android.database.SQLException;
