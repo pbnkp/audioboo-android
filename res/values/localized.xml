@@ -143,6 +143,11 @@
   <string name="account_location_section_title">Location</string>
   <string name="account_location_label">Use Current Location</string>
 
+  <string name="account_intro_section_title">Intro Boo</string>
+  <string name="account_intro_label">Play intro boo again</string>
+
+  <string name="account_version_format">Version: %1$s</string>
+
   <string name="account_unlink_dialog_message">Are you sure you want to unlink
     this device from your account?</string>
   <string name="account_unlink_dialog_confirm">Unlink</string>
@@ -376,7 +381,7 @@
   <string name="upload_progress">Uploading Boo... %1$.0f%%</string>
 
   <!-- Intro boo -->
-  <string name="intro_boo_title">Welcome to AUdioboo</string>
+  <string name="intro_boo_title">Welcome to Audioboo</string>
   <string name="intro_boo_author">The BooBot</string>
   <string name="intro_boo_location">Audioboo HQ</string>
 

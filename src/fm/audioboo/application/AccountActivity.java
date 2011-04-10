@@ -23,6 +23,8 @@ import android.net.Uri;
 import android.content.res.Configuration;
 import android.content.SharedPreferences;
 import android.content.Intent;
+import android.content.pm.PackageManager;
+import android.content.pm.PackageInfo;
 
 import android.view.View;
 
@@ -31,6 +33,7 @@ import android.widget.ToggleButton;
 import android.widget.CheckBox;
 import android.widget.TextView;
 import android.widget.ImageView;
+import android.widget.Button;
 
 import android.content.DialogInterface;
 import android.app.Dialog;
@@ -187,7 +190,7 @@ public class AccountActivity extends Activity
   private void initUI()
   {
     API.Status status = Globals.get().getStatus();
-    Log.d(LTAG, "init UI: " + status);
+//    Log.d(LTAG, "init UI: " + status);
     if (null == status) {
       // Shouldn't happen, but can if the user switches tabs before the status
       // request completes.
@@ -243,6 +246,32 @@ public class AccountActivity extends Activity
       SharedPreferences prefs = Globals.get().getPrefs();
       mUseLocation = prefs.getBoolean(Globals.PREF_USE_LOCATION, false);
       cb.setChecked(mUseLocation);
+    }
+
+    // Play intro again button
+    Button button = (Button) findViewById(R.id.account_intro);
+    if (null != button) {
+      button.setOnClickListener(new View.OnClickListener() {
+          public void onClick(View v)
+          {
+            Globals.get().mPlayer.play(Boo.createIntroBoo(AccountActivity.this), true);
+          }
+      });
+    }
+
+    // Version
+    TextView text_view = (TextView) findViewById(R.id.account_version);
+    if (null != text_view) {
+      String version = "-";
+      try {
+        PackageInfo info = getPackageManager().getPackageInfo(getPackageName(), 0);
+        version = info.versionName;
+      } catch (PackageManager.NameNotFoundException ex) {
+        Log.e(LTAG, "Can't find our own package?!?");
+      }
+
+      version = String.format(getResources().getString(R.string.account_version_format), version);
+      text_view.setText(version);
     }
   }
 

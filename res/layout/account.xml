@@ -150,6 +150,46 @@
           android:singleLine="true"
           android:text="@string/account_location_label"
         />
+
+      <!-- Replay Intro label -->
+      <TextView
+          android:layout_width="fill_parent"
+          android:layout_height="wrap_content"
+          android:layout_marginTop="20dp"
+          android:textSize="@dimen/account_section_label"
+          android:textColor="@color/account_section_label"
+          android:textStyle="bold"
+          android:ellipsize="end"
+          android:lines="1"
+          android:singleLine="true"
+          android:text="@string/account_intro_section_title"
+        />
+
+      <!-- Intro button -->
+      <Button android:id="@+id/account_intro"
+          android:layout_width="fill_parent"
+          android:layout_height="wrap_content"
+          android:layout_marginLeft="15dp"
+          android:layout_marginTop="5dp"
+          android:gravity="center"
+          android:text="@string/account_intro_label"
+        />
+
+      <!-- Version -->
+      <TextView android:id="@+id/account_version"
+          android:layout_width="fill_parent"
+          android:layout_height="wrap_content"
+          android:layout_marginTop="30dp"
+          android:gravity="center"
+          android:textSize="@dimen/text_smaller"
+          android:textColor="@color/account_section_label"
+          android:ellipsize="end"
+          android:lines="1"
+          android:singleLine="true"
+          android:text="@string/account_version_format"
+        />
+
+
     </LinearLayout>
   </ScrollView>
 </RelativeLayout>
