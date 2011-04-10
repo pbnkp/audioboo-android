@@ -49,7 +49,9 @@ import android.util.Log;
 /**
  * Service implementing IAudiobooService
  **/
-public class AudiobooService extends Service
+public class AudiobooService
+       extends Service
+       implements BooPlayer.ActivityListener
 {
   /***************************************************************************
    * Private constants
@@ -92,7 +94,7 @@ public class AudiobooService extends Service
   public void onCreate()
   {
     if (null == mPlayer) {
-      mPlayer = new BooPlayer(this);
+      mPlayer = new BooPlayer(this, this);
       mPlayer.start();
 
 //      // Search for and read state.
@@ -133,6 +135,7 @@ public class AudiobooService extends Service
 //      PersistentPlaybackState state = mPlayer.getPersistentState();
 
       // Stop player
+      cancelPlaybackNotification();
       mPlayer.mShouldRun = false;
       mPlayer.interrupt();
       mPlayer = null;
@@ -223,7 +226,6 @@ public class AudiobooService extends Service
     public void play(BooData boo, boolean playImmediately)
     {
       mPlayer.play(new Boo(boo), playImmediately);
-      showPlaybackNotification();
     }
 
 
@@ -247,7 +249,6 @@ public class AudiobooService extends Service
     public void resume()
     {
       mPlayer.resumePlaying();
-      showPlaybackNotification();
     }
 
 
@@ -271,5 +272,21 @@ public class AudiobooService extends Service
       mUploader.processQueue();
     }
   };
+
+
+
+  /***************************************************************************
+   * BooPlayer.ActivityListener implementation
+   **/
+  public void updateActivity(boolean active)
+  {
+    if (active) {
+      showPlaybackNotification();
+    }
+    else {
+      cancelPlaybackNotification();
+    }
+  }
+
 }
 

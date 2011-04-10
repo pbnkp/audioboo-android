@@ -64,6 +64,14 @@ public class BooPlayer extends Thread
   };
 
 
+  /***************************************************************************
+   * Listens to whether or not the player is active/inactive.
+   **/
+  public static interface ActivityListener
+  {
+    public void updateActivity(boolean active);
+  }
+
 
   /***************************************************************************
    * Public data
@@ -100,6 +108,8 @@ public class BooPlayer extends Thread
   private double                mPlaybackProgress;
   private long                  mTimestamp;
 
+  // Activity listener.
+  private WeakReference<ActivityListener> mListener;
 
 
   /***************************************************************************
@@ -108,6 +118,14 @@ public class BooPlayer extends Thread
   public BooPlayer(Context ctx)
   {
     mContext = new WeakReference<Context>(ctx);
+  }
+
+
+
+  public BooPlayer(Context ctx, ActivityListener listener)
+  {
+    mContext = new WeakReference<Context>(ctx);
+    mListener = new WeakReference<ActivityListener>(listener);
   }
 
 
@@ -508,6 +526,7 @@ public class BooPlayer extends Thread
     mState = Constants.STATE_PAUSED;
 
     if (null != mTimer) {
+      onTimer(false);
       mTimer.cancel();
       mTimer = null;
     }
@@ -530,6 +549,7 @@ public class BooPlayer extends Thread
   }
 
 
+
   private void stopUnlocked()
   {
     if (null != mPlayer) {
@@ -538,6 +558,7 @@ public class BooPlayer extends Thread
     }
 
     if (null != mTimer) {
+      onTimer(false);
       mTimer.cancel();
       mTimer = null;
     }
@@ -563,7 +584,7 @@ public class BooPlayer extends Thread
       {
         public void run()
         {
-          onTimer();
+          onTimer(true);
         }
       };
       mTimer.scheduleAtFixedRate(task, 0, TIMER_TASK_INTERVAL);
@@ -582,7 +603,7 @@ public class BooPlayer extends Thread
    * Invoked periodically; tracks progress and notifies the listener
    * accordingly.
    **/
-  private void onTimer()
+  private void onTimer(boolean fromTimer)
   {
     long current = System.currentTimeMillis();
     long diff = current - mTimestamp;
@@ -601,6 +622,19 @@ public class BooPlayer extends Thread
       // Log.d(LTAG, "progress: " + mPlaybackProgress);
       mPlaybackProgress += (double) diff / 1000.0;
     }
+
+    // Notify listener, if it exists.
+    if (null == mListener) {
+      return;
+    }
+    ActivityListener listener = mListener.get();
+    if (null == listener) {
+      return;
+    }
+    // Since the timer is only running when stuff is active, the
+    // fromTimer flag already tells us whether the player is active
+    // or not.
+    listener.updateActivity(fromTimer);
   }
 
 
