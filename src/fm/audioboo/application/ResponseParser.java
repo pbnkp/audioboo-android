@@ -145,6 +145,7 @@ class ResponseParser
 
   // Upload response
   private static final String AUDIO_CLIP              = "audio_clip";
+  private static final String MESSAGE                 = "message";
   private static final String CLIP_ID                 = "id";
   private static final String ATTACHMENT              = "attachment";
   private static final String ATTACHMENT_SIZE         = "size";
@@ -634,7 +635,7 @@ class ResponseParser
         return null;
       }
 
-      Boo boo = parseBoo(body.mContent.getJSONObject(AUDIO_CLIP), isMessage);
+      Boo boo = parseBoo(body.mContent.getJSONObject(isMessage ? MESSAGE : AUDIO_CLIP), isMessage);
 
       Response<Boo> result = new Response<Boo>();
       result.mTimestamp = body.mTimestamp;
