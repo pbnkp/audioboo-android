@@ -875,7 +875,11 @@ public class BooListAdapter extends BaseExpandableListAdapter
         text_view.setText(boo.mData.mUser.mUsername);
       }
       else {
-        text_view.setText(Globals.get().mAccount.mUsername);
+        String username = activity.getResources().getString(R.string.boo_list_me);
+        if (null != Globals.get().mAccount) {
+          username = Globals.get().mAccount.mUsername;
+        }
+        text_view.setText(username);
       }
     }
 
