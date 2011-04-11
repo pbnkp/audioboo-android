@@ -153,6 +153,16 @@
   <string name="account_unlink_dialog_confirm">Unlink</string>
   <string name="account_unlink_dialog_cancel">Cancel</string>
 
+  <string name="account_poll_section_title">Messages</string>
+  <string name="account_poll_prompt">Fetch interval</string>
+  <string-array name="account_poll_options">
+    <item>Never fetch</item>
+    <item>Fetch every 15 min</item>
+    <item>Fetch every half hour</item>
+    <item>Fetch every hour</item>
+    <item>Fetch every half day</item>
+    <item>Fetch every day</item>
+  </string-array>
 
   <!--
     Error codes and their messages. See res/values/errors.xml for details
@@ -385,4 +395,7 @@
   <string name="intro_boo_author">The BooBot</string>
   <string name="intro_boo_location">Audioboo HQ</string>
 
+  <!-- Message polling -->
+  <string name="poll_title">New Audioboo message(s)</string>
+  <string name="poll_info_format">%1$d unread</string>
 </resources>

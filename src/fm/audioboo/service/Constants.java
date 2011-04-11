@@ -37,4 +37,12 @@ public class Constants
   public static final int MAX_UPLOAD_CHUNK_SIZE = 1024 * 1000;
   public static final int MIN_UPLOAD_TIME       = 10000; // msec
   public static final int MAX_UPLOAD_TIME       = 40000; // msec
+
+  // Notification IDs
+  public static final int  NOTIFICATION_PLAYING_BACK  = 0;
+  public static final int  NOTIFICATION_UPLOADING     = 1;
+  public static final int  NOTIFICATION_MESSAGES      = 2;
+
+  // Preference keys
+  public static final String PREF_POLL_INTERVAL = "poll-interval";
 }

@@ -15,12 +15,15 @@ import android.content.Context;
 import android.content.Intent;
 
 import android.app.Activity;
+import android.app.AlarmManager;
+import android.app.PendingIntent;
 
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
 import android.os.Handler;
 import android.os.Message;
+import android.os.SystemClock;
 
 import android.telephony.TelephonyManager;
 import java.math.BigInteger;
@@ -51,6 +54,8 @@ import android.provider.Settings;
 
 import fm.audioboo.service.BooPlayerClient;
 import fm.audioboo.service.UploadClient;
+import fm.audioboo.service.Constants;
+import fm.audioboo.service.PollReceiver;
 import fm.audioboo.data.User;
 
 import java.lang.ref.WeakReference;
@@ -104,6 +109,15 @@ public class Globals
 
   // Directory prefix for the data directory.
   private static final String     DATA_DIR_PREFIX             = "boo_data";
+
+  // Possible poll intervals
+  private static final long[] POLL_INTERVALS = {
+    AlarmManager.INTERVAL_FIFTEEN_MINUTES,
+    AlarmManager.INTERVAL_HALF_HOUR,
+    AlarmManager.INTERVAL_HOUR,
+    AlarmManager.INTERVAL_HALF_DAY,
+    AlarmManager.INTERVAL_DAY,
+  };
 
 
   /***************************************************************************
@@ -168,6 +182,9 @@ public class Globals
 
   // Map of error codes to error messages.
   private HashMap<Integer, String>  mErrorMessages;
+
+  // Poll intent.
+  private PendingIntent             mPollIntent;
 
   // Cache/update linked status of the app
   private API.Status                mStatus;
@@ -319,6 +336,9 @@ public class Globals
 
     // Find out the device linked status early.
     updateStatus(null);
+
+    // Start polling, if necessary
+    updatePolling();
   }
 
 
@@ -739,5 +759,36 @@ public class Globals
     mOnwardsHandler = onwardsHandler;
     mAccount = null;
     mAPI.updateStatus(mStatusHandler);
+  }
+
+
+  /**
+   * Start/stop polling, depending on preferences.
+   **/
+  public void updatePolling()
+  {
+    Context ctx = mContext.get();
+    if (null == ctx) {
+      return;
+    }
+
+    AlarmManager am = (AlarmManager) ctx.getSystemService(Context.ALARM_SERVICE);
+
+    // Schedule polling?
+    int pos = getPrefs().getInt(Constants.PREF_POLL_INTERVAL, 0);
+    if (0 == pos) {
+      if (null != mPollIntent) {
+        am.cancel(mPollIntent);
+        mPollIntent = null;
+      }
+      return;
+    }
+
+    Intent poll_intent = new Intent(PollReceiver.ACTION_POLL_MESSAGES);
+    mPollIntent = PendingIntent.getBroadcast(ctx, 0, poll_intent, 0);
+
+    long interval = POLL_INTERVALS[pos - 1];
+    long delay = SystemClock.elapsedRealtime() + interval;
+    am.setInexactRepeating(AlarmManager.ELAPSED_REALTIME, delay, interval, mPollIntent);
   }
 }

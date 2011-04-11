@@ -53,9 +53,6 @@ public class UploadManager
   // Sleep time, if the thread's not woken.
   private static final int SLEEP_TIME_LONG      = 60 * 1000;
 
-  // Notification IDs (FIXME put in the same place as other NOTIFICATION_
-  // constants).
-  private static final int  NOTIFICATION_UPLOADING  = 1;
 
 
   /***************************************************************************
@@ -380,7 +377,7 @@ public class UploadManager
     }
 
     NotificationManager nm = (NotificationManager) ctx.getSystemService(Context.NOTIFICATION_SERVICE);
-    nm.cancel(NOTIFICATION_UPLOADING);
+    nm.cancel(Constants.NOTIFICATION_UPLOADING);
   }
 
 
@@ -421,6 +418,6 @@ public class UploadManager
     notification.flags |= Notification.FLAG_NO_CLEAR;
 
     // Install notification
-    nm.notify(NOTIFICATION_UPLOADING, notification);
+    nm.notify(Constants.NOTIFICATION_UPLOADING, notification);
   }
 }

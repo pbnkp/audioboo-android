@@ -58,9 +58,6 @@ public class AudiobooService
    **/
   private static final String LTAG = "AudiobooService";
 
-  // Notification IDs
-  private static final int  NOTIFICATION_PLAYING_BACK    = 0;
-
 
   /***************************************************************************
    * Private data
@@ -167,7 +164,7 @@ public class AudiobooService
     notification.flags |= Notification.FLAG_NO_CLEAR;
 
     // Install notification
-    nm.notify(NOTIFICATION_PLAYING_BACK, notification);
+    nm.notify(Constants.NOTIFICATION_PLAYING_BACK, notification);
 
   }
 
@@ -176,7 +173,7 @@ public class AudiobooService
   private void cancelPlaybackNotification()
   {
     NotificationManager nm = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
-    nm.cancel(NOTIFICATION_PLAYING_BACK);
+    nm.cancel(Constants.NOTIFICATION_PLAYING_BACK);
   }
 
 

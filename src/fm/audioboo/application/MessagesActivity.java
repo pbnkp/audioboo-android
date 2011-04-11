@@ -12,11 +12,14 @@
 package fm.audioboo.application;
 
 import android.app.Activity;
+import android.app.NotificationManager;
 
 import android.os.Bundle;
 
+import android.content.Context;
 import android.content.Intent;
 import android.content.res.Resources;
+import android.content.SharedPreferences;
 
 import android.widget.ListView;
 import android.widget.ArrayAdapter;
@@ -25,6 +28,8 @@ import android.view.Menu;
 import android.view.MenuItem;
 
 import android.widget.Toast;
+
+import fm.audioboo.service.Constants;
 
 import java.util.List;
 
@@ -179,6 +184,12 @@ public class MessagesActivity extends BooListActivity
           // Not set or invalid - we'll just ignore it.
           break;
       }
+    }
+
+    // If we've been launched as the inbox, clear messages notification
+    if (DISPLAY_MODE_INBOX == mDisplayMode) {
+      NotificationManager nm = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+      nm.cancel(Constants.NOTIFICATION_MESSAGES);
     }
   }
 

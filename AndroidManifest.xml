@@ -109,5 +109,12 @@
         <action android:name="fm.audioboo.service.IUploadService" />
       </intent-filter>
     </service>
+
+    <!-- Poller -->
+    <receiver android:name="fm.audioboo.service.PollReceiver">
+      <intent-filter>
+        <action android:name="fm.audioboo.actions.POLL_MESSAGES" />
+      </intent-filter>
+    </receiver>
   </application>
 </manifest>

@@ -151,6 +151,28 @@
           android:text="@string/account_location_label"
         />
 
+      <!-- Polling -->
+      <TextView
+          android:layout_width="fill_parent"
+          android:layout_height="wrap_content"
+          android:layout_marginTop="20dp"
+          android:textSize="@dimen/account_section_label"
+          android:textColor="@color/account_section_label"
+          android:textStyle="bold"
+          android:ellipsize="end"
+          android:lines="1"
+          android:singleLine="true"
+          android:text="@string/account_poll_section_title"
+        />
+
+      <Spinner android:id="@+id/account_poll_spinner"
+          android:layout_width="fill_parent"
+          android:layout_height="wrap_content"
+          android:layout_marginLeft="15dp"
+          android:layout_marginTop="5dp"
+          android:prompt="@string/account_poll_prompt"
+        />
+
       <!-- Replay Intro label -->
       <TextView
           android:layout_width="fill_parent"

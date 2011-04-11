@@ -20,6 +20,7 @@ import android.os.Parcelable;
 
 import android.net.Uri;
 
+import android.content.Context;
 import android.content.res.Configuration;
 import android.content.SharedPreferences;
 import android.content.Intent;
@@ -34,6 +35,9 @@ import android.widget.CheckBox;
 import android.widget.TextView;
 import android.widget.ImageView;
 import android.widget.Button;
+import android.widget.Spinner;
+import android.widget.ArrayAdapter;
+import android.widget.AdapterView;
 
 import android.content.DialogInterface;
 import android.app.Dialog;
@@ -45,13 +49,17 @@ import java.util.LinkedList;
 
 import fm.audioboo.data.User;
 
+import fm.audioboo.service.Constants;
+
 import android.util.Log;
 
 /**
  * Displays a settings pane, and allows to link or unlink the device to/from
  * an account.
  **/
-public class AccountActivity extends Activity
+public class AccountActivity
+       extends Activity
+       implements AdapterView.OnItemSelectedListener
 {
   /***************************************************************************
    * Private constants
@@ -246,6 +254,22 @@ public class AccountActivity extends Activity
       SharedPreferences prefs = Globals.get().getPrefs();
       mUseLocation = prefs.getBoolean(Globals.PREF_USE_LOCATION, false);
       cb.setChecked(mUseLocation);
+    }
+
+    // Poll spinner
+    Spinner spinner = (Spinner) findViewById(R.id.account_poll_spinner);
+    if (null != spinner) {
+      ArrayAdapter<CharSequence> adapter = ArrayAdapter.createFromResource(
+          this, R.array.account_poll_options, android.R.layout.simple_spinner_item);
+      adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+      spinner.setAdapter(adapter);
+
+      // Restore settings & set spinner's selection accordingly
+      SharedPreferences prefs = Globals.get().getPrefs();
+      int pos = prefs.getInt(Constants.PREF_POLL_INTERVAL, 0);
+      spinner.setSelection(pos);
+
+      spinner.setOnItemSelectedListener(this);
     }
 
     // Play intro again button
@@ -508,5 +532,25 @@ public class AccountActivity extends Activity
     }
 
 
+  }
+
+
+  /***************************************************************************
+   * AdapterView.OnItemSelectedListener implementation
+   **/
+  public void onItemSelected(AdapterView<?> parent, View view, int pos, long id)
+  {
+    SharedPreferences prefs = Globals.get().getPrefs();
+    SharedPreferences.Editor edit = prefs.edit();
+    edit.putInt(Constants.PREF_POLL_INTERVAL, pos);
+    edit.commit();
+
+    Globals.get().updatePolling();
+  }
+
+
+  public void onNothingSelected(AdapterView parent)
+  {
+    // Do nothing.
   }
 }
