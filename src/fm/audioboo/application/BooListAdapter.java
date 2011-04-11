@@ -895,7 +895,7 @@ public class BooListAdapter extends BaseExpandableListAdapter
       }
     }
 
-    text_view = (TextView) view.findViewById(R.id.boo_list_item_location);
+    text_view = (TextView) view.findViewById(R.id.boo_list_upload_progress);
     if (null != text_view) {
       setTextColor(activity, data, text_view, ELEMENT_PROGRESS);
 
