@@ -173,7 +173,7 @@ public class Boo
         boo.mFilename = filename;
       }
       if (null == boo.mRecordings && null != boo.mHighMP3Url && boo.mHighMP3Url.getScheme().equals("file")) {
-        Log.d(LTAG, "Purging old recording.");
+        //Log.d(LTAG, "Purging old recording.");
         new File(boo.mHighMP3Url.getPath()).delete();
         return null;
       }
@@ -223,6 +223,8 @@ public class Boo
   public void writeToFile(String filename)
   {
     mData.mUpdatedAt = new Date();
+    //Log.d(LTAG, "Writing to file: " + this + " - " + filename);
+    //Thread.dumpStack();
 
     try {
       ObjectOutputStream os = new ObjectOutputStream(new FileOutputStream(new File(filename)));
@@ -402,6 +404,7 @@ public class Boo
   // into a single flac file. XXX Warning, this function blocks.
   public void flattenAudio()
   {
+    // Log.d(LTAG, "flattenAudio: " + this);
     // First, check if audio is already flattened. If that's the case, we don't
     // want to flatten everything again.
     if (null != mData.mHighMP3Url) {
@@ -476,7 +479,7 @@ public class Boo
 
     // Next, set the high mp3 Uri for the Boo to be the target path.
     mData.mHighMP3Url = Uri.parse(String.format("file://%s", target));
-    //Log.d(LTAG, "Flattened to: " + mHighMP3Url);
+    //Log.d(LTAG, "Flattened to: " + mData.mHighMP3Url);
 
     // Right, persist this flattened URL
     writeToFile();
