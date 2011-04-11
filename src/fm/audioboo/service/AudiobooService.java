@@ -188,7 +188,7 @@ public class AudiobooService
     public void play(BooData boo, boolean playImmediately)
     {
       Boo b = new Boo(boo);
-      b.writeToFile(getStateFilename());
+      // FIXME b.writeToFile(getStateFilename());
 
       // Mark boo as read, if it's a message.
       if (b.mData.mIsMessage) {
