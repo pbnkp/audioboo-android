@@ -93,6 +93,8 @@ public class UploadManager
           // If there's no current boo, get one.
           synchronized (mUploadLock) {
             if (null == mBooUpload) {
+              Log.d(LTAG, "Finding uploads...");
+              Globals.get().getBooManager().rebuildIndex();
               List<Boo> uploads = new LinkedList<Boo>();
               uploads.addAll(Globals.get().getBooManager().getBooUploads());
               uploads.addAll(Globals.get().getBooManager().getMessageUploads());
@@ -111,7 +113,6 @@ public class UploadManager
             clearNotification();
             continue;
           }
-          setNotification(boo);
 
           // Loop until processNextStage returns false. It'll return false in
           // most cases.
@@ -205,8 +206,11 @@ public class UploadManager
   {
     if (null == boo || null == boo.mData || null == boo.mData.mUploadInfo) {
       Log.e(LTAG, "Can't process null upload: " + boo);
+      clearNotification();
       return false;
     }
+
+    setNotification(boo);
 
     // Process timestamps first, to determine new chunk size.
     if (-1 != mUploadStarted) {
@@ -348,9 +352,6 @@ public class UploadManager
 
   private boolean processMetadataStage(Boo boo, UploadResult res)
   {
-    // TODO
-    Log.d(LTAG, "Right, attachments are uploaded. Now upload metadata.");
-
     // FIXME
     Globals.get().mAPI.uploadBoo(boo, mHandler);
 
