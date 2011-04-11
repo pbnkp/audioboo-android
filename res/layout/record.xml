@@ -148,8 +148,6 @@
                   android:layout_width="fill_parent"
                   android:layout_height="wrap_content"
                   android:layout_marginTop="2dp"
-                  android:layout_marginLeft="5dp"
-                  android:layout_marginRight="5dp"
                   android:textSize="@dimen/boo_player_title"
                   android:textStyle="bold"
                   android:textColor="@color/boo_player_title"
@@ -157,23 +155,44 @@
                   android:lines="1"
                   android:singleLine="true"
                 />
-
-              <!-- Remaining label -->
-              <TextView
-                  android:layout_width="fill_parent"
-                  android:layout_height="wrap_content"
-                  android:layout_marginTop="2dp"
-                  android:text="Time remaining:"
-                  android:textSize="@dimen/boo_player_author"
-                  android:textStyle="bold"
-                  android:textColor="@color/boo_player_author"
-                  android:ellipsize="end"
-                  android:lines="1"
-                  android:singleLine="true"
-                />
-
-                <!-- TODO remaining -->
             </LinearLayout>
+          </LinearLayout>
+
+          <!-- Remaining -->
+          <LinearLayout
+              android:layout_width="fill_parent"
+              android:layout_height="wrap_content"
+              android:layout_marginTop="5dp"
+              android:layout_marginBottom="3dp"
+              android:orientation="horizontal"
+              android:gravity="center"
+            >
+            <TextView
+                android:layout_width="fill_parent"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:layout_marginRight="10dp"
+                android:text="@string/record_remaining_label"
+                android:textSize="@dimen/boo_player_author"
+                android:textStyle="bold"
+                android:textColor="@color/boo_player_author"
+                android:ellipsize="end"
+                android:lines="1"
+                android:singleLine="true"
+              />
+
+            <TextView android:id="@+id/record_remaining"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginRight="8dp"
+                android:text="00:00"
+                android:textSize="@dimen/boo_player_author"
+                android:textStyle="bold"
+                android:textColor="@color/record_remaining"
+                android:ellipsize="end"
+                android:lines="1"
+                android:singleLine="true"
+              />
           </LinearLayout>
         </LinearLayout>
       </ViewAnimator>

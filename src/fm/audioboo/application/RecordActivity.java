@@ -116,6 +116,7 @@ public class RecordActivity extends Activity
   private RecordButton    mRecordButton;
   private SpectralView    mSpectralView;
   private PieProgressView mPieProgress;
+  private TextView        mTextProgress;
   private Button          mRestartButton;
   private Button          mPublishButton;
 
@@ -349,8 +350,13 @@ public class RecordActivity extends Activity
 
   public void onBackPressedManual()
   {
-    if (mBoo.getDuration() > 0.0) {
+    if (mBoo.getDuration() > 0.0
+        || (null != mBooRecorder
+          && (mBooRecorder.isRecording()
+            || mBooRecorder.getDuration() > 0.0)))
+    {
       // Save/discard dialogue.
+      mRecordButton.setChecked(false);
       showDialog(DIALOG_DRAFT);
     }
     else {
@@ -361,6 +367,8 @@ public class RecordActivity extends Activity
 
   private void deleteAndQuit()
   {
+    mRecordButton.setChecked(false);
+
     // We ensure the freshly deleted boo doesn't get played by queueing the
     // intro boo.
     Globals.get().mPlayer.play(Boo.createIntroBoo(this), false);
@@ -582,6 +590,18 @@ public class RecordActivity extends Activity
       }
     }
 
+    // Set author in progress views.
+    text_view = (TextView) findViewById(R.id.record_author);
+    if (null != text_view) {
+      if (null == mBoo.mData.mUser) {
+        text_view.setText(R.string.boo_player_no_author);
+      }
+      else {
+        text_view.setText(mBoo.mData.mUser.mUsername);
+      }
+    }
+
+    mTextProgress = (TextView) findViewById(R.id.record_remaining);
 
     // Other buttons.
     mRestartButton = (Button) findViewById(R.id.record_restart);
@@ -638,6 +658,13 @@ public class RecordActivity extends Activity
     mSpectralView.setAmplitudes(amp.mAverage, amp.mPeak);
     if (null != mPieProgress) {
       mPieProgress.setProgress(position);
+    }
+
+    double remaining = RECORDING_TIME_LIMIT - position;
+    if (null != mTextProgress) {
+      int min = (int) (remaining / 60);
+      int sec = ((int) remaining) % 60;
+      mTextProgress.setText(String.format("%02d:%02d", min, sec));
     }
 
     // If the Boo has no location, but Globals does, update the Boo's location.

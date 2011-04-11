@@ -94,6 +94,9 @@
   <string name="record_draft_dialog_save">Save</string>
   <string name="record_draft_dialog_delete">Delete</string>
 
+  <!-- Progress dialog -->
+  <string name="record_remaining_label">Time remaining:</string>
+
   <!--
     Boo player view
   -->

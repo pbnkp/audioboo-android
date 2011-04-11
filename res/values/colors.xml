@@ -31,6 +31,8 @@
   <color name="bb_dark_blue_dark">#ff2d383b</color>
   <color name="bb_dark_blue_medium">#ff4b566b</color>
 
+  <color name="bb_orange">#fffb9b27</color>
+
   <!-- Gradients -->
   <color name="bb_darkPink">#ffc2065e</color>
   <color name="bb_lightPink">#ffe813c4</color>
@@ -105,6 +107,7 @@
   <color name="record_to_background">@color/bb_darkBlue</color>
 
   <color name="record_addressee">@android:color/white</color>
+  <color name="record_remaining">@color/bb_orange</color>
 
   <!--
     Colors for the player view
