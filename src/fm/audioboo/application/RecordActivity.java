@@ -361,7 +361,10 @@ public class RecordActivity extends Activity
 
   private void deleteAndQuit()
   {
-    Globals.get().mPlayer.stop();
+    // We ensure the freshly deleted boo doesn't get played by queueing the
+    // intro boo.
+    Globals.get().mPlayer.play(Boo.createIntroBoo(this), false);
+
     int res = mBoo.delete() ? Activity.RESULT_OK : Activity.RESULT_CANCELED;
     setResult(res);
     finish();
@@ -617,6 +620,11 @@ public class RecordActivity extends Activity
             startActivityForResult(i, ACTIVITY_PUBLISH);
           }
       });
+    }
+
+    // Disable buttons if there's nothing to do with them yet.
+    if (mBoo.getDuration() <= 0.0) {
+      disableSecondaryButtons();
     }
   }
 
