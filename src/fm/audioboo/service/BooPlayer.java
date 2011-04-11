@@ -159,7 +159,8 @@ public class BooPlayer extends Thread
    **/
   public void play(Boo boo, boolean playImmediately)
   {
-    // Log.d(LTAG, "Asked to play: " + boo + " / " + playImmediately);
+    //Log.d(LTAG, "Asked to play: " + boo + " / " + playImmediately);
+    //Thread.dumpStack();
     synchronized (mLock)
     {
       mPlaybackProgress = 0f;
