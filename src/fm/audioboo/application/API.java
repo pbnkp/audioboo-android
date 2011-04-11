@@ -278,8 +278,6 @@ public class API
     REQUEST_TYPES.put(API_UNLINK,         RT_FORM);
     REQUEST_TYPES.put(API_CONTACTS,       RT_GET);
     REQUEST_TYPES.put(API_ACCOUNT,        RT_GET);
-    REQUEST_TYPES.put(API_BOO_UPLOAD,     RT_MULTIPART_POST);
-    REQUEST_TYPES.put(API_MESSAGE_UPLOAD, RT_MULTIPART_POST);
     // XXX Add request types for different API calls; if they're not specified
     //     here, the default is RT_GET.
     // XXX API_USER varies in form, can't be easily matched like this, but wants
@@ -313,6 +311,7 @@ public class API
     private String                  mApi;
     private HashMap<String, Object> mParams;
     private HashMap<String, Object> mSignedParams;
+    private HashMap<String, Object> mFileParams;
     private Handler.Callback        mCallback;
     private int                     mRequestType;
     private Object                  mBaton;
@@ -323,7 +322,7 @@ public class API
         HashMap<String, Object> signedParams,
         Handler.Callback callback)
     {
-      this(api, params, signedParams, callback, -1);
+      this(api, params, signedParams, callback, -1, null);
     }
 
 
@@ -333,12 +332,24 @@ public class API
         Handler.Callback callback,
         int requestType)
     {
+      this(api, params, signedParams, callback, requestType, null);
+    }
+
+
+    public Request(String api,
+        HashMap<String, Object> params,
+        HashMap<String, Object> signedParams,
+        Handler.Callback callback,
+        int requestType,
+        HashMap<String, Object> fileParams)
+    {
       super();
       mApi = api;
       mParams = params;
       mSignedParams = signedParams;
       mCallback = callback;
       mRequestType = requestType;
+      mFileParams = fileParams;
     }
   }
 
@@ -889,7 +900,7 @@ public class API
     signedParams.put("callback[failure]", "audioboo:///link_failure");
 
     HttpRequestBase request = constructRequestInternal(
-        mStatus.mLinkUri.toString(), RT_GET, null, signedParams);
+        mStatus.mLinkUri.toString(), RT_GET, null, signedParams, null);
 
     return request.getURI().toString();
   }
@@ -1004,6 +1015,16 @@ public class API
           boo.mData.mUploadInfo.mImageChunkId);
     }
 
+    // Prepare files. FIXME
+    HashMap<String, Object> fileParams = null;
+    /*
+    HashMap<String, String> fileParams = new HashMap<String, String>();
+    fileParams.put("audio_clip[uploaded_data]", boo.mData.mHighMP3Url.getPath());
+    if (null != boo.mData.mImageUrl) {
+      fileParams.put("audio_clip[uploaded_image]", boo.mData.mImageUrl.getPath());
+    }
+    */
+
     // Destination
     if (null != boo.mData.mDestinationInfo) {
       if (boo.mData.mIsMessage) {
@@ -1057,8 +1078,8 @@ public class API
             }
             return true;
           }
-        }
-    ));
+        }, RT_MULTIPART_POST)
+    );
     mRequester.interrupt();
   }
 
@@ -1264,20 +1285,21 @@ public class API
    **/
   private HttpRequestBase constructRequest(Request req)
   {
-    return constructRequest(req.mApi, req.mParams, req.mSignedParams, req.mRequestType);
+    return constructRequest(req.mApi, req.mParams, req.mSignedParams, req.mRequestType, req.mFileParams);
   }
 
   private HttpRequestBase constructRequest(String api,
       HashMap<String, Object> params,
       HashMap<String, Object> signedParams)
   {
-    return constructRequest(api, params, signedParams, -1);
+    return constructRequest(api, params, signedParams, -1, null);
   }
 
   private HttpRequestBase constructRequest(String api,
       HashMap<String, Object> params,
       HashMap<String, Object> signedParams,
-      int requestType)
+      int requestType,
+      HashMap<String, Object> fileParams)
   {
     // Construct request URI.
     String request_uri = makeAbsoluteUriString(api);
@@ -1294,7 +1316,7 @@ public class API
     }
 
     return constructRequestInternal(request_uri, request_type,
-        params, signedParams);
+        params, signedParams, fileParams);
   }
 
 
@@ -1302,7 +1324,8 @@ public class API
   private HttpRequestBase constructRequestInternal(String request_uri,
       int request_type,
       HashMap<String, Object> params,
-      HashMap<String, Object> signedParams)
+      HashMap<String, Object> signedParams,
+      HashMap<String, Object> fileParams)
   {
     // 1. Initialize params map. We always send the API version, and the API key
     if (null == params) {
@@ -1361,6 +1384,13 @@ public class API
             } catch (java.io.UnsupportedEncodingException ex) {
               Log.e(LTAG, "Unsupported encoding, skipping parameter: "
                   + param.getKey());
+            }
+          }
+
+          // Append all files as parts.
+          if (null != fileParams) {
+            for (Map.Entry<String, Object> param : fileParams.entrySet()) {
+              content.addPart(param.getKey(), new FileBody(new File(param.getValue().toString())));
             }
           }
 
