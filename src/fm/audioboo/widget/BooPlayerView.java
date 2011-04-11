@@ -79,6 +79,7 @@ public class BooPlayerView
   private NotifyingToggleButton   mButton;
   private TextView                mAuthor;
   private TextView                mTitle;
+  private TextView                mProgress;
   private Button                  mDisclosure;
 
   // Configurables
@@ -167,6 +168,19 @@ public class BooPlayerView
     if (null != mSeekBar) {
       mSeekBar.setIndeterminate(true);
     }
+  }
+
+
+
+  public void setProgress(double progress)
+  {
+    if (null == mProgress) {
+      return;
+    }
+    int minutes = (int) (progress / 60);
+    int seconds = ((int) progress) % 60;
+    String text = String.format("%02d:%02d", minutes, seconds);
+    mProgress.setText(text);
   }
 
 
@@ -265,6 +279,7 @@ public class BooPlayerView
     // Remember
     mTitle = (TextView) content.findViewById(R.id.boo_player_title);
     mAuthor = (TextView) content.findViewById(R.id.boo_player_author);
+    mProgress = (TextView) content.findViewById(R.id.boo_player_progress);
     mDisclosure = (Button) content.findViewById(R.id.boo_player_disclosure);
 
     // Show disclosure?
@@ -295,7 +310,7 @@ public class BooPlayerView
       BooPlayerClient client = globals.mPlayer;
 
       if (null == client) {
-        setVisualState(Constants.STATE_NONE, null, null);
+        setVisualState(Constants.STATE_NONE, null, null, 0f, 0f);
         globals.setClientBindListener(new Globals.ClientBindListener() {
             public void onBound()
             {
@@ -382,19 +397,24 @@ public class BooPlayerView
     int numericState = Constants.STATE_NONE;
     String title = null;
     String author = null;
+    double progress = 0f;
+    double total = 0f;
 
     if (null != state) {
       numericState = state.mState;
       title = state.mBooTitle;
       author = state.mBooUsername;
+      progress = state.mProgress;
+      total = state.mTotal;
     }
 
-    setVisualState(numericState, title, author);
+    setVisualState(numericState, title, author, progress, total);
   }
 
 
 
-  private void setVisualState(int state, String title, String author)
+  private void setVisualState(int state, String title, String author,
+      double progress, double total)
   {
     // Log.d(LTAG, "[" + this + "] Setting state: " + state + " " + title + "/" + author);
     switch (state) {
@@ -405,6 +425,7 @@ public class BooPlayerView
         setAuthor(R.string.boo_player_no_author);
         mButton.setChecked(true);
         resetProgress();
+        setProgress(total);
         break;
 
       case Constants.STATE_PREPARING:
@@ -413,6 +434,7 @@ public class BooPlayerView
         setTitleAndAuthor(title, author);
         mButton.setChecked(false);
         showBuffering();
+        setProgress(progress);
         break;
 
       case Constants.STATE_PLAYING:
@@ -420,15 +442,24 @@ public class BooPlayerView
         setTitleAndAuthor(title, author);
         mButton.setChecked(false);
         showPlaying();
+        setProgress(progress);
         break;
 
       case Constants.STATE_FINISHED:
-        resetProgress(); // fall through
+        resetProgress();
+        setEnabled(true);
+        setTitleAndAuthor(title, author);
+        mButton.setChecked(true);
+        showPlaying();
+        setProgress(total);
+        break;
+
       case Constants.STATE_PAUSED:
         setEnabled(true);
         setTitleAndAuthor(title, author);
         mButton.setChecked(true);
         showPlaying();
+        setProgress(total);
         break;
     }
   }
