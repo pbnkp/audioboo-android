@@ -357,7 +357,8 @@ public class BooDetailsActivity
           }
       });
 
-      if (mBoo.mData.mIsMessage
+      if (null != Globals.get().mAccount
+          && mBoo.mData.mIsMessage
           && mBoo.mData.mUser.mId != Globals.get().mAccount.mId)
       {
         button.setVisibility(View.VISIBLE);

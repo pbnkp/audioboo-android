@@ -429,7 +429,7 @@ public class BooListAdapter extends BaseExpandableListAdapter
         break;
 
       case VIEW_TYPE_UPLOAD:
-        ret = prepareUploadView(activity, data, view);
+        ret = prepareUploadView(activity, data, group, position, view);
         break;
 
       default:
@@ -848,9 +848,94 @@ public class BooListAdapter extends BaseExpandableListAdapter
 
 
 
-  private boolean prepareUploadView(ExpandableListActivity activity, DataSource data, View view)
+  private boolean prepareUploadView(ExpandableListActivity activity, DataSource data,
+      int group, int position, View view)
   {
-    // FIXME
+    // Grab upload.
+    List<Boo> boos = data.getGroup(group);
+    if (position < 0 || position >= boos.size()) {
+      Log.e(LTAG, "Position " + position + " out of range for group " + group);
+      return false;
+    }
+    Boo boo = boos.get(position);
+
+    // Select the view's background.
+    int bgId = data.getBackgroundResource(VIEW_TYPE_UPLOAD);
+    if (-1 != bgId) {
+      view.setBackgroundResource(bgId);
+    }
+
+    // Fill view with data.
+    TextView text_view = (TextView) view.findViewById(R.id.boo_list_upload_author);
+    if (null != text_view) {
+      setTextColor(activity, data, text_view, ELEMENT_AUTHOR);
+
+      if (null != boo.mData.mUser && null != boo.mData.mUser.mUsername) {
+        text_view.setText(boo.mData.mUser.mUsername);
+      }
+      else {
+        text_view.setText(Globals.get().mAccount.mUsername);
+      }
+    }
+
+    text_view = (TextView) view.findViewById(R.id.boo_list_upload_title);
+    if (null != text_view) {
+      setTextColor(activity, data, text_view, ELEMENT_TITLE);
+
+      if (null != boo.mData.mTitle) {
+        text_view.setText(boo.mData.mTitle);
+      }
+      else {
+        text_view.setText(activity.getResources().getString(R.string.boo_unknown_title));
+      }
+    }
+
+    text_view = (TextView) view.findViewById(R.id.boo_list_item_location);
+    if (null != text_view) {
+      setTextColor(activity, data, text_view, ELEMENT_LOCATION);
+
+      double progress = boo.uploadProgress();
+      if (progress > 0.0) {
+        text_view.setText(String.format(activity.getResources().getString(R.string.boo_list_upload_progress),
+              progress));
+      }
+      else {
+        text_view.setText(activity.getResources().getString(R.string.boo_list_upload_pending));
+      }
+    }
+
+    // If the image cache contains an appropriate image at the right size, then
+    // we'll display that. If not, display a default image. We need to do the
+    // second in case the item view is being reused.
+    ImageView image_view = (ImageView) view.findViewById(R.id.boo_list_item_image);
+    if (null != image_view) {
+      // First, determine the url we want to display.
+      Pair<String, Uri> image_url = getDisplayUrl(boo);
+
+      boolean customImageSet = false;
+      if (null != image_url) {
+        // If we don't know the image dimensions yet, determine them now.
+        if (-1 == mDimensions) {
+          mDimensions = image_view.getLayoutParams().width
+            - image_view.getPaddingLeft() - image_view.getPaddingRight();
+        }
+
+        // Next, try to grab an image from the cache.
+        Bitmap bitmap = Globals.get().mImageCache.get(image_url.mFirst, mDimensions);
+
+        if (null != bitmap) {
+          image_view.setImageDrawable(new BitmapDrawable(bitmap));
+          customImageSet = true;
+        }
+      }
+
+      // If we were not able to set a custom image here, default to the
+      // anonymous_boo one.
+      if (!customImageSet) {
+        image_view.setImageResource(R.drawable.anonymous_boo);
+      }
+    }
+
     return true;
   }
 

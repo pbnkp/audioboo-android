@@ -40,6 +40,7 @@
   <dimen name="boo_list_item_author">@dimen/text_small</dimen>
   <dimen name="boo_list_item_title">@dimen/text_large</dimen>
   <dimen name="boo_list_item_location">@dimen/text_smaller</dimen>
+  <dimen name="boo_list_item_progress">@dimen/text_smaller</dimen>
 
   <!--
     Publish view

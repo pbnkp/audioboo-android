@@ -15,7 +15,7 @@
   >
 
   <!-- Boo thumbnail -->
-  <ImageView android:id="@+id/boo_list_item_image"
+  <ImageView android:id="@+id/boo_list_upload_image"
       android:layout_width="60dp"
       android:layout_height="60dp"
       android:layout_margin="2dp"
@@ -40,7 +40,7 @@
     >
 
     <!-- Author -->
-    <TextView android:id="@+id/boo_list_item_author"
+    <TextView android:id="@+id/boo_list_upload_author"
         android:layout_width="fill_parent"
         android:layout_height="wrap_content"
         android:textSize="@dimen/boo_list_item_author"
@@ -53,7 +53,7 @@
       />
 
     <!-- Title -->
-    <TextView android:id="@+id/boo_list_item_title"
+    <TextView android:id="@+id/boo_list_upload_title"
         android:layout_width="fill_parent"
         android:layout_height="wrap_content"
         android:textSize="@dimen/boo_list_item_title"
@@ -63,12 +63,12 @@
         android:singleLine="true"
       />
 
-    <!-- Location -->
-    <TextView android:id="@+id/boo_list_item_location"
+    <!-- Progress -->
+    <TextView android:id="@+id/boo_list_upload_progress"
         android:layout_width="fill_parent"
         android:layout_height="wrap_content"
-        android:textSize="@dimen/boo_list_item_location"
-        android:textColor="@color/boo_list_location"
+        android:textSize="@dimen/boo_list_item_progress"
+        android:textColor="@color/boo_list_progress"
         android:textStyle="bold"
         android:ellipsize="end"
         android:lines="1"
@@ -76,16 +76,4 @@
       />
 
   </LinearLayout>
-
-
-  <!-- Disclosure -->
-  <ImageView android:id="@+id/boo_list_item_disclosure"
-      android:layout_width="30dp"
-      android:layout_height="60dp"
-      android:layout_alignParentTop="true"
-      android:layout_alignParentRight="true"
-      android:padding="2dp"
-      android:clickable="true"
-      android:src="@drawable/disclosure"
-    />
 </RelativeLayout>
