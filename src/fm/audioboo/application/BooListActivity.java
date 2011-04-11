@@ -316,7 +316,15 @@ public abstract class BooListActivity
 
       TextView msg = (TextView) findViewById(R.id.boo_list_error);
       if (null != msg) {
-        msg.setText(R.string.boo_list_generic_error);
+        int error_id = R.string.boo_list_generic_error;
+        if (null != exception) {
+          switch (exception.getCode()) {
+            case 403:
+              error_id = R.string.boo_list_login_error;
+              break;
+          }
+        }
+        msg.setText(error_id);
       }
     }
   }

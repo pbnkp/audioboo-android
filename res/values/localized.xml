@@ -26,6 +26,7 @@
   <!-- Author string to use when the boo was posted anonymously -->
   <string name="boo_list_anonymous_author">The BooBot</string>
   <string name="boo_list_generic_error">Oops! I can\'t reach the server. That makes me sad.</string>
+  <string name="boo_list_login_error">You must link the device to an Audioboo account in the Settings for this to work.</string>
   <string name="boo_list_upload_progress">Uploaded: %1$.0f%%</string>
   <string name="boo_list_upload_pending">Pending</string>
   <string name="boo_list_me">me</string>
