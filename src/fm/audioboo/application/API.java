@@ -897,6 +897,52 @@ public class API
 
 
   /**
+   * Mark a message as read
+   **/
+  public void markRead(Boo boo, final Handler result_handler)
+  {
+      Log.d(LTAG, "MessagE: " + boo.mData.mIsMessage);
+    if (null == boo.mData || !boo.mData.mIsMessage) {
+      Log.e(LTAG, "Invalid Boo for marking as read.");
+      result_handler.obtainMessage(ERR_API_ERROR).sendToTarget();
+      return;
+    }
+
+    if (boo.mData.mIsRead) {
+      result_handler.obtainMessage(ERR_SUCCESS).sendToTarget();
+      return;
+    }
+
+    String api = String.format(API_MESSAGE_DETAILS, boo.mData.mId);
+
+    HashMap<String, Object> signedParams = new HashMap<String, Object>();
+    signedParams.put("message[played]", 1);
+
+    mRequestQueue.add(new Request(api, null, signedParams,
+        new Handler.Callback() {
+          public boolean handleMessage(Message msg)
+          {
+            if (ERR_SUCCESS == msg.what) {
+              ResponseParser.Response<Integer> result
+                  = ResponseParser.parseUploadResponse((String) msg.obj,
+                    result_handler);
+              if (null != result) {
+                result_handler.obtainMessage(ERR_SUCCESS, result.mContent).sendToTarget();
+              }
+            }
+            else {
+              result_handler.obtainMessage(msg.what, msg.obj).sendToTarget();
+            }
+            return true;
+          }
+        }, RT_MULTIPART_PUT)
+    );
+    mRequester.interrupt();
+  }
+
+
+
+  /**
    * Uploads a Boo. Technically uploads metadata for a Boo; if any audio and
    * video is attached to the Boo, it must be in the Boo's upload info already.
    * On success, the message object will contain an Integer representing the
@@ -906,7 +952,7 @@ public class API
   {
     if (null == boo.mData || null == boo.mData.mUploadInfo) {
       Log.e(LTAG, "Invalid Boo data for upload.");
-      result_handler.obtainMessage(ERR_API_ERROR, null).sendToTarget();
+      result_handler.obtainMessage(ERR_API_ERROR).sendToTarget();
       return;
     }
 

@@ -15,6 +15,7 @@ import android.app.Service;
 import android.os.IBinder;
 import android.os.Parcelable;
 import android.os.Environment;
+import android.os.Handler;
 
 import android.net.Uri;
 
@@ -40,6 +41,7 @@ import fm.audioboo.data.PlayerState;
 import fm.audioboo.application.Boo;
 import fm.audioboo.application.UriUtils;
 import fm.audioboo.application.BooDetailsActivity;
+import fm.audioboo.application.Globals;
 
 import fm.audioboo.application.R;
 
@@ -187,6 +189,12 @@ public class AudiobooService
     {
       Boo b = new Boo(boo);
       b.writeToFile(getStateFilename());
+
+      // Mark boo as read, if it's a message.
+      if (b.mData.mIsMessage) {
+        // Ignore results.
+        Globals.get().mAPI.markRead(b, new Handler());
+      }
 
       mPlayer.play(b, playImmediately);
     }
