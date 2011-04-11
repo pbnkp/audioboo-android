@@ -86,7 +86,10 @@ public class MessagesActivity extends BooListActivity
 
   public String getTitleString(int api)
   {
-    return getResources().getString(R.string.inbox_title);
+    if (API.BOOS_INBOX == api) {
+      return getResources().getString(R.string.inbox_title_inbox);
+    }
+    return getResources().getString(R.string.inbox_title_outbox);
   }
 
 
@@ -384,6 +387,7 @@ public class MessagesActivity extends BooListActivity
   {
     switch (viewType) {
       case BooListAdapter.VIEW_TYPE_BOO:
+      case BooListAdapter.VIEW_TYPE_UPLOAD:
         return R.drawable.message_list_background;
 
       case BooListAdapter.VIEW_TYPE_MORE:
@@ -408,6 +412,9 @@ public class MessagesActivity extends BooListActivity
 
       case BooListAdapter.ELEMENT_LOCATION:
         return R.color.message_list_location;
+
+      case BooListAdapter.ELEMENT_PROGRESS:
+        return R.color.message_list_progress;
 
       default:
         return -1;

@@ -66,6 +66,7 @@ public class BooListAdapter extends BaseExpandableListAdapter
   public static final int ELEMENT_AUTHOR      = 0;
   public static final int ELEMENT_TITLE       = 1;
   public static final int ELEMENT_LOCATION    = 2;
+  public static final int ELEMENT_PROGRESS    = 3;
 
 
   /***************************************************************************
@@ -892,7 +893,7 @@ public class BooListAdapter extends BaseExpandableListAdapter
 
     text_view = (TextView) view.findViewById(R.id.boo_list_item_location);
     if (null != text_view) {
-      setTextColor(activity, data, text_view, ELEMENT_LOCATION);
+      setTextColor(activity, data, text_view, ELEMENT_PROGRESS);
 
       double progress = boo.uploadProgress();
       if (progress > 0.0) {
