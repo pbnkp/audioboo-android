@@ -149,6 +149,7 @@ public class UploadManager
       public boolean handleMessage(Message msg)
       {
         if (API.ERR_SUCCESS == msg.what) {
+          // Cast is safe even if msg.obj is null.
           UploadResult res = (UploadResult) msg.obj;
           Boo boo = null;
           synchronized (mUploadLock) {
@@ -352,19 +353,22 @@ public class UploadManager
 
   private boolean processMetadataStage(Boo boo, UploadResult res)
   {
-    // FIXME
-    Globals.get().mAPI.uploadBoo(boo, mHandler);
-
-    // Clear the current upload state and go back to sleep.
-    // FIXME
-    // boo.delete();
-    synchronized (mUploadLock) {
-      if (boo != mBooUpload) {
-        Log.e(LTAG, "Uh, this really shouldn't happen.");
-        return false;
+    if (null != res) {
+      Log.d(LTAG, "Done uploading Boo!");
+      // FIXME
+      // boo.delete();
+      synchronized (mUploadLock) {
+        if (boo != mBooUpload) {
+          Log.e(LTAG, "Uh, this really shouldn't happen.");
+          return false;
+        }
+        mBooUpload = null;
       }
-      mBooUpload = null;
+      return false;
     }
+
+    // Try the last phase.
+    Globals.get().mAPI.uploadBoo(boo, mHandler);
     return false;
   }
 
