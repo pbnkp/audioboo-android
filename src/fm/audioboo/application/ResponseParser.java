@@ -547,7 +547,9 @@ class ResponseParser
 
     result.mLongitude = location.getDouble(LOCATION_LONGITUDE);
     result.mLatitude = location.getDouble(LOCATION_LATITUDE);
-    result.mAccuracy = location.getDouble(LOCATION_ACCURACY);
+    if (location.has(LOCATION_ACCURACY)) {
+      result.mAccuracy = location.getDouble(LOCATION_ACCURACY);
+    }
 
     result.mDescription = location.getString(LOCATION_DESCRIPTION);
 
