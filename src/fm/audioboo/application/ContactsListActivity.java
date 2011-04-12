@@ -10,7 +10,6 @@
 package fm.audioboo.application;
 
 import android.app.ListActivity;
-import android.app.Dialog;
 
 import android.os.Bundle;
 import android.os.Handler;
@@ -26,6 +25,7 @@ import android.view.View;
 import android.widget.ViewAnimator;
 import android.widget.ArrayAdapter;
 import android.widget.AdapterView;
+import android.widget.TextView;
 
 import java.util.List;
 
@@ -45,9 +45,6 @@ public class ContactsListActivity extends ListActivity
   // Log ID
   private static final String LTAG  = "ContactsListActivity";
 
-  // Dialog IDs
-  private static final int  DIALOG_ERROR            = Globals.DIALOG_ERROR;
-
 
   /***************************************************************************
    * Public constants
@@ -63,22 +60,12 @@ public class ContactsListActivity extends ListActivity
   // Current contact list.
   private List<User> mUsers;
 
-  // Last error information - used and cleared in onCreateDialog
-  private int               mErrorCode = -1;
-  private API.APIException  mException;
-
   // Request handling
   private boolean                       mRequesting = false;
   private Handler                       mHandler = new Handler(new Handler.Callback() {
       public boolean handleMessage(Message msg)
       {
         mRequesting = false;
-
-        // Flip view
-        ViewAnimator loading = (ViewAnimator) findViewById(R.id.contacts_progress_flipper);
-        if (null != loading) {
-          loading.showNext();
-        }
 
         // Process results.
         if (API.ERR_SUCCESS == msg.what) {
@@ -151,12 +138,6 @@ public class ContactsListActivity extends ListActivity
 
     setTitle(R.string.contacts_title);
 
-    // Initialize loading view
-    ViewAnimator loading = (ViewAnimator) findViewById(R.id.contacts_progress_flipper);
-    if (null != loading) {
-      loading.setDisplayedChild(1);
-    }
-
     // Initialize retry button
     v = findViewById(R.id.contacts_retry);
     if (null != v) {
@@ -205,10 +186,15 @@ public class ContactsListActivity extends ListActivity
     }
 
     // Flip view
-    ViewAnimator loading = (ViewAnimator) findViewById(R.id.contacts_progress_flipper);
-    if (null != loading) {
-      loading.showNext();
+    ViewAnimator anim = (ViewAnimator) findViewById(R.id.contacts_progress);
+    if (null != anim) {
+      anim.setDisplayedChild(0);
     }
+    anim = (ViewAnimator) findViewById(R.id.contacts_error_flipper);
+    if (null != anim) {
+      anim.setDisplayedChild(0);
+    }
+
 
     setListAdapter(null);
 
@@ -248,26 +234,29 @@ public class ContactsListActivity extends ListActivity
 
   private void onError(int code, API.APIException exception)
   {
-    mErrorCode = code;
-    mException = exception;
-    showDialog(DIALOG_ERROR);
-  }
-
-
-
-  protected Dialog onCreateDialog(int id)
-  {
-    Dialog dialog = null;
-    Resources res = getResources();
-
-    switch (id) {
-      case DIALOG_ERROR:
-        dialog = Globals.get().createDialog(this, id, mErrorCode, mException);
-        mErrorCode = -1;
-        mException = null;
-        break;
+    // Retry button
+    ViewAnimator anim = (ViewAnimator) findViewById(R.id.contacts_progress);
+    if (null != anim) {
+      anim.setDisplayedChild(1);
     }
 
-    return dialog;
+    // Flip error flipper to show error view.
+    anim = (ViewAnimator) findViewById(R.id.contacts_error_flipper);
+    if (null != anim) {
+      anim.setDisplayedChild(1);
+
+      TextView msg = (TextView) findViewById(R.id.contacts_error);
+      if (null != msg) {
+        int error_id = R.string.boo_list_generic_error;
+        if (null != exception) {
+          switch (exception.getCode()) {
+            case 403:
+              error_id = R.string.boo_list_login_error;
+              break;
+          }
+        }
+        msg.setText(error_id);
+      }
+    }
   }
 }
