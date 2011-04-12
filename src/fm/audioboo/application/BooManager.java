@@ -309,6 +309,13 @@ public class BooManager
           continue;
         }
 
+        // XXX Hack: works around a bug in PublishActivity that permitted null-
+        //     titled Boos for a while.
+        if (null == b.mData.mTitle) {
+          b.mData.mTitle = Globals.get().mTitleGenerator.getTitle();
+          b.writeToFile();
+        }
+
         if (null == b.mData.mUploadInfo) {
           if (b.mData.mIsMessage) {
             messageDrafts.add(b);
