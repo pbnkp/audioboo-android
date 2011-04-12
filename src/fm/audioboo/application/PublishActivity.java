@@ -255,7 +255,8 @@ public class PublishActivity extends Activity
       String title = edit_text.getText().toString();
       if (null == title || 0 == title.length()) {
         if (useHint) {
-          title = edit_text.getHint().toString();
+          mBoo.mData.mTitle = edit_text.getHint().toString();
+          retval = true;
         }
       }
       else {
