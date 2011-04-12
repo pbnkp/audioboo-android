@@ -317,11 +317,17 @@ public abstract class BooListActivity
       TextView msg = (TextView) findViewById(R.id.boo_list_error);
       if (null != msg) {
         int error_id = R.string.boo_list_generic_error;
-        if (null != exception) {
-          switch (exception.getCode()) {
-            case 403:
-              error_id = R.string.boo_list_login_error;
-              break;
+        if (API.ERR_LOCATION_REQUIRED == code) {
+          error_id = R.string.boo_list_location_error;
+        }
+        else {
+          if (null != exception) {
+            Log.d(LTAG, "Error code: " + exception.getCode());
+            switch (exception.getCode()) {
+              case 403:
+                error_id = R.string.boo_list_login_error;
+                break;
+            }
           }
         }
         msg.setText(error_id);
