@@ -31,11 +31,14 @@ import java.security.MessageDigest;
 
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
 
 import java.util.StringTokenizer;
 import java.util.HashMap;
 import java.util.List;
 import java.util.LinkedList;
+import java.util.Random;
 
 import android.content.SharedPreferences;
 
@@ -376,6 +379,26 @@ public class Globals
       return null;
     }
 
+    // Try to read client ID first.
+    File d = ctx.getDir("metadata", Context.MODE_PRIVATE);
+    String filename = d.getPath() + File.separator + "id";
+    try {
+      File f = new File(filename);
+      FileInputStream is = new FileInputStream(f);
+      byte[] buf = new byte[1024];
+      int size = is.read(buf);
+      is.close();
+
+      String id = new String(buf, 0, size);
+      mClientID = id;
+
+      // Log.d(LTAG, "Stored ID >" + id + "<");
+      return mClientID;
+    } catch (IOException ex) {
+      Log.e(LTAG, "Could not read device ID; generating new one.");
+    }
+
+    // Generate new ID.
     TelephonyManager tman = (TelephonyManager) ctx.getSystemService(
         Context.TELEPHONY_SERVICE);
     String deviceId = tman.getDeviceId();
@@ -385,11 +408,30 @@ public class Globals
       // text.
       MessageDigest m = MessageDigest.getInstance("SHA-1");
       m.update((CLIENT_ID_PREFIX + getHardwareString() + deviceId).getBytes());
+
+      // Also add some random bytes.
+      Random r = new Random(System.currentTimeMillis());
+      byte[] buf = new byte[128];
+      r.nextBytes(buf);
+      m.update(buf);
+
+      // Generate digest.
       String digest = new BigInteger(1, m.digest()).toString(16);
       while (digest.length() < 32) {
         digest = "0" + digest;
       }
       mClientID = CLIENT_ID_PREFIX + digest;
+      // Log.d(LTAG, "Generated ID >" + mClientID + "<");
+
+      // At this point we have a good client ID that we can store.
+      try {
+        File f = new File(filename);
+        FileOutputStream os = new FileOutputStream(f);
+        os.write(mClientID.getBytes());
+        os.close();
+      } catch (IOException ex) {
+        Log.e(LTAG, "Could not write device ID; we'll generate a new one next time.");
+      }
 
     } catch (java.security.NoSuchAlgorithmException ex) {
       Log.e(LTAG, "ERROR: could not determine client ID: " + ex.getMessage());
