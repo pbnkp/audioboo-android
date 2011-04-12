@@ -980,7 +980,7 @@ public class API
     signedParams.put(String.format("%s[author_locale]", prefix), Locale.getDefault().toString());
 
     // Tags
-    if (null != boo.mData.mTags) {
+    if (!boo.mData.mIsMessage && null != boo.mData.mTags) {
       LinkedList<String> tags = new LinkedList<String>();
       for (Tag t : boo.mData.mTags) {
         tags.add(t.mNormalised);

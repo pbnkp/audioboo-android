@@ -183,11 +183,24 @@ public class PublishActivity extends Activity
       edit_text.setHint(Globals.get().mTitleGenerator.getTitle());
     }
 
-    // Try to set tags, if they're defined.
-    if (null != mBoo.mData.mTags) {
-      EditTags tags_view = (EditTags) findViewById(R.id.publish_tags);
-      if (null != tags_view) {
-        tags_view.setTags(mBoo.mData.mTags);
+    // Try to set tags, if they're defined (and we want them).
+    if (mBoo.mData.mIsMessage) {
+      View v = findViewById(R.id.publish_tags_container);
+      if (null != v) {
+        v.setVisibility(View.GONE);
+      }
+    }
+    else {
+      View v = findViewById(R.id.publish_tags_container);
+      if (null != v) {
+        v.setVisibility(View.VISIBLE);
+      }
+
+      if (null != mBoo.mData.mTags) {
+        EditTags tags_view = (EditTags) findViewById(R.id.publish_tags);
+        if (null != tags_view) {
+          tags_view.setTags(mBoo.mData.mTags);
+        }
       }
     }
   }
