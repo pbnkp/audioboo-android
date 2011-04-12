@@ -972,11 +972,6 @@ public class API
       prefix = "message";
     }
 
-    // Prepare parameters.
-    HashMap<String, Object> params = null;
-//    params = new HashMap<String, Object>();
-//    params.put("debug_signature", "true");
-
     // Prepare signed parameters
     HashMap<String, Object> signedParams = new HashMap<String, Object>();
     signedParams.put(String.format("%s[title]", prefix), boo.mData.mTitle);
@@ -1015,16 +1010,6 @@ public class API
           boo.mData.mUploadInfo.mImageChunkId);
     }
 
-    // Prepare files. FIXME
-    HashMap<String, Object> fileParams = null;
-    /*
-    HashMap<String, String> fileParams = new HashMap<String, String>();
-    fileParams.put("audio_clip[uploaded_data]", boo.mData.mHighMP3Url.getPath());
-    if (null != boo.mData.mImageUrl) {
-      fileParams.put("audio_clip[uploaded_image]", boo.mData.mImageUrl.getPath());
-    }
-    */
-
     // Destination
     if (null != boo.mData.mDestinationInfo) {
       if (boo.mData.mIsMessage) {
@@ -1038,16 +1023,6 @@ public class API
         // Channels
         signedParams.put("audio_clip[destination][stream_id]", boo.mData.mDestinationInfo.mDestinationId);
       }
-
-// record_to:
-//   destination[X] -> audio_clip[destination][X]
-// 
-// send_message:
-//   title -> setTitle()
-//   recipient_id -> message[recipient_id]
-//   parent_id -> message[parent_id]
-
-    // FIXME
     }
 
     // API
@@ -1056,12 +1031,13 @@ public class API
       api = API_MESSAGE_UPLOAD;
     }
 
+    // FIXME
     Log.d(LTAG, "API: " + api);
     for (String key : signedParams.keySet()) {
       Log.d(LTAG, "P: " + key + " = " + signedParams.get(key));
     }
 
-    mRequestQueue.add(new Request(api, params, signedParams,
+    mRequestQueue.add(new Request(api, null, signedParams,
         new Handler.Callback() {
           public boolean handleMessage(Message msg)
           {
@@ -1331,7 +1307,8 @@ public class API
     if (null == params) {
       params = new HashMap<String, Object>();
     }
-    // params.put("debug_signature", "true");
+    // FIXME
+    params.put("debug_signature", "true");
 
     // 2. If there are signed parameters, perform the signature dance.
     createSignature(request_uri, params, signedParams);
@@ -1364,6 +1341,11 @@ public class API
           // Append all parameters as parts.
           for (Map.Entry<String, Object> param : params.entrySet()) {
             Object obj = param.getValue();
+            if (null == obj) {
+              Log.e(LTAG, "Ingoring null value for: " + param.getKey());
+              continue;
+            }
+
             try {
               if (obj instanceof List) {
                 List cast = (List) obj;
@@ -1409,6 +1391,11 @@ public class API
           LinkedList<BasicNameValuePair> p = new LinkedList<BasicNameValuePair>();
           for (Map.Entry<String, Object> param : params.entrySet()) {
             Object obj = param.getValue();
+            if (null == obj) {
+              Log.e(LTAG, "Ingoring null value for: " + param.getKey());
+              continue;
+            }
+
             if (obj instanceof List) {
               List cast = (List) obj;
               String key = String.format("%s[]", param.getKey());
@@ -1627,6 +1614,10 @@ public class API
       for (int i = 0 ; i < keys.size() ; ++i) {
         String key = keys.get(i);
         Object obj = signedParams.get(key);
+        if (null == obj) {
+          Log.e(LTAG, "Ignoring null value for key: " + key);
+          continue;
+        }
 
         if (obj instanceof List) {
           List cast = (List) obj;
@@ -1650,7 +1641,6 @@ public class API
         }
 
 
-
         if (i < (keys.size() - 1)) {
           m.update("&".getBytes());
         }
@@ -1658,7 +1648,7 @@ public class API
 
       m.update(String.format(":%s", mAPISecret).getBytes());
       String signature = new BigInteger(1, m.digest()).toString(16);
-      // Log.d(LTAG, "signature: " + signature);
+      Log.d(LTAG, "signature: " + signature);
       params.put(mParamNameSignature, signature);
     } catch (java.security.NoSuchAlgorithmException ex) {
       Log.e(LTAG, "Error: could not sign request: " + ex.getMessage());
@@ -1679,14 +1669,9 @@ public class API
       return true;
     }
 
-    // Prepare parameters
-    HashMap<String, Object> params = null;
-//    params = new HashMap<String, Object>();
-//    params.put("debug_signature", "true");
-
     // Construct status request. We pass an signedParams map to force signing
     HashMap<String, Object> signedParams = new HashMap<String, Object>();
-    HttpRequestBase request = constructRequest(API_STATUS, params, signedParams);
+    HttpRequestBase request = constructRequest(API_STATUS, null, signedParams);
     byte[] data = fetchRawSynchronous(request, req);
     if (null == data) {
       Log.e(LTAG, "No response to status update call.");
