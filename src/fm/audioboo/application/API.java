@@ -912,7 +912,6 @@ public class API
    **/
   public void markRead(Boo boo, final Handler result_handler)
   {
-      Log.d(LTAG, "MessagE: " + boo.mData.mIsMessage);
     if (null == boo.mData || !boo.mData.mIsMessage) {
       Log.e(LTAG, "Invalid Boo for marking as read.");
       result_handler.obtainMessage(ERR_API_ERROR).sendToTarget();
@@ -934,12 +933,8 @@ public class API
           public boolean handleMessage(Message msg)
           {
             if (ERR_SUCCESS == msg.what) {
-              ResponseParser.Response<Integer> result
-                  = ResponseParser.parseUploadResponse((String) msg.obj,
-                    result_handler);
-              if (null != result) {
-                result_handler.obtainMessage(ERR_SUCCESS, result.mContent).sendToTarget();
-              }
+              // For once, we don't actually care about the actual result.
+              result_handler.obtainMessage(ERR_SUCCESS, result.mContent).sendToTarget();
             }
             else {
               result_handler.obtainMessage(msg.what, msg.obj).sendToTarget();
@@ -1042,7 +1037,7 @@ public class API
           public boolean handleMessage(Message msg)
           {
             if (ERR_SUCCESS == msg.what) {
-              ResponseParser.Response<Integer> result
+              ResponseParser.Response<UploadManager.UploadResult> result
                   = ResponseParser.parseUploadResponse((String) msg.obj,
                     result_handler);
               if (null != result) {
@@ -1307,8 +1302,7 @@ public class API
     if (null == params) {
       params = new HashMap<String, Object>();
     }
-    // FIXME
-    params.put("debug_signature", "true");
+    // params.put("debug_signature", "true");
 
     // 2. If there are signed parameters, perform the signature dance.
     createSignature(request_uri, params, signedParams);
@@ -1765,13 +1759,7 @@ public class API
 //    Log.d(LTAG, "registration response: " + new String(data));
 
     ResponseParser.Response<Pair<String, String>> results
-        = ResponseParser.parseRegistrationResponse(new String(data), new Handler(new Handler.Callback() {
-                public boolean handleMessage(Message msg)
-                {
-                  sendMessage(req, msg.what, msg.obj);
-                  return true;
-                }
-              }));
+        = ResponseParser.parseRegistrationResponse(new String(data), req);
 
     if (null != results) {
       mAPISecret = results.mContent.mFirst;
