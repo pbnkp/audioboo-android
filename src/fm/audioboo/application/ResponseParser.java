@@ -219,10 +219,10 @@ class ResponseParser
    * Parses a registration response, returns the secret in Pair's first
    * member, and the key in the second.
    **/
-  public static Response<Pair<String, String>> parseRegistrationResponse(String response, Handler handler)
+  public static Response<Pair<String, String>> parseRegistrationResponse(String response, API.Request req)
   {
     try {
-      Response<JSONObject> body = retrieveBody(response, handler);
+      Response<JSONObject> body = retrieveBody(response, req);
       if (null == body) {
         return null;
       }
@@ -240,7 +240,7 @@ class ResponseParser
 
     } catch (JSONException ex) {
       Log.e(LTAG, "Could not parse JSON response: " + ex);
-      handler.obtainMessage(API.ERR_PARSE_ERROR).sendToTarget();
+      Globals.get().mAPI.sendMessage(req, API.ERR_PARSE_ERROR);
       return null;
     }
   }
@@ -322,7 +322,7 @@ class ResponseParser
    * Parse the response to an upload request. It should only contain the ID of
    * the newly uploaded clip.
    **/
-  public static Response<Integer> parseUploadResponse(String response, Handler handler)
+  public static Response<UploadManager.UploadResult> parseUploadResponse(String response, Handler handler)
   {
     try {
       Response<JSONObject> body = retrieveBody(response, handler);
@@ -330,12 +330,16 @@ class ResponseParser
         return null;
       }
 
-      JSONObject clip = body.mContent.getJSONObject(AUDIO_CLIP);
+      Response<UploadManager.UploadResult> result = new Response<UploadManager.UploadResult>();
 
-      Response<Integer> result = new Response<Integer>();
+      // FIXME
+//      JSONObject clip = body.mContent.getJSONObject(AUDIO_CLIP);
+//
+//      Response<Integer> result = new Response<Integer>();
       result.mTimestamp = body.mTimestamp;
       result.mWindow = body.mWindow;
-      result.mContent = clip.getInt(CLIP_ID);
+//      result.mContent = clip.getInt(CLIP_ID);
+
       return result;
 
     } catch (JSONException ex) {
