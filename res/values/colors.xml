@@ -140,6 +140,7 @@
   <color name="details_title">@android:color/black</color>
   <color name="details_age">@color/bb_black_80</color>
   <color name="details_location">@android:color/black</color>
+  <color name="details_tag">@android:color/black</color>
 
   <!--
     Main page

@@ -90,7 +90,12 @@
         </LinearLayout>
       </LinearLayout>
 
-      <!-- TODO tags -->
+      <!-- Tags -->
+      <fm.audioboo.widget.LeftAlignedLayout android:id="@+id/boo_tags"
+          android:layout_width="fill_parent"
+          android:layout_height="wrap_content"
+          android:layout_marginTop="15dp"
+        />
 
       <!-- Image -->
       <LinearLayout android:id="@+id/boo_image_container"

@@ -63,6 +63,7 @@
   <dimen name="details_title">@dimen/text_large</dimen>
   <dimen name="details_age">@dimen/text_small</dimen>
   <dimen name="details_location">@dimen/text_small</dimen>
+  <dimen name="details_tag">@dimen/text_smaller</dimen>
 
   <!--
     Contact details

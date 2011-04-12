@@ -18,6 +18,7 @@ import android.os.Parcelable;
 
 import android.content.Intent;
 import android.content.res.Configuration;
+import android.content.res.ColorStateList;
 
 import android.net.Uri;
 
@@ -35,6 +36,8 @@ import android.graphics.drawable.BitmapDrawable;
 
 import android.app.Dialog;
 
+import android.util.TypedValue;
+
 import java.util.List;
 import java.util.LinkedList;
 
@@ -42,8 +45,10 @@ import org.apache.http.NameValuePair;
 
 import fm.audioboo.data.BooData;
 import fm.audioboo.data.PlayerState;
+import fm.audioboo.data.Tag;
 import fm.audioboo.service.BooPlayerClient;
 import fm.audioboo.service.Constants;
+import fm.audioboo.widget.LeftAlignedLayout;
 
 import android.util.Log;
 
@@ -260,6 +265,35 @@ public class BooDetailsActivity
     text_view = (TextView) findViewById(R.id.boo_date);
     if (null != text_view) {
       text_view.setText(NaturalDateFormat.format(mBoo.mData.mRecordedAt));
+    }
+
+    // Tags
+    LeftAlignedLayout tags = (LeftAlignedLayout) findViewById(R.id.boo_tags);
+    if (null != tags) {
+      if (null == mBoo.mData.mTags || 0 == mBoo.mData.mTags.size()) {
+        tags.setVisibility(View.GONE);
+      }
+      else {
+        tags.setVisibility(View.VISIBLE);
+
+        int margin = (int) (2 * getResources().getDisplayMetrics().density);
+        float textSize = getResources().getDimensionPixelSize(R.dimen.details_tag);
+        ColorStateList textColor = getResources().getColorStateList(R.color.details_tag);
+
+        for (Tag tag : mBoo.mData.mTags) {
+          TextView tv = new TextView(this);
+          LeftAlignedLayout.LayoutParams params = new LeftAlignedLayout.LayoutParams(
+              LeftAlignedLayout.LayoutParams.WRAP_CONTENT,
+              LeftAlignedLayout.LayoutParams.WRAP_CONTENT);
+          params.bottomMargin = params.topMargin = params.leftMargin = params.rightMargin = margin;
+          tv.setLayoutParams(params);
+          tv.setTextSize(TypedValue.COMPLEX_UNIT_PX, textSize);
+          tv.setTextColor(textColor);
+          tv.setBackgroundResource(R.drawable.tag_background);
+          tv.setText(null != tag.mDisplay ? tag.mDisplay : tag.mNormalised);
+          tags.addView(tv);
+        }
+      }
     }
 
     // Image
