@@ -934,7 +934,7 @@ public class API
           {
             if (ERR_SUCCESS == msg.what) {
               // For once, we don't actually care about the actual result.
-              result_handler.obtainMessage(ERR_SUCCESS, result.mContent).sendToTarget();
+              result_handler.obtainMessage(ERR_SUCCESS).sendToTarget();
             }
             else {
               result_handler.obtainMessage(msg.what, msg.obj).sendToTarget();
