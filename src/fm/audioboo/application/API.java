@@ -389,6 +389,8 @@ public class API
             break;
           }
 
+          // Log.d(LTAG, "Got request to: " + req.mApi);
+
           // After resolving the API host, we need to obtain the appropriate
           // key(s) for API calls. This should return immediately after the
           // first time it's run.
@@ -399,11 +401,12 @@ public class API
           // the Requester will terminate after this call.
           if (req.mApi.equals(API_STATUS)) {
             updateStatus(req, true);
-            break;
+            continue;
           }
           else {
             if (!updateStatus(req, false)) {
               Log.e(LTAG, "Could not update status, going back to sleep.");
+              sendMessage(req, ERR_INVALID_STATE);
               break;
             }
           }
