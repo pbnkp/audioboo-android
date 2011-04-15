@@ -1,6 +1,8 @@
 /**
  * This file is part of AudioBoo, an android program for audio blogging.
- * Copyright (C) 2011 BestBefore Media Ltd. All rights reserved.
+ * Copyright (C) 2009 BestBefore Media Ltd.
+ * Copyright (C) 2010,2011 AudioBoo Ltd.
+ * All rights reserved.
  *
  * Author: Jens Finkhaeuser <jens@finkhaeuser.de>
  *
@@ -104,9 +106,8 @@ public class BooPlayer extends Thread
   // Boo that's currently being played
   private volatile Boo          mBoo;
 
-  // Used for progress tracking
-  private double                mPlaybackProgress;
-  private long                  mTimestamp;
+  // Used for seeking
+  private double                mSeekTo = -1;
 
   // Activity listener.
   private WeakReference<ActivityListener> mListener;
@@ -163,7 +164,6 @@ public class BooPlayer extends Thread
     //Thread.dumpStack();
     synchronized (mLock)
     {
-      mPlaybackProgress = 0f;
       if (null == boo || null == boo.mData) {
         mBoo = null;
         mTargetState = Constants.STATE_ERROR;
@@ -184,7 +184,11 @@ public class BooPlayer extends Thread
    **/
   public void seekTo(double position)
   {
-    Log.d(LTAG, "Seek to: " + position);
+    synchronized (mLock)
+    {
+      mSeekTo = position;
+    }
+    interrupt();
   }
 
 
@@ -236,7 +240,12 @@ public class BooPlayer extends Thread
 
     synchronized (mLock) {
       s.mState = mState;
-      s.mProgress = mPlaybackProgress;
+      if (null == mPlayer) {
+        s.mProgress = 0f;
+      }
+      else {
+        s.mProgress = mPlayer.getPosition() / 1000f;
+      }
 
       if (null != mBoo && null != mBoo.mData) {
         s.mTotal = mBoo.getDuration();
@@ -347,6 +356,7 @@ public class BooPlayer extends Thread
           Boo currentBoo = mBoo;
           int currentState = mState;
           int targetState = mTargetState;
+          double seekTo = mSeekTo;
           // Log.d(LTAG, "#1 currentBoo: " + currentBoo + " - currentState: " + currentState + " - targetState: " + targetState + " - action: " + action);
 
           // 2. If we're supposed to reset the state machine, let's do so now.
@@ -392,7 +402,7 @@ public class BooPlayer extends Thread
           //    a) They successfully changed state (which not every function must
           //       do), or
           //    b) They encountered an error.
-          sleep_long = performAction(action, targetState, currentBoo);
+          sleep_long = performAction(action, currentState, targetState, currentBoo, seekTo);
         }
 
         // Now we're back out of the lock, we'll sleep.
@@ -413,19 +423,25 @@ public class BooPlayer extends Thread
     synchronized (mLock)
     {
       int action = STATE_DECISION_MATRIX[normalizeState(mState)][Constants.STATE_NONE];
-      performAction(action, Constants.STATE_NONE, null);
+      performAction(action, mState, Constants.STATE_NONE, null, -1f);
     }
   }
 
 
 
-  private boolean performAction(int action, int targetState, Boo boo)
+  private boolean performAction(int action, int state, int targetState, Boo boo,
+      double seekTo)
   {
     boolean sleep_long = true;
 
     switch (action) {
       case T_NONE:
-        // Do nothing. We're pretty much waiting for stuff to happen.
+        // In most cases, do nothing. We're pretty much waiting for stuff to happen.
+        // However, if the current state is PLAYING, and we've been asked to seek,
+        // we can do so.
+        if (Constants.STATE_PLAYING == state && seekTo > 0) {
+          sleep_long = seekInternal(seekTo);
+        }
         break;
 
       case T_PREPARE:
@@ -441,7 +457,6 @@ public class BooPlayer extends Thread
       case T_STOP:
         stopUnlocked();
         mState = targetState;
-        mPlaybackProgress = 0f;
         break;
 
       case T_PAUSE:
@@ -553,6 +568,14 @@ public class BooPlayer extends Thread
 
 
 
+  private boolean seekInternal(double position)
+  {
+    mPlayer.seekTo((long) (position * 1000));
+    return true;
+  }
+
+
+
   private void stopUnlocked()
   {
     if (null != mPlayer) {
@@ -576,10 +599,6 @@ public class BooPlayer extends Thread
   private boolean resumeCountingProgress()
   {
     //Log.d(LTAG, "Starting playback state.");
-
-    // If we made it here, then we'll start a tick timer for sending
-    // continuous progress to the users of this class.
-    mTimestamp = System.currentTimeMillis();
 
     try {
       mTimer = new Timer();
@@ -608,24 +627,6 @@ public class BooPlayer extends Thread
    **/
   private void onTimer(boolean fromTimer)
   {
-    long current = System.currentTimeMillis();
-    long diff = current - mTimestamp;
-    mTimestamp = current;
-
-    int state = -1;
-    synchronized (mLock)
-    {
-      state = mState;
-    }
-
-
-    if (state == Constants.STATE_PLAYING) {
-      // Log.d(LTAG, "timestamp: " + mTimestamp);
-      // Log.d(LTAG, "diff: " + diff);
-      // Log.d(LTAG, "progress: " + mPlaybackProgress);
-      mPlaybackProgress += (double) diff / 1000.0;
-    }
-
     // Notify listener, if it exists.
     if (null == mListener) {
       return;
