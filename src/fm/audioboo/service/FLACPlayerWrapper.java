@@ -109,4 +109,18 @@ public class FLACPlayerWrapper extends PlayerBase
     mFlacPlayer.interrupt();
     mFlacPlayer = null;
   }
+
+
+
+  public void seekTo(long position)
+  {
+    mFlacPlayer.seekTo(position);
+  }
+
+
+
+  public long getPosition()
+  {
+    return mFlacPlayer.currentPosition();
+  }
 }

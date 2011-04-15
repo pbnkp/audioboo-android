@@ -66,4 +66,8 @@ abstract class PlayerBase
   // Stops playback and also releases player resources; after this call
   // pause()/resume() won't work any longer.
   abstract void stop();
+
+  // Seek within currently playing Boo.
+  abstract void seekTo(long position);
+  abstract long getPosition();
 }

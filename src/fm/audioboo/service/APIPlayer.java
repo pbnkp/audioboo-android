@@ -172,5 +172,27 @@ public class APIPlayer extends PlayerBase
     mMediaPlayer.release();
     mMediaPlayer = null;
   }
+
+
+
+  public void seekTo(long position)
+  {
+    if (null == mMediaPlayer) {
+      return;
+    }
+
+    mMediaPlayer.seekTo((int) position);
+  }
+
+
+
+  public long getPosition()
+  {
+    if (null == mMediaPlayer) {
+      return -1;
+    }
+
+    return mMediaPlayer.getCurrentPosition();
+  }
 }
 
