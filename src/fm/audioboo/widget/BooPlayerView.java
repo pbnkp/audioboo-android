@@ -99,6 +99,46 @@ public class BooPlayerView
 
 
   /***************************************************************************
+   * Seekbar Listener
+   **/
+  private class SeekBarListener implements SeekBar.OnSeekBarChangeListener
+  {
+    private int mProgress;
+
+    public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser)
+    {
+      if (!fromUser) {
+        return;
+      }
+
+      mProgress = progress;
+    }
+
+    public void onStartTrackingTouch(SeekBar seekBar)
+    {
+      // Ignore
+    }
+
+
+    public void onStopTrackingTouch(SeekBar seekBar)
+    {
+      BooPlayerClient client = Globals.get().mPlayer;
+      if (null == client) {
+        return;
+      }
+
+      PlayerState state = client.getState();
+      if (null == state || Constants.STATE_PLAYING != state.mState) {
+        return;
+      }
+
+      client.seekTo(((double) mProgress) / PROGRESS_SCALE);
+    }
+  }
+
+
+
+  /***************************************************************************
    * Implementation
    **/
   public BooPlayerView(Context context)
@@ -270,37 +310,7 @@ public class BooPlayerView
     }
     mSeekBar = (SeekBar) content.findViewById(R.id.boo_player_seek);
     if (null != mSeekBar) {
-      mSeekBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
-        public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser)
-        {
-          if (!fromUser) {
-            return;
-          }
-
-          BooPlayerClient client = Globals.get().mPlayer;
-          if (null == client) {
-            return;
-          }
-
-          PlayerState state = client.getState();
-          if (null == state || Constants.STATE_PLAYING != state.mState) {
-            return;
-          }
-
-          client.seekTo(((double) progress) / PROGRESS_SCALE);
-        }
-
-        public void onStartTrackingTouch(SeekBar seekBar)
-        {
-          // Ignore
-        }
-
-
-        public void onStopTrackingTouch(SeekBar seekBar)
-        {
-          // Ignore
-        }
-      });
+      mSeekBar.setOnSeekBarChangeListener(new SeekBarListener());
     }
     mSeekBarFlipper = (ViewAnimator) content.findViewById(R.id.boo_player_seek_flipper);
     if (null != mSeekBarFlipper) {
@@ -361,8 +371,6 @@ public class BooPlayerView
         initialize();
       }
     }
-
-    Log.d(LTAG, "Subviews: " + getChildCount());
   }
 
 
