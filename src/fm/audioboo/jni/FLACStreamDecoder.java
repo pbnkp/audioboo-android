@@ -1,6 +1,8 @@
 /**
  * This file is part of AudioBoo, an android program for audio blogging.
- * Copyright (C) 2009,2010 BestBefore Media Ltd. All rights reserved.
+ * Copyright (C) 2009 BestBefore Media Ltd.
+ * Copyright (C) 2010,2011 AudioBoo Ltd.
+ * All rights reserved.
  *
  * Author: Jens Finkhaeuser <jens@finkhaeuser.de>
  *
@@ -105,6 +107,21 @@ public class FLACStreamDecoder
    * Returns the number of bytes actually read, or -1 on fatal errors.
    **/
   native public int read(ByteBuffer buffer, int bufsize);
+
+  /**
+   * Returns the number of samples in the file.
+   **/
+  native public int totalSamples();
+
+  /**
+   * Seeks to a particular sample.
+   **/
+  native public void seekTo(int sample);
+
+  /**
+   * Returns read position, in samples.
+   **/
+  native public int position();
 
   // Load native library
   static {

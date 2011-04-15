@@ -109,6 +109,7 @@ public:
     , m_decoder(NULL)
     , m_finished(false)
     , m_seek_pos(-1)
+    , m_cur_pos(-1)
     , m_buffer(NULL)
     , m_buf_size(-1)
     , m_buf_used(-1)
@@ -205,16 +206,25 @@ public:
 
     FLAC__bool result = 0;
     do {
-      result = FLAC__stream_decoder_process_single(m_decoder);
-      if (result && m_seek_pos >= 0) {
+      if (m_seek_pos >= 0) {
+        //aj::log(ANDROID_LOG_DEBUG, LTAG, "seek to: %d", m_seek_pos);
         result = FLAC__stream_decoder_seek_absolute(m_decoder, m_seek_pos);
+        m_cur_pos = m_seek_pos;
         m_seek_pos = -1;
+        m_buf_used = 0;
+
+        ret = checkState();
+        if (-4 == ret) {
+          ret = 0;
+          FLAC__stream_decoder_flush(m_decoder);
+          continue;
+        }
       }
+
+      result = FLAC__stream_decoder_process_single(m_decoder);
+
       ret = checkState();
       // aj::log(ANDROID_LOG_DEBUG, LTAG, "result: %d, used: %d, size: %d, ret: %d", result, m_buf_used, m_buf_size, ret);
-      if (-4 == ret) {
-        FLAC__stream_decoder_flush(m_decoder);
-      }
     } while ((0 == ret) && (result && m_buf_used < m_buf_size));
 
     //aj::log(ANDROID_LOG_DEBUG, LTAG, "finished read()");
@@ -266,6 +276,13 @@ public:
   void seekTo(int sample)
   {
     m_seek_pos = sample;
+  }
+
+
+
+  int position()
+  {
+    return m_cur_pos;
   }
 
 
@@ -438,6 +455,7 @@ private:
         *outbuf = buffer[channel][i];
         ++outbuf;
         ++m_buf_used;
+        ++m_cur_pos;
       }
     }
 
@@ -507,8 +525,9 @@ private:
 
   bool m_finished;
 
-  // Seek related
+  // Seek & playback related
   int m_seek_pos;
+  int m_cur_pos;
 
   // Buffer related data, used by write callback and set by read function
   char *  m_buffer;
@@ -807,6 +826,22 @@ Java_fm_audioboo_jni_FLACStreamDecoder_seekTo(JNIEnv * env, jobject obj, jint sa
   }
 
   decoder->seekTo(sample);
+}
+
+
+
+jint
+Java_fm_audioboo_jni_FLACStreamDecoder_position(JNIEnv * env, jobject obj)
+{
+  FLACStreamDecoder * decoder = get_decoder(env, obj);
+
+  if (NULL == decoder) {
+    aj::throwByName(env, IllegalArgumentException_classname,
+        "Called without a valid Decoder instance!");
+    return 0;
+  }
+
+  return decoder->position();
 }
 
 
