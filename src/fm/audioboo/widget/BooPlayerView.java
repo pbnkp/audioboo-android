@@ -20,6 +20,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.view.View.OnTouchListener;
 import android.view.MotionEvent;
+import android.view.animation.Animation;
 
 import android.widget.RelativeLayout;
 import android.widget.Button;
@@ -51,8 +52,7 @@ import android.util.Log;
  **/
 public class BooPlayerView
        extends RelativeLayout
-       implements BooPlayerClient.ProgressListener,
-                  CompoundButton.OnCheckedChangeListener,
+       implements CompoundButton.OnCheckedChangeListener,
                   NotifyingToggleButton.OnPressedListener
 {
   /***************************************************************************
@@ -62,7 +62,7 @@ public class BooPlayerView
   private static final String LTAG  = "BooPlayerView";
 
   // Scale for the seek bar
-  private static final int  PROGRESS_MAX        = 10000;
+  private static final int  PROGRESS_SCALE        = 10000;
 
 
   /***************************************************************************
@@ -81,6 +81,10 @@ public class BooPlayerView
   private TextView                mTitle;
   private TextView                mProgress;
   private Button                  mDisclosure;
+
+  // Animation related.
+  private long                    mLastDraw   = 0;
+  private Animation               mAnimation  = null;
 
   // Configurables
   private boolean                 mShowDisclosure;
@@ -145,19 +149,19 @@ public class BooPlayerView
   {
     if (null != mSeekBar) {
       mSeekBar.setIndeterminate(false);
-      mSeekBar.setMax(PROGRESS_MAX);
+      mSeekBar.setMax(1);
       mSeekBar.setProgress(0);
     }
   }
 
 
 
-  private void showPlaying()
+  private void showPlaying(double progress, double total)
   {
     if (null != mSeekBar) {
       mSeekBar.setIndeterminate(false);
-//      mSeekBar.setMax(PROGRESS_MAX);
-//      mSeekBar.setProgress(PROGRESS_MAX); // FIXME
+      mSeekBar.setMax((int) (total * PROGRESS_SCALE));
+      mSeekBar.setProgress((int) (progress * PROGRESS_SCALE));
     }
   }
 
@@ -323,6 +327,8 @@ public class BooPlayerView
         initialize();
       }
     }
+
+    Log.d(LTAG, "Subviews: " + getChildCount());
   }
 
 
@@ -334,9 +340,6 @@ public class BooPlayerView
       Log.e(LTAG, "Initialized when no player is bound!");
       return;
     }
-
-    // Be informed of whatever player state exists.
-    client.addProgressListener(this);
 
     updateVisualState();
   }
@@ -441,7 +444,7 @@ public class BooPlayerView
         setEnabled(true);
         setTitleAndAuthor(title, author);
         mButton.setChecked(false);
-        showPlaying();
+        showPlaying(progress, total);
         setProgress(progress);
         break;
 
@@ -450,7 +453,7 @@ public class BooPlayerView
         setEnabled(true);
         setTitleAndAuthor(title, author);
         mButton.setChecked(true);
-        showPlaying();
+        showPlaying(total, total);
         setProgress(total);
         break;
 
@@ -458,7 +461,7 @@ public class BooPlayerView
         setEnabled(true);
         setTitleAndAuthor(title, author);
         mButton.setChecked(true);
-        showPlaying();
+        showPlaying(progress, total);
         setProgress(total);
         break;
     }
@@ -471,11 +474,9 @@ public class BooPlayerView
   {
     super.onWindowFocusChanged(hasWindowFocus);
 
-    if (!hasWindowFocus) {
-      BooPlayerClient client = Globals.get().mPlayer;
-      if (null != client) {
-        client.removeProgressListener(this);
-      }
+    if (!hasWindowFocus && null != mAnimation) {
+      clearAnimation();
+      mAnimation = null;
       return;
     }
 
@@ -484,23 +485,37 @@ public class BooPlayerView
   }
 
 
-  /***************************************************************************
-   * BooPlayerClient.ProgressListener implementation
-   **/
-  public void onProgress(PlayerState state)
+
+  @Override
+  protected void dispatchDraw(android.graphics.Canvas canvas)
   {
-    // Update button state
-    updateVisualState(state);
+    super.dispatchDraw(canvas);
 
-    // If there's progress, update that, too.
-    if (null != mSeekBar && state.mTotal > 0) {
-      int cur = (int) ((state.mProgress / state.mTotal) * PROGRESS_MAX);
-      //Log.d(LTAG, "cur/max: " + cur + "/" + PROGRESS_MAX);
+    if (null == mAnimation) {
+      // Start an animation; it doesn't do *anything*, it just triggers at
+      // least once per second, causing dispatchDraw() to be called again.
+      mAnimation = new Animation() {};
+      mAnimation.setRepeatCount(Animation.INFINITE);
+      mAnimation.setDuration(1000L);
+      startAnimation(mAnimation);
+    }
 
-      mSeekBar.setMax(PROGRESS_MAX);
-      mSeekBar.setProgress(cur);
+
+    // As dispatchDraw is called at least once per second, we want to update
+    // the player view state. But there's no point doing that more than once
+    // per second, so let's limit ourselves to that... this *can* mean that
+    // an update happens a frame late, but even on slow phones that should
+    // not be noticeable.
+    long draw = android.os.SystemClock.uptimeMillis();
+    if (draw - mLastDraw > 1000) {
+      mLastDraw = draw;
+      BooPlayerClient client = Globals.get().mPlayer;
+      if (null != client) {
+        updateVisualState(client.getState());
+      }
     }
   }
+
 
 
 
