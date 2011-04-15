@@ -12,9 +12,12 @@ package fm.audioboo.widget;
 
 import android.content.Context;
 
+import android.os.SystemClock;
+
 import android.util.AttributeSet;
 
 import android.view.View;
+import android.view.MotionEvent;
 import android.view.animation.Transformation;
 
 import android.widget.Gallery;
@@ -54,6 +57,9 @@ public class Flow extends Gallery
 
   // Center of the Flow view.
   private int                 mCenter;
+
+  // Last scroll event time that was registered.
+  private long                mLastScrollEvent;
 
 
 
@@ -122,5 +128,27 @@ public class Flow extends Gallery
   {
     mCenter = getCenterOfFlow();
     super.onSizeChanged(w, h, oldw, oldh);
+  }
+
+
+
+  @Override
+  protected void onLayout(boolean changed, int l, int t, int r, int b)
+  {
+    // XXX Hack alert!
+    // Ignore layout calls if we've had a scroll event in the last 250 msec;
+    // that'll ignore the per-second layout calls we get through BooPlayerView's
+    // updating.
+    long now = SystemClock.uptimeMillis();
+    if (Math.abs(now - mLastScrollEvent) > 250) {
+      super.onLayout(changed, l, t, r, b);
+    }
+  }
+
+  @Override
+  public boolean onScroll(MotionEvent e1, MotionEvent e2, float distanceX, float distanceY)
+  {
+    mLastScrollEvent = SystemClock.uptimeMillis();
+    return super.onScroll(e1, e2, distanceX, distanceY);
   }
 }
