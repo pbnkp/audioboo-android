@@ -16,6 +16,8 @@ import android.content.res.TypedArray;
 import android.content.Intent;
 import android.util.AttributeSet;
 
+import android.os.SystemClock;
+
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.View.OnTouchListener;
@@ -27,6 +29,8 @@ import android.widget.Button;
 import android.widget.CompoundButton;
 import android.widget.SeekBar;
 import android.widget.TextView;
+
+import android.graphics.Canvas;
 
 import android.net.Uri;
 
@@ -487,7 +491,7 @@ public class BooPlayerView
 
 
   @Override
-  protected void dispatchDraw(android.graphics.Canvas canvas)
+  protected void dispatchDraw(Canvas canvas)
   {
     super.dispatchDraw(canvas);
 
@@ -506,7 +510,7 @@ public class BooPlayerView
     // per second, so let's limit ourselves to that... this *can* mean that
     // an update happens a frame late, but even on slow phones that should
     // not be noticeable.
-    long draw = android.os.SystemClock.uptimeMillis();
+    long draw = SystemClock.uptimeMillis();
     if (draw - mLastDraw > 1000) {
       mLastDraw = draw;
       BooPlayerClient client = Globals.get().mPlayer;
