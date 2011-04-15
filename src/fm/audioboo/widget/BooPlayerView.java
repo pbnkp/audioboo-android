@@ -273,7 +273,21 @@ public class BooPlayerView
       mSeekBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
         public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser)
         {
-          // FIXME seek within audio
+          if (!fromUser) {
+            return;
+          }
+
+          BooPlayerClient client = Globals.get().mPlayer;
+          if (null == client) {
+            return;
+          }
+
+          PlayerState state = client.getState();
+          if (null == state || Constants.STATE_PLAYING != state.mState) {
+            return;
+          }
+
+          client.seekTo(((double) progress) / PROGRESS_SCALE);
         }
 
         public void onStartTrackingTouch(SeekBar seekBar)

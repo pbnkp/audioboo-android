@@ -35,4 +35,9 @@ interface IBooPlaybackService
    * if no boo is playing.
    **/
   PlayerState getState();
+
+  /**
+   * Seek to the given position. Does nothing if no Boo is playing.
+   **/
+  void seekTo(double position);
 }

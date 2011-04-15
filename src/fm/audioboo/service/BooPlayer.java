@@ -182,8 +182,9 @@ public class BooPlayer extends Thread
   /**
    * Seek to given position. Must be >= 0 and < getDuration()
    **/
-  public void seek(double position)
+  public void seekTo(double position)
   {
+    Log.d(LTAG, "Seek to: " + position);
   }
 
 

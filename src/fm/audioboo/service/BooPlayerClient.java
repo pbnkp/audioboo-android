@@ -362,6 +362,17 @@ public class BooPlayerClient
 
 
 
+  public void seekTo(double position)
+  {
+    try {
+      mStub.seekTo(position);
+    } catch (RemoteException ex) {
+      Log.e(LTAG, "Exception " + ex.getMessage());
+    }
+  }
+
+
+
   public PlayerState getState()
   {
     try {

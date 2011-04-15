@@ -224,6 +224,13 @@ public class AudiobooService
 
 
 
+    public void seekTo(double position)
+    {
+      mPlayer.seekTo(position);
+    }
+
+
+
     public PlayerState getState()
     {
       return mPlayer.getPlayerState();
