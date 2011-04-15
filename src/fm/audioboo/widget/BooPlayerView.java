@@ -27,8 +27,10 @@ import android.view.animation.Animation;
 import android.widget.RelativeLayout;
 import android.widget.Button;
 import android.widget.CompoundButton;
+import android.widget.ProgressBar;
 import android.widget.SeekBar;
 import android.widget.TextView;
+import android.widget.ViewAnimator;
 
 import android.graphics.Canvas;
 
@@ -79,7 +81,9 @@ public class BooPlayerView
   private volatile boolean        mWasPressed;
 
   // Views
+  private ViewAnimator            mSeekBarFlipper;
   private SeekBar                 mSeekBar;
+  private ProgressBar             mIndeterminate;
   private NotifyingToggleButton   mButton;
   private TextView                mAuthor;
   private TextView                mTitle;
@@ -151,8 +155,10 @@ public class BooPlayerView
 
   private void resetProgress()
   {
+    if (null != mSeekBarFlipper) {
+      mSeekBarFlipper.setDisplayedChild(0);
+    }
     if (null != mSeekBar) {
-      mSeekBar.setIndeterminate(false);
       mSeekBar.setMax(1);
       mSeekBar.setProgress(0);
     }
@@ -162,8 +168,10 @@ public class BooPlayerView
 
   private void showPlaying(double progress, double total)
   {
+    if (null != mSeekBarFlipper) {
+      mSeekBarFlipper.setDisplayedChild(0);
+    }
     if (null != mSeekBar) {
-      mSeekBar.setIndeterminate(false);
       mSeekBar.setMax((int) (total * PROGRESS_SCALE));
       mSeekBar.setProgress((int) (progress * PROGRESS_SCALE));
     }
@@ -173,8 +181,8 @@ public class BooPlayerView
 
   private void showBuffering()
   {
-    if (null != mSeekBar) {
-      mSeekBar.setIndeterminate(true);
+    if (null != mSeekBarFlipper) {
+      mSeekBarFlipper.setDisplayedChild(1);
     }
   }
 
@@ -256,6 +264,10 @@ public class BooPlayerView
     ViewGroup content = (ViewGroup) inflate(ctx, R.layout.boo_player, this);
 
     // Set up seekbar
+    mIndeterminate = (ProgressBar) content.findViewById(R.id.boo_player_indeterminate);
+    if (null != mIndeterminate) {
+      mIndeterminate.setIndeterminate(true);
+    }
     mSeekBar = (SeekBar) content.findViewById(R.id.boo_player_seek);
     if (null != mSeekBar) {
       mSeekBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
@@ -275,6 +287,10 @@ public class BooPlayerView
           // Ignore
         }
       });
+    }
+    mSeekBarFlipper = (ViewAnimator) content.findViewById(R.id.boo_player_seek_flipper);
+    if (null != mSeekBarFlipper) {
+      mSeekBarFlipper.setDisplayedChild(0);
     }
 
     // Set up play/pause button

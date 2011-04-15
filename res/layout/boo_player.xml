@@ -108,13 +108,24 @@
     >
 
     <!-- Seek bar -->
-    <SeekBar android:id="@+id/boo_player_seek"
+    <ViewAnimator android:id="@+id/boo_player_seek_flipper"
         android:layout_width="fill_parent"
         android:layout_height="wrap_content"
         android:layout_weight="1"
         android:layout_marginRight="10dp"
-        style="?android:progressBarStyleHorizontal"
-      />
+      >
+      <SeekBar android:id="@+id/boo_player_seek"
+          android:layout_width="fill_parent"
+          android:layout_height="wrap_content"
+          style="?android:progressBarStyleHorizontal"
+        />
+      <ProgressBar android:id="@+id/boo_player_indeterminate"
+          android:layout_width="fill_parent"
+          android:layout_height="wrap_content"
+          android:paddingTop="4dp"
+          style="?android:progressBarStyleHorizontal"
+        />
+    </ViewAnimator>
 
     <!-- Progress in seconds -->
     <TextView android:id="@+id/boo_player_progress"
