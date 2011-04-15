@@ -1,6 +1,8 @@
 /**
  * This file is part of AudioBoo, an android program for audio blogging.
- * Copyright (C) 2009 BestBefore Media Ltd. All rights reserved.
+ * Copyright (C) 2009 BestBefore Media Ltd.
+ * Copyright (C) 2010,2011 AudioBoo Ltd.
+ * All rights reserved.
  *
  * Author: Jens Finkhaeuser <jens@finkhaeuser.de>
  *
@@ -100,11 +102,16 @@ public:
     : m_infile_name(infile)
     , m_infile(NULL)
     , m_sample_rate(-1)
+    , m_total_samples(-1)
     , m_channels(-1)
     , m_bits_per_sample(-1)
     , m_min_buffer_size(-1)
     , m_decoder(NULL)
     , m_finished(false)
+    , m_seek_pos(-1)
+    , m_buffer(NULL)
+    , m_buf_size(-1)
+    , m_buf_used(-1)
   {
   }
 
@@ -143,7 +150,7 @@ public:
     }
 
     // Read first frame. That means we also process any metadata.
-    FLAC__bool result = FLAC__stream_decoder_process_single(m_decoder);
+    FLAC__bool result = FLAC__stream_decoder_process_until_end_of_metadata(m_decoder);
     if (!result) {
       return "Could not read metadata from FLAC__StreamDecoder!";
     }
@@ -199,8 +206,15 @@ public:
     FLAC__bool result = 0;
     do {
       result = FLAC__stream_decoder_process_single(m_decoder);
+      if (result && m_seek_pos >= 0) {
+        result = FLAC__stream_decoder_seek_absolute(m_decoder, m_seek_pos);
+        m_seek_pos = -1;
+      }
       ret = checkState();
       // aj::log(ANDROID_LOG_DEBUG, LTAG, "result: %d, used: %d, size: %d, ret: %d", result, m_buf_used, m_buf_size, ret);
+      if (-4 == ret) {
+        FLAC__stream_decoder_flush(m_decoder);
+      }
     } while ((0 == ret) && (result && m_buf_used < m_buf_size));
 
     //aj::log(ANDROID_LOG_DEBUG, LTAG, "finished read()");
@@ -239,6 +253,21 @@ public:
   {
     return m_min_buffer_size;
   }
+
+
+
+  int totalSamples()
+  {
+    return m_total_samples;
+  }
+
+
+
+  void seekTo(int sample)
+  {
+    m_seek_pos = sample;
+  }
+
 
 
   /**
@@ -361,6 +390,7 @@ public:
     }
 
     m_sample_rate = metadata->data.stream_info.sample_rate;
+    m_total_samples = metadata->data.stream_info.total_samples;
     m_channels = metadata->data.stream_info.channels;
     m_bits_per_sample = metadata->data.stream_info.bits_per_sample;
 
@@ -470,11 +500,15 @@ private:
 
   // Metadata read from file
   int m_sample_rate;
+  int m_total_samples;
   int m_channels;
   int m_bits_per_sample;
   int m_min_buffer_size;
 
   bool m_finished;
+
+  // Seek related
+  int m_seek_pos;
 
   // Buffer related data, used by write callback and set by read function
   char *  m_buffer;
@@ -741,6 +775,38 @@ Java_fm_audioboo_jni_FLACStreamDecoder_minBufferSize(JNIEnv * env, jobject obj)
   }
 
   return decoder->minBufferSize();
+}
+
+
+
+jint
+Java_fm_audioboo_jni_FLACStreamDecoder_totalSamples(JNIEnv * env, jobject obj)
+{
+  FLACStreamDecoder * decoder = get_decoder(env, obj);
+
+  if (NULL == decoder) {
+    aj::throwByName(env, IllegalArgumentException_classname,
+        "Called without a valid Decoder instance!");
+    return 0;
+  }
+
+  return decoder->totalSamples();
+}
+
+
+
+void
+Java_fm_audioboo_jni_FLACStreamDecoder_seekTo(JNIEnv * env, jobject obj, jint sample)
+{
+  FLACStreamDecoder * decoder = get_decoder(env, obj);
+
+  if (NULL == decoder) {
+    aj::throwByName(env, IllegalArgumentException_classname,
+        "Called without a valid Decoder instance!");
+    return;
+  }
+
+  decoder->seekTo(sample);
 }
 
 
