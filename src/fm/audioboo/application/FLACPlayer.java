@@ -1,6 +1,8 @@
 /**
  * This file is part of AudioBoo, an android program for audio blogging.
- * Copyright (C) 2009 BestBefore Media Ltd. All rights reserved.
+ * Copyright (C) 2009 BestBefore Media Ltd.
+ * Copyright (C) 2010,2011 AudioBoo Ltd.
+ * All rights reserved.
  *
  * Author: Jens Finkhaeuser <jens@finkhaeuser.de>
  *
@@ -45,7 +47,7 @@ public class FLACPlayer extends Thread
    * Public data
    **/
   // Flag that keeps the thread running when true.
-  public boolean mShouldRun;
+  public volatile boolean mShouldRun;
 
 
   /***************************************************************************
@@ -74,7 +76,11 @@ public class FLACPlayer extends Thread
   private String            mPath;
 
   // Flag; determines whether playback is paused or not.
-  private boolean           mPaused;
+  private volatile boolean  mPaused;
+
+  // Seek & play position, in msec.
+  private volatile long     mSeekPos = -1;
+  private volatile long     mPlayPos = 0;
 
   // Listener.
   private PlayerListener    mListener;
@@ -106,6 +112,21 @@ public class FLACPlayer extends Thread
   {
     mPaused = false;
     interrupt();
+  }
+
+
+
+  public void seekTo(long position)
+  {
+    mSeekPos = position;
+    interrupt();
+  }
+
+
+
+  public long currentPosition()
+  {
+    return mPlayPos;
   }
 
 
@@ -149,6 +170,14 @@ public class FLACPlayer extends Thread
             continue;
           }
 
+          // Seek, if required.
+          long seekPos = mSeekPos;
+          if (seekPos > 0) {
+            int sample = (int) (seekPos / 1000f * sampleRate);
+            mDecoder.seekTo(sample);
+            mSeekPos = -1;
+          }
+
           // Otherwise, play back a chunk.
           int read = mDecoder.read(buffer, bufsize);
           if (read <= 0) {
@@ -159,6 +188,9 @@ public class FLACPlayer extends Thread
           buffer.rewind();
           buffer.get(tmpbuf, 0, read);
           mAudioTrack.write(tmpbuf, 0, read);
+
+          // Also record the current playback position.
+          mPlayPos = (long) (mDecoder.position() * 1000f / sampleRate);
         } catch (InterruptedException ex) {
           // We'll pass through to the next iteration. If mShouldRun has
           // been set to false, the thread will terminate. If mPause has
