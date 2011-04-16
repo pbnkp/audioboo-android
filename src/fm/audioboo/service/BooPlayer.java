@@ -253,6 +253,7 @@ public class BooPlayer extends Thread
         s.mBooTitle = mBoo.mData.mTitle;
         s.mBooUsername = null == mBoo.mData.mUser ? null : mBoo.mData.mUser.mUsername;
         s.mBooIsMessage = mBoo.mData.mIsMessage;
+        s.mBooIsLocal = mBoo.isLocal();
       }
     }
 

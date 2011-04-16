@@ -41,6 +41,7 @@ public class PlayerState implements Parcelable, Serializable
   public String   mBooTitle;
   public String   mBooUsername;
   public boolean  mBooIsMessage;
+  public boolean  mBooIsLocal;
 
 
   public PlayerState()
@@ -52,6 +53,7 @@ public class PlayerState implements Parcelable, Serializable
     mBooTitle = null;
     mBooUsername = null;
     mBooIsMessage = false;
+    mBooIsLocal = false;
   }
 
 

@@ -165,9 +165,8 @@ public class BooPlayerView
 
 
 
-  public void showDisclosure(boolean show)
+  private void showDisclosure(boolean show)
   {
-    mShowDisclosure = show;
     if (null != mDisclosure) {
       mDisclosure.setVisibility(show ? View.VISIBLE : View.GONE);
     }
@@ -358,7 +357,7 @@ public class BooPlayerView
       BooPlayerClient client = globals.mPlayer;
 
       if (null == client) {
-        setVisualState(Constants.STATE_NONE, null, null, 0f, 0f);
+        updateVisualState();
         globals.setClientBindListener(new Globals.ClientBindListener() {
             public void onBound()
             {
@@ -383,7 +382,7 @@ public class BooPlayerView
       return;
     }
 
-    updateVisualState();
+    updateVisualState(client.getState());
   }
 
 
@@ -439,30 +438,25 @@ public class BooPlayerView
 
   private void updateVisualState(PlayerState state)
   {
-    int numericState = Constants.STATE_NONE;
-    String title = null;
-    String author = null;
-    double progress = 0f;
-    double total = 0f;
+    Log.d(LTAG, "[" + this + "] Setting state: " + state);
 
-    if (null != state) {
-      numericState = state.mState;
-      title = state.mBooTitle;
-      author = state.mBooUsername;
-      progress = state.mProgress;
-      total = state.mTotal;
+    // If the state is not set, treat this as Constants.STATE_NONE;
+    // the block is pretty much identical to the one in the switch
+    // statement.
+    if (null == state) {
+      setEnabled(false);
+      setTitle(R.string.boo_player_no_title);
+      setAuthor(R.string.boo_player_no_author);
+      mButton.setChecked(true);
+      resetProgress();
+      setProgress(0f);
+      return;
     }
 
-    setVisualState(numericState, title, author, progress, total);
-  }
+    // Hide disclosure for all local items.
+    showDisclosure(!state.mBooIsLocal);
 
-
-
-  private void setVisualState(int state, String title, String author,
-      double progress, double total)
-  {
-    // Log.d(LTAG, "[" + this + "] Setting state: " + state + " " + title + "/" + author);
-    switch (state) {
+    switch (state.mState) {
       case Constants.STATE_NONE:
       case Constants.STATE_ERROR:
         setEnabled(false);
@@ -470,41 +464,41 @@ public class BooPlayerView
         setAuthor(R.string.boo_player_no_author);
         mButton.setChecked(true);
         resetProgress();
-        setProgress(total);
+        setProgress(state.mTotal);
         break;
 
       case Constants.STATE_PREPARING:
       case Constants.STATE_BUFFERING:
         setEnabled(true);
-        setTitleAndAuthor(title, author);
+        setTitleAndAuthor(state.mBooTitle, state.mBooUsername);
         mButton.setChecked(false);
         showBuffering();
-        setProgress(progress);
+        setProgress(state.mProgress);
         break;
 
       case Constants.STATE_PLAYING:
         setEnabled(true);
-        setTitleAndAuthor(title, author);
+        setTitleAndAuthor(state.mBooTitle, state.mBooUsername);
         mButton.setChecked(false);
-        showPlaying(progress, total);
-        setProgress(progress);
+        showPlaying(state.mProgress, state.mTotal);
+        setProgress(state.mTotal);
         break;
 
       case Constants.STATE_FINISHED:
         resetProgress();
         setEnabled(true);
-        setTitleAndAuthor(title, author);
+        setTitleAndAuthor(state.mBooTitle, state.mBooUsername);
         mButton.setChecked(true);
-        showPlaying(total, total);
-        setProgress(total);
+        showPlaying(state.mProgress, state.mTotal);
+        setProgress(state.mTotal);
         break;
 
       case Constants.STATE_PAUSED:
         setEnabled(true);
-        setTitleAndAuthor(title, author);
+        setTitleAndAuthor(state.mBooTitle, state.mBooUsername);
         mButton.setChecked(true);
-        showPlaying(progress, total);
-        setProgress(total);
+        showPlaying(state.mProgress, state.mTotal);
+        setProgress(state.mProgress);
         break;
     }
   }
