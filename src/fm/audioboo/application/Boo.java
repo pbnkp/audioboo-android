@@ -160,6 +160,9 @@ public class Boo
       return null;
     }
 
+    if (f.getName().equals(".nomedia")) {
+      return null;
+    }
 
     try {
       ObjectInputStream is = new ObjectInputStream(new FileInputStream(f));

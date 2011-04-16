@@ -273,7 +273,7 @@ public class BooManager
     BooFileFilter filter = new BooFileFilter();
 
     for (String path : mPaths) {
-      Log.i(LTAG, "Searching for Boos in path '" + path + "'...");
+      // Log.d(LTAG, "Searching for Boos in path '" + path + "'...");
 
       File d = new File(path);
       if (!d.exists()) {
@@ -332,6 +332,10 @@ public class BooManager
             booUploads.add(b);
           }
         }
+
+        // Log.d(LTAG, "*** boo: " + b);
+        // Log.d(LTAG, "upload info: " + b.mData.mUploadInfo);
+        // Log.d(LTAG, "msg: " + b.mData.mIsMessage);
       }
     }
 
