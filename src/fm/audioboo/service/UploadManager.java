@@ -90,11 +90,11 @@ public class UploadManager
       while (mShouldRun)
       {
         try {
+          process();
+
           // And when we're done, sleep. We'll get interrupted if the app
           // thinks we need to do stuff.
           sleep(SLEEP_TIME_LONG);
-
-          process();
         } catch (InterruptedException ex) {
           // pass
         }
@@ -179,6 +179,7 @@ public class UploadManager
       if (API.ERR_SUCCESS != result) {
         Log.e(LTAG, "Response code: " + result);
         mBooUpload = null;
+        clearNotification();
         return;
       }
 
@@ -275,6 +276,7 @@ public class UploadManager
       default:
         Log.e(LTAG, "Invalid processing stage: " + mBooUpload.mData.mUploadInfo.mUploadStage);
         mBooUpload = null;
+        clearNotification();
         break;
     }
 
@@ -297,6 +299,7 @@ public class UploadManager
       {
         Log.e(LTAG, "Got response, but the chunk IDs don't match. Ugh.");
         mBooUpload = null;
+        clearNotification();
         return false;
       }
 
@@ -344,6 +347,7 @@ public class UploadManager
       {
         Log.e(LTAG, "Got response, but the chunk IDs don't match. Ugh.");
         mBooUpload = null;
+        clearNotification();
         return false;
       }
 
@@ -394,6 +398,7 @@ public class UploadManager
     if (null != res && res.id > 0) {
       mBooUpload.delete();
       mBooUpload = null;
+      clearNotification();
       return false;
     }
 
