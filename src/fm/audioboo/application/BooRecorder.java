@@ -187,6 +187,9 @@ public class BooRecorder
 
   public double getDuration()
   {
+    if (null == mAmplitudes) {
+      return 0f;
+    }
     return mAmplitudes.mPosition / 1000.0;
   }
 
