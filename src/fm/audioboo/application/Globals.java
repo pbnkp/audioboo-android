@@ -809,6 +809,11 @@ public class Globals
    **/
   public void updatePolling()
   {
+    if (null == mStatus || !mStatus.mLinked) {
+      // No polling for unlinked accounts.
+      return;
+    }
+
     Context ctx = mContext.get();
     if (null == ctx) {
       return;

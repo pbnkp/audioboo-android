@@ -270,6 +270,8 @@ public class AccountActivity
       spinner.setSelection(pos);
 
       spinner.setOnItemSelectedListener(this);
+
+      spinner.setEnabled(status.mLinked);
     }
 
     // Play intro again button
