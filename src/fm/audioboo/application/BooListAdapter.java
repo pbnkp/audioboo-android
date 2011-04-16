@@ -654,7 +654,7 @@ public class BooListAdapter extends BaseExpandableListAdapter
     if (null == boos) {
       return;
     }
-    if (baton.itemIndex.mSecond >= boos) {
+    if (baton.itemIndex.mSecond >= boos.size()) {
       return;
     }
     Boo expected_boo = boos.get(baton.itemIndex.mSecond);
