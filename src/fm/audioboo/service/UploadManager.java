@@ -51,7 +51,7 @@ public class UploadManager
   private static final String LTAG              = "UploadManager";
 
   // Sleep time, if the thread's not woken.
-  private static final int SLEEP_TIME_LONG      = 60 * 1000;
+  private static final int SLEEP_TIME_LONG      = 5 * 60 * 1000;
 
 
 
@@ -67,6 +67,12 @@ public class UploadManager
     public int      outstanding;
     public boolean  complete;
     public String   filename;
+
+    public String toString()
+    {
+      return String.format("[UploadResult:%d:%s:%d/%d:%s]", id, contentType,
+          received, size, filename);
+    }
   }
 
 
@@ -88,38 +94,7 @@ public class UploadManager
           // thinks we need to do stuff.
           sleep(SLEEP_TIME_LONG);
 
-          Boo boo = null;
-
-          // If there's no current boo, get one.
-          synchronized (mUploadLock) {
-            if (null == mBooUpload) {
-              Log.d(LTAG, "Finding uploads...");
-              Globals.get().getBooManager().rebuildIndex();
-              List<Boo> uploads = new LinkedList<Boo>();
-              uploads.addAll(Globals.get().getBooManager().getBooUploads());
-              uploads.addAll(Globals.get().getBooManager().getMessageUploads());
-              Collections.sort(uploads, Boo.RECORDING_DATE_COMPARATOR);
-
-              if (!uploads.isEmpty()) {
-                mBooUpload = uploads.get(0);
-              }
-            }
-
-            boo = mBooUpload;
-          }
-
-          // If there's still no current boo, sleep again.
-          if (null == boo) {
-            clearNotification();
-            continue;
-          }
-
-          // Loop until processNextStage returns false. It'll return false in
-          // most cases.
-          while (processNextStage(boo, null)) {
-            Log.d(LTAG, "Still processing: " + boo);
-          }
-
+          process();
         } catch (InterruptedException ex) {
           // pass
         }
@@ -148,24 +123,11 @@ public class UploadManager
   private Handler                 mHandler        = new Handler(new Handler.Callback() {
       public boolean handleMessage(Message msg)
       {
+        UploadResult result = null;
         if (API.ERR_SUCCESS == msg.what) {
-          // Cast is safe even if msg.obj is null.
-          UploadResult res = (UploadResult) msg.obj;
-          Boo boo = null;
-          synchronized (mUploadLock) {
-            boo = mBooUpload;
-          }
-          if (null == boo) {
-            Log.e(LTAG, "Something is wrong. Got upload result, but no current upload to process.");
-            return true;
-          }
-          processNextStage(boo, res);
-          return true;
+          result = (UploadResult) msg.obj;
         }
-
-        // Consume message, but don't do anything. The next time the thread wakes
-        // up, it'll try the same thing again.
-        Log.e(LTAG, "Upload result is: " + msg.what);
+        process(msg.what, result);
         return true;
       }
   });
@@ -200,18 +162,78 @@ public class UploadManager
 
 
   /**
+   * Run the upload processing loop until we're out of work for the moment.
+   * XXX Must be called when the upload lock is held.
+   **/
+  private void process()
+  {
+    process(API.ERR_SUCCESS, null);
+  }
+
+
+  private void process(int result, UploadResult res)
+  {
+    synchronized (mUploadLock)
+    {
+      // Check for errors.
+      if (API.ERR_SUCCESS != result) {
+        Log.e(LTAG, "Response code: " + result);
+        mBooUpload = null;
+        return;
+      }
+
+      // Preprocess; avoid that the result is matched with the wrong Boo.
+      if (null == mBooUpload && null != res) {
+        Log.e(LTAG, "Result for unknown upload: " + res);
+        return;
+      }
+
+      // Ensure that there is a current boo, if possible. If the queue is
+      // empty, of course, that won't be the case.
+      if (null == mBooUpload) {
+        // Log.d(LTAG, "Finding uploads...");
+        Globals.get().getBooManager().rebuildIndex();
+        List<Boo> uploads = new LinkedList<Boo>();
+        uploads.addAll(Globals.get().getBooManager().getBooUploads());
+        uploads.addAll(Globals.get().getBooManager().getMessageUploads());
+        Collections.sort(uploads, Boo.RECORDING_DATE_COMPARATOR);
+
+        if (!uploads.isEmpty()) {
+          mBooUpload = uploads.get(0);
+        }
+      }
+
+      // Empty queue, we're done.
+      if (null == mBooUpload) {
+        clearNotification();
+        return;
+      }
+
+      // Now process stages until we're supposed to stop.
+      while (processNextStage(res)) {
+        // After the first iteration, any result that might've come in needs to
+        // be discarded.
+        res = null;
+      }
+    }
+  }
+
+
+
+  /**
    * Returns true if the main thread is supposed to call this function again
    * immediately, false otherwise.
+   * XXX Must be called when the upload lock is held.
    **/
-  private boolean processNextStage(Boo boo, UploadResult res)
+  private boolean processNextStage(UploadResult res)
   {
-    if (null == boo || null == boo.mData || null == boo.mData.mUploadInfo) {
-      Log.e(LTAG, "Can't process null upload: " + boo);
+    if (null == mBooUpload.mData || null == mBooUpload.mData.mUploadInfo) {
+      Log.e(LTAG, "Can't process null upload: " + mBooUpload);
+      mBooUpload = null;
       clearNotification();
       return false;
     }
-
-    setNotification(boo);
+    setNotification(mBooUpload);
 
     // Process timestamps first, to determine new chunk size.
     if (-1 != mUploadStarted) {
@@ -233,25 +255,26 @@ public class UploadManager
 
       mUploadStarted = -1;
     }
-    Log.d(LTAG, "Chunk size is: " + mChunkSize);
+    // Log.d(LTAG, "Chunk size is: " + mChunkSize);
 
     // Delegate to chunk-specific function
     boolean ret = false;
-    switch (boo.mData.mUploadInfo.mUploadStage) {
+    switch (mBooUpload.mData.mUploadInfo.mUploadStage) {
       case UploadInfo.UPLOAD_STAGE_AUDIO:
-        ret = processAudioStage(boo, res);
+        ret = processAudioStage(res);
         break;
 
       case UploadInfo.UPLOAD_STAGE_IMAGE:
-        ret = processImageStage(boo, res);
+        ret = processImageStage(res);
         break;
 
       case UploadInfo.UPLOAD_STAGE_METADATA:
-        ret = processMetadataStage(boo, res);
+        ret = processMetadataStage(res);
         break;
 
       default:
-        Log.e(LTAG, "Invalid processing stage: " + boo.mData.mUploadInfo.mUploadStage);
+        Log.e(LTAG, "Invalid processing stage: " + mBooUpload.mData.mUploadInfo.mUploadStage);
+        mBooUpload = null;
         break;
     }
 
@@ -260,41 +283,46 @@ public class UploadManager
 
 
 
-  private boolean processAudioStage(Boo boo, UploadResult res)
+  /**
+   * Part of processNextStage()
+   * XXX Must be called when the upload lock is held.
+   **/
+  private boolean processAudioStage(UploadResult res)
   {
-    Log.d(LTAG, "Audio stage: " + boo);
+    // Log.d(LTAG, "Audio stage: " + mBooUpload);
 
     if (null != res) {
-      if (-1 != boo.mData.mUploadInfo.mAudioChunkId
-          && boo.mData.mUploadInfo.mAudioChunkId != res.id)
+      if (-1 != mBooUpload.mData.mUploadInfo.mAudioChunkId
+          && mBooUpload.mData.mUploadInfo.mAudioChunkId != res.id)
       {
         Log.e(LTAG, "Got response, but the chunk IDs don't match. Ugh.");
+        mBooUpload = null;
         return false;
       }
 
       // Update metadata
-      boo.mData.mUploadInfo.mAudioChunkId = res.id;
-      boo.mData.mUploadInfo.mAudioUploaded = res.received;
+      mBooUpload.mData.mUploadInfo.mAudioChunkId = res.id;
+      mBooUpload.mData.mUploadInfo.mAudioUploaded = res.received;
 
-      if (res.complete) {
-        boo.mData.mUploadInfo.mUploadStage = UploadInfo.UPLOAD_STAGE_IMAGE;
-        boo.writeToFile();
+      if (res.complete || res.outstanding <= 0) {
+        mBooUpload.mData.mUploadInfo.mUploadStage = UploadInfo.UPLOAD_STAGE_IMAGE;
+        mBooUpload.writeToFile();
         return true;
       }
-      boo.writeToFile();
+      mBooUpload.writeToFile();
     }
 
     // Create a new attachment if we don't have an ID yet. Otherwise add to the
     // pre-existing attachment.
     mUploadStarted = System.currentTimeMillis();
-    if (-1 == boo.mData.mUploadInfo.mAudioChunkId) {
-      boo.flattenAudio();
-      Globals.get().mAPI.createAttachment(boo.mData.mHighMP3Url.getPath(), 0,
+    if (-1 == mBooUpload.mData.mUploadInfo.mAudioChunkId) {
+      mBooUpload.flattenAudio();
+      Globals.get().mAPI.createAttachment(mBooUpload.mData.mHighMP3Url.getPath(), 0,
           mChunkSize, mHandler);
     }
     else {
-      Globals.get().mAPI.appendToAttachment(boo.mData.mUploadInfo.mAudioChunkId,
-          boo.mData.mHighMP3Url.getPath(), boo.mData.mUploadInfo.mAudioUploaded,
+      Globals.get().mAPI.appendToAttachment(mBooUpload.mData.mUploadInfo.mAudioChunkId,
+          mBooUpload.mData.mHighMP3Url.getPath(), mBooUpload.mData.mUploadInfo.mAudioUploaded,
           mChunkSize, mHandler);
     }
     return false;
@@ -302,48 +330,53 @@ public class UploadManager
 
 
 
-  private boolean processImageStage(Boo boo, UploadResult res)
+  /**
+   * Part of processNextStage()
+   * XXX Must be called when the upload lock is held.
+   **/
+  private boolean processImageStage(UploadResult res)
   {
-    Log.d(LTAG, "Image stage: " + boo);
+    // Log.d(LTAG, "Image stage: " + mBooUpload);
 
     if (null != res) {
-      if (-1 != boo.mData.mUploadInfo.mImageChunkId
-          && boo.mData.mUploadInfo.mImageChunkId != res.id)
+      if (-1 != mBooUpload.mData.mUploadInfo.mImageChunkId
+          && mBooUpload.mData.mUploadInfo.mImageChunkId != res.id)
       {
         Log.e(LTAG, "Got response, but the chunk IDs don't match. Ugh.");
+        mBooUpload = null;
         return false;
       }
 
       // Update metadata
-      boo.mData.mUploadInfo.mImageChunkId = res.id;
-      boo.mData.mUploadInfo.mImageUploaded = res.received;
+      mBooUpload.mData.mUploadInfo.mImageChunkId = res.id;
+      mBooUpload.mData.mUploadInfo.mImageUploaded = res.received;
 
-      if (res.complete) {
-        boo.mData.mUploadInfo.mUploadStage = UploadInfo.UPLOAD_STAGE_METADATA;
-        boo.writeToFile();
+      if (res.complete || res.outstanding <= 0) {
+        mBooUpload.mData.mUploadInfo.mUploadStage = UploadInfo.UPLOAD_STAGE_METADATA;
+        mBooUpload.writeToFile();
         return true;
       }
-      boo.writeToFile();
+      mBooUpload.writeToFile();
     }
 
     // We might not have an image attachment.
-    if (null == boo.mData.mImageUrl) {
-      boo.mData.mUploadInfo.mUploadStage = UploadInfo.UPLOAD_STAGE_METADATA;
-      boo.writeToFile();
+    if (null == mBooUpload.mData.mImageUrl) {
+      mBooUpload.mData.mUploadInfo.mUploadStage = UploadInfo.UPLOAD_STAGE_METADATA;
+      mBooUpload.writeToFile();
       return true;
     }
 
     // Create a new attachment if we don't have an ID yet. Otherwise add to the
     // pre-existing attachment.
     mUploadStarted = System.currentTimeMillis();
-    if (-1 == boo.mData.mUploadInfo.mImageChunkId) {
-      boo.flattenAudio();
-      Globals.get().mAPI.createAttachment(boo.mData.mImageUrl.getPath(), 0,
+    if (-1 == mBooUpload.mData.mUploadInfo.mImageChunkId) {
+      mBooUpload.flattenAudio();
+      Globals.get().mAPI.createAttachment(mBooUpload.mData.mImageUrl.getPath(), 0,
           mChunkSize, mHandler);
     }
     else {
-      Globals.get().mAPI.appendToAttachment(boo.mData.mUploadInfo.mImageChunkId,
-          boo.mData.mImageUrl.getPath(), boo.mData.mUploadInfo.mImageUploaded,
+      Globals.get().mAPI.appendToAttachment(mBooUpload.mData.mUploadInfo.mImageChunkId,
+          mBooUpload.mData.mImageUrl.getPath(), mBooUpload.mData.mUploadInfo.mImageUploaded,
           mChunkSize, mHandler);
     }
     return false;
@@ -351,29 +384,29 @@ public class UploadManager
 
 
 
-  private boolean processMetadataStage(Boo boo, UploadResult res)
+  /**
+   * Part of processNextStage()
+   * XXX Must be called when the upload lock is held.
+   **/
+  private boolean processMetadataStage(UploadResult res)
   {
-    if (null != res) {
-      Log.d(LTAG, "Done uploading Boo!");
-      // FIXME
-      // boo.delete();
-      synchronized (mUploadLock) {
-        if (boo != mBooUpload) {
-          Log.e(LTAG, "Uh, this really shouldn't happen.");
-          return false;
-        }
-        mBooUpload = null;
-      }
+    // Log.d(LTAG, "metadata stage: " + res);
+    if (null != res && res.id > 0) {
+      mBooUpload.delete();
+      mBooUpload = null;
       return false;
     }
 
     // Try the last phase.
-    Globals.get().mAPI.uploadBoo(boo, mHandler);
+    Globals.get().mAPI.uploadBoo(mBooUpload, mHandler);
     return false;
   }
 
 
 
+  /**
+   * Clear upload notification
+   **/
   private void clearNotification()
   {
     Context ctx = mContext.get();
@@ -387,6 +420,9 @@ public class UploadManager
 
 
 
+  /**
+   * Set upload notification
+   **/
   private void setNotification(Boo boo)
   {
     Context ctx = mContext.get();
