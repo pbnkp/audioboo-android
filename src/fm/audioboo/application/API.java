@@ -973,9 +973,15 @@ public class API
     // Prepare signed parameters
     HashMap<String, Object> signedParams = new HashMap<String, Object>();
     signedParams.put(String.format("%s[title]", prefix), boo.mData.mTitle);
-    signedParams.put(String.format("%s[local_recorded_at]", prefix), boo.mData.mRecordedAt.toString());
-    // signedParams.put(String.format("%s[recorded_at]", prefix), boo.mData.mRecordedAt.toString());
     signedParams.put(String.format("%s[author_locale]", prefix), Locale.getDefault().toString());
+
+    // Date is different depending on whether we've got a message or not.
+    if (!boo.mData.mIsMessage) {
+      signedParams.put(String.format("%s[local_recorded_at]", prefix), boo.mData.mRecordedAt.toString());
+    }
+    else {
+      signedParams.put(String.format("%s[recorded_at]", prefix), boo.mData.mRecordedAt.toString());
+    }
 
     // Tags
     if (!boo.mData.mIsMessage && null != boo.mData.mTags) {
@@ -983,7 +989,7 @@ public class API
       for (Tag t : boo.mData.mTags) {
         tags.add(t.mNormalised);
       }
-      signedParams.put(String.format("%s[tags]", prefix), tags);
+      signedParams.put(String.format("%s[tag_list]", prefix), tags);
     }
 
     if (null != boo.mData.mLocation) {
@@ -1029,11 +1035,10 @@ public class API
       api = API_MESSAGE_UPLOAD;
     }
 
-    // FIXME
-    Log.d(LTAG, "API: " + api);
-    for (String key : signedParams.keySet()) {
-      Log.d(LTAG, "P: " + key + " = " + signedParams.get(key));
-    }
+    // Log.d(LTAG, "API: " + api);
+    // for (String key : signedParams.keySet()) {
+    //   Log.d(LTAG, "P: " + key + " = " + signedParams.get(key));
+    // }
 
     mRequestQueue.add(new Request(api, null, signedParams,
         new Handler.Callback() {
@@ -1080,11 +1085,12 @@ public class API
       int size, final Handler result_handler)
   {
     File file = new File(filename);
+    FilePartBody part = new FilePartBody(file, offset, size);
 
     HashMap<String, Object> signedParams = new HashMap<String, Object>();
     signedParams.put("attachment[chunk_offset]", String.format("%d", offset));
     signedParams.put("attachment[size]", String.format("%d", file.length()));
-    signedParams.put("attachment[chunk]", new FilePartBody(file, offset, size));
+    signedParams.put("attachment[chunk]", part);
 
     int request_type = RT_MULTIPART_POST;
     String api = API_ATTACHMENTS;
@@ -1216,7 +1222,7 @@ public class API
       int code = response.getStatusLine().getStatusCode();
       switch (code) {
         case 405:
-          Log.d(LTAG, "Request method not allowed: " + request.getRequestLine().getMethod());
+          Log.e(LTAG, "Request method not allowed: " + request.getRequestLine().getMethod());
           sendMessage(req, ERR_METHOD_NOT_ALLOWED);
           return null;
 
@@ -1621,7 +1627,7 @@ public class API
           for (int j = 0 ; j < cast.size() ; ++j) {
             m.update(String.format("%s[]=%s", key, cast.get(j).toString()).getBytes());
 
-            if (j < (keys.size() - 1)) {
+            if (j < (cast.size() - 1)) {
               m.update("&".getBytes());
             }
           }
@@ -1645,7 +1651,7 @@ public class API
 
       m.update(String.format(":%s", mAPISecret).getBytes());
       String signature = new BigInteger(1, m.digest()).toString(16);
-      Log.d(LTAG, "signature: " + signature);
+      // Log.d(LTAG, "signature: " + signature);
       params.put(mParamNameSignature, signature);
     } catch (java.security.NoSuchAlgorithmException ex) {
       Log.e(LTAG, "Error: could not sign request: " + ex.getMessage());
