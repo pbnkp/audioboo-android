@@ -172,6 +172,7 @@
           android:layout_marginRight="70dp"
           android:text="@string/details_reply_label"
           style="@style/button_huge_green"
+          android:visibility="gone"
         />
     </LinearLayout>
   </ScrollView>

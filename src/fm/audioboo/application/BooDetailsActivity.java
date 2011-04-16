@@ -101,6 +101,7 @@ public class BooDetailsActivity
    * Private data
    **/
   private Boo     mBoo;
+  private boolean mShowPlayButton = false;
 
   // Request handling
   private Handler mHandler = new Handler(new Handler.Callback() {
@@ -139,6 +140,10 @@ public class BooDetailsActivity
     if (null != dataUri) {
       int id = -1;
       boolean message = false;
+
+      if (dataUri.getPath().equals("/play_boo")) {
+        mShowPlayButton = true;
+      }
 
       List<NameValuePair> params = UriUtils.getQuery(dataUri);
       for (NameValuePair pair : params) {
@@ -508,20 +513,25 @@ public class BooDetailsActivity
     // Also initialize the player view
     View pv = findViewById(R.id.boo_player_container);
     if (null != pv) {
-      BooPlayerClient player = Globals.get().mPlayer;
-      if (null != player) {
-        PlayerState state = player.getState();
-        switch (state.mState) {
-          case Constants.STATE_PREPARING:
-          case Constants.STATE_BUFFERING:
-          case Constants.STATE_PLAYING:
-          case Constants.STATE_PAUSED:
-            showPlayerContainer();
-            break;
+      if (mShowPlayButton) {
+        showPlayerContainer();
+      }
+      else {
+        BooPlayerClient player = Globals.get().mPlayer;
+        if (null != player) {
+          PlayerState state = player.getState();
+          switch (state.mState) {
+            case Constants.STATE_PREPARING:
+            case Constants.STATE_BUFFERING:
+            case Constants.STATE_PLAYING:
+            case Constants.STATE_PAUSED:
+              showPlayerContainer();
+              break;
 
-          default:
-            hidePlayerContainer();
-            break;
+            default:
+              hidePlayerContainer();
+              break;
+          }
         }
       }
     }
@@ -556,17 +566,20 @@ public class BooDetailsActivity
     // What's interesting as well is whether or not it's *this* Boo that's being
     // played or not.
     PlayerState state = Globals.get().mPlayer.getState();
-    if (null == state) {
-      return;
-    }
 
     ViewAnimator flipper = (ViewAnimator) findViewById(R.id.boo_player_flipper);
-    if (null == mBoo || null == mBoo.mData || mBoo.mData.mId == state.mBooId) {
-      // We have a match. Since we do, we want to show the player
-      flipper.setDisplayedChild(0);
+    if (null != state) {
+      if (null == mBoo || null == mBoo.mData || mBoo.mData.mId == state.mBooId) {
+        // We have a match. Since we do, we want to show the player
+        flipper.setDisplayedChild(0);
+      }
+      else {
+        // Show the button to let people play the current view instead!
+        flipper.setDisplayedChild(1);
+      }
     }
-    else {
-      // Show the button to let people play the current view instead!
+    else if (mShowPlayButton) {
+      // Also show the play button if nothing is playing, but it was requested.
       flipper.setDisplayedChild(1);
     }
   }
