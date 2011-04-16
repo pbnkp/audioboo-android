@@ -330,15 +330,25 @@ class ResponseParser
         return null;
       }
 
-      Response<UploadManager.UploadResult> result = new Response<UploadManager.UploadResult>();
+      JSONObject clip = null;
+      if (body.mContent.has(AUDIO_CLIP)) {
+        clip = body.mContent.getJSONObject(AUDIO_CLIP);
+      }
+      else if (body.mContent.has(MESSAGE)) {
+        clip = body.mContent.getJSONObject(MESSAGE);
+      }
+      else {
+        Log.e(LTAG, "Response does not contain audio_clip or message?");
+        handler.obtainMessage(API.ERR_PARSE_ERROR).sendToTarget();
+        return null;
+      }
 
-      // FIXME
-//      JSONObject clip = body.mContent.getJSONObject(AUDIO_CLIP);
-//
-//      Response<Integer> result = new Response<Integer>();
+      Response<UploadManager.UploadResult> result = new Response<UploadManager.UploadResult>();
+      result.mContent = new UploadManager.UploadResult();
+      result.mContent.id = clip.getInt(CLIP_ID);
+
       result.mTimestamp = body.mTimestamp;
       result.mWindow = body.mWindow;
-//      result.mContent = clip.getInt(CLIP_ID);
 
       return result;
 
@@ -693,7 +703,7 @@ class ResponseParser
    **/
   private static Response<JSONObject> retrieveBody(String response, Handler handler) throws JSONException
   {
-    Log.d(LTAG, "response: " + response);
+    // Log.d(LTAG, "response: " + response);
 
     JSONObject object = new JSONObject(response);
 
@@ -719,7 +729,7 @@ class ResponseParser
 
   private static Response<JSONObject> retrieveBody(String response, API.Request req) throws JSONException
   {
-    Log.d(LTAG, "response: " + response);
+    // Log.d(LTAG, "response: " + response);
 
     JSONObject object = new JSONObject(response);
 
