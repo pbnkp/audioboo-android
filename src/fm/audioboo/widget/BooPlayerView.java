@@ -494,7 +494,7 @@ public class BooPlayerView
         break;
 
       case Constants.STATE_PAUSED:
-        setEnabled(true);
+        setEnabled(state.mTotal > 0f);
         setTitleAndAuthor(state.mBooTitle, state.mBooUsername);
         mButton.setChecked(true);
         showPlaying(state.mProgress, state.mTotal);

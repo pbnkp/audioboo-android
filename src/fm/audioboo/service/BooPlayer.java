@@ -358,7 +358,7 @@ public class BooPlayer extends Thread
           int currentState = mState;
           int targetState = mTargetState;
           double seekTo = mSeekTo;
-          // Log.d(LTAG, "#1 currentBoo: " + currentBoo + " - currentState: " + currentState + " - targetState: " + targetState + " - action: " + action);
+          // Log.d(LTAG, "#1 currentBoo: " + currentBoo + " - currentState: " + currentState + " - targetState: " + targetState);
 
           // 2. If we're supposed to reset the state machine, let's do so now.
           //    We also set the current state to STATE_NONE so that the rest
@@ -382,7 +382,7 @@ public class BooPlayer extends Thread
             currentState = Constants.STATE_NONE;
           }
 
-          // Log.d(LTAG, "#2 currentBoo: " + currentBoo + " - currentState: " + currentState + " - targetState: " + targetState + " - action: " + action);
+          // Log.d(LTAG, "#2 currentBoo: " + currentBoo + " - currentState: " + currentState + " - targetState: " + targetState);
 
           // 3. Figure out the action that might take us to the target state
           //    (this doesn't have to happen immediately.)
