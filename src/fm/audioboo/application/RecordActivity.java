@@ -369,12 +369,19 @@ public class RecordActivity extends Activity
   {
     mRecordButton.setChecked(false);
 
+    int res = mBoo.delete() ? Activity.RESULT_OK : Activity.RESULT_CANCELED;
+    setResult(res);
+    finishInternal();
+  }
+
+
+
+  private void finishInternal()
+  {
     // We ensure the freshly deleted boo doesn't get played by queueing the
     // intro boo.
     Globals.get().mPlayer.play(Boo.createIntroBoo(this), false);
 
-    int res = mBoo.delete() ? Activity.RESULT_OK : Activity.RESULT_CANCELED;
-    setResult(res);
     finish();
   }
 
@@ -741,7 +748,7 @@ public class RecordActivity extends Activity
 
       case PublishActivity.RESULT_PUBLISHED:
         setResult(PublishActivity.RESULT_PUBLISHED);
-        finish();
+        finishInternal();
         break;
 
       default:
@@ -779,7 +786,7 @@ public class RecordActivity extends Activity
               {
                 writeBoo();
                 setResult(Activity.RESULT_OK);
-                finish();
+                finishInternal();
               }
           })
           .setNegativeButton(R.string.record_draft_dialog_delete, new DialogInterface.OnClickListener() {
