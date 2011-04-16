@@ -438,7 +438,7 @@ public class BooPlayerView
 
   private void updateVisualState(PlayerState state)
   {
-    Log.d(LTAG, "[" + this + "] Setting state: " + state);
+    // Log.d(LTAG, "[" + this + "] Setting state: " + state);
 
     // If the state is not set, treat this as Constants.STATE_NONE;
     // the block is pretty much identical to the one in the switch
