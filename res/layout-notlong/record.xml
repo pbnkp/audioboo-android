@@ -1,0 +1,273 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+ This file is part of AudioBoo, an android program for audio blogging.
+ Copyright (C) 2009 BestBefore Media Ltd. All rights reserved.
+
+ Author: Jens Finkhaeuser <jens@finkhaeuser.de>
+
+ $Id$
+-->
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:audioboo="http://schemas.android.com/apk/res/fm.audioboo.application"
+    android:layout_width="fill_parent"
+    android:layout_height="fill_parent"
+    android:orientation="vertical"
+  >
+  <RelativeLayout android:id="@+id/record_background"
+      android:layout_width="fill_parent"
+      android:layout_height="330dp"
+      android:background="@color/record_background"
+      android:gravity="top|center_vertical"
+    >
+    <!-- 0. Pseudo-spectral analysis view -->
+    <fm.audioboo.widget.SpectralView android:id="@+id/record_spectral_view"
+        android:layout_width="288dp"
+        android:layout_height="194dp"
+        android:layout_alignParentTop="true"
+        android:layout_alignParentLeft="true"
+        android:layout_marginTop="35dp"
+        android:layout_marginLeft="16dp"
+        android:background="@color/record_grid_background"
+        audioboo:numberOfBars="9"
+        audioboo:barDrawable="@color/record_grid_bar"
+        audioboo:gridColor="@color/record_grid_color"
+        audioboo:gridSpacing="4dp"
+      />
+
+    <!-- 1. Shadow overlay -->
+    <ImageView
+        android:layout_width="fill_parent"
+        android:layout_height="fill_parent"
+        android:layout_alignParentTop="true"
+        android:src="@drawable/inner_shadow"
+        android:scaleType="fitXY"
+      />
+
+    <!-- 2. Main view content -->
+    <RelativeLayout
+        android:layout_width="fill_parent"
+        android:layout_height="fill_parent"
+        android:gravity="center"
+        android:paddingLeft="15dp"
+        android:paddingRight="15dp"
+      >
+      <!-- Addressee field -->
+      <TextView android:id="@+id/record_addressee"
+          android:layout_width="fill_parent"
+          android:layout_height="wrap_content"
+          android:layout_alignParentTop="true"
+          android:layout_alignParentLeft="true"
+          android:layout_marginTop="5dp"
+          android:gravity="center"
+          android:text=" "
+          android:textColor="@color/record_addressee"
+          android:textStyle="bold"
+          android:textSize="@dimen/text_larger"
+          android:shadowColor="@color/text_shadow"
+          android:shadowRadius="1"
+          android:shadowDx="0"
+          android:shadowDy="-1"
+        />
+
+
+      <!-- Player view -->
+      <ViewAnimator android:id="@+id/record_player_flipper"
+          android:layout_width="fill_parent"
+          android:layout_height="wrap_content"
+          android:layout_alignParentBottom="true"
+          android:layout_marginBottom="2dp"
+          android:inAnimation="@anim/fade_in"
+          android:outAnimation="@anim/fade_out"
+        >
+        <!-- Player itself -->
+        <fm.audioboo.widget.BooPlayerView
+            android:id="@+id/record_player"
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            audioboo:showDisclosure="false"
+          />
+
+        <!-- Progress -->
+        <LinearLayout
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:layout_margin="0dp"
+            android:orientation="vertical"
+            android:padding="3dp"
+          >
+          <LinearLayout
+              android:layout_width="fill_parent"
+              android:layout_height="wrap_content"
+              android:orientation="horizontal"
+              android:gravity="center"
+            >
+            <!-- Progress Pie -->
+            <RelativeLayout
+                android:layout_width="55dp"
+                android:layout_height="55dp"
+              >
+              <ImageView
+                  android:layout_width="55dp"
+                  android:layout_height="55dp"
+                  android:src="@drawable/pie_shadow"
+                />
+
+              <fm.audioboo.widget.PieProgressView android:id="@+id/record_pie_progress"
+                  android:layout_width="51dp"
+                  android:layout_height="51dp"
+                  android:layout_centerInParent="true"
+                  audioboo:pieColor="@android:color/white"
+                />
+            </RelativeLayout>
+
+            <LinearLayout
+                android:layout_width="fill_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginLeft="5dp"
+                android:layout_marginRight="5dp"
+                android:layout_weight="1"
+                android:orientation="vertical"
+                android:gravity="center"
+              >
+              <!-- Author -->
+              <TextView android:id="@+id/record_author"
+                  android:layout_width="fill_parent"
+                  android:layout_height="wrap_content"
+                  android:layout_marginTop="2dp"
+                  android:textSize="@dimen/boo_player_author"
+                  android:textStyle="bold"
+                  android:textColor="@color/boo_player_author"
+                  android:ellipsize="end"
+                  android:lines="1"
+                  android:singleLine="true"
+                />
+
+              <!-- Title -->
+              <TextView android:id="@+id/record_title"
+                  android:layout_width="fill_parent"
+                  android:layout_height="wrap_content"
+                  android:layout_marginTop="2dp"
+                  android:textSize="@dimen/boo_player_title"
+                  android:textStyle="bold"
+                  android:textColor="@color/boo_player_title"
+                  android:ellipsize="end"
+                  android:lines="1"
+                  android:singleLine="true"
+                />
+            </LinearLayout>
+          </LinearLayout>
+
+          <!-- Remaining -->
+          <LinearLayout
+              android:layout_width="fill_parent"
+              android:layout_height="wrap_content"
+              android:layout_marginTop="5dp"
+              android:layout_marginBottom="3dp"
+              android:orientation="horizontal"
+              android:gravity="center"
+            >
+            <TextView
+                android:layout_width="fill_parent"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:layout_marginRight="10dp"
+                android:text="@string/record_remaining_label"
+                android:textSize="@dimen/boo_player_author"
+                android:textStyle="bold"
+                android:textColor="@color/boo_player_author"
+                android:ellipsize="end"
+                android:lines="1"
+                android:singleLine="true"
+              />
+
+            <TextView android:id="@+id/record_remaining"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginRight="8dp"
+                android:text="00:00"
+                android:textSize="@dimen/boo_player_author"
+                android:textStyle="bold"
+                android:textColor="@color/record_remaining"
+                android:ellipsize="end"
+                android:lines="1"
+                android:singleLine="true"
+              />
+          </LinearLayout>
+        </LinearLayout>
+      </ViewAnimator>
+    </RelativeLayout>
+
+    <!-- 3. Disabled overlay -->
+    <LinearLayout android:id="@+id/record_overlay"
+        android:layout_width="fill_parent"
+        android:layout_height="fill_parent"
+        android:gravity="center"
+        android:clickable="true"
+        android:visibility="gone"
+        android:background="@color/record_overlay_background"
+      >
+      <TextView android:id="@+id/record_countdown"
+          android:layout_width="wrap_content"
+          android:layout_height="wrap_content"
+          android:textSize="@dimen/record_initial_countdown"
+          android:textStyle="bold"
+          android:background="@android:color/transparent"
+        />
+    </LinearLayout>
+  </RelativeLayout>
+
+  <TableLayout
+      android:layout_width="fill_parent"
+      android:layout_height="fill_parent"
+      android:gravity="center"
+      android:stretchColumns="0,1"
+    >
+    <TableRow
+        android:layout_height="wrap_content"
+      >
+      <!-- Record button -->
+      <fm.audioboo.widget.RecordButton android:id="@+id/record_button"
+          android:layout_width="fill_parent"
+          android:layout_height="wrap_content"
+          android:layout_margin="4dp"
+          android:layout_span="2"
+          audioboo:textInitial="@string/record_label_record"
+          android:textOn="@string/record_label_pause"
+          android:textOff="@string/record_label_resume"
+          audioboo:backgroundInitial="@drawable/btn_red"
+          audioboo:backgroundOn="@drawable/btn_blue"
+          audioboo:backgroundOff="@drawable/btn_red"
+          style="@style/button_huge"
+        />
+    </TableRow>
+
+    <TableRow android:layout_height="wrap_content"
+      >
+      <!-- Reset button -->
+      <Button android:id="@+id/record_restart"
+          android:layout_width="fill_parent"
+          android:layout_height="wrap_content"
+          android:layout_marginTop="0dp"
+          android:layout_marginBottom="0dp"
+          android:layout_marginLeft="4dp"
+          android:layout_marginRight="2dp"
+          android:text="@string/record_label_restart"
+          style="@style/button_large_red"
+        />
+
+      <!-- Publish button -->
+      <Button android:id="@+id/record_publish"
+          android:layout_width="fill_parent"
+          android:layout_height="wrap_content"
+          android:layout_marginTop="0dp"
+          android:layout_marginBottom="0dp"
+          android:layout_marginLeft="2dp"
+          android:layout_marginRight="4dp"
+          android:text="@string/record_label_publish"
+          style="@style/button_large_green"
+        />
+
+    </TableRow>
+  </TableLayout>
+</LinearLayout>
