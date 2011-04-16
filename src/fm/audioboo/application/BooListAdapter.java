@@ -654,6 +654,9 @@ public class BooListAdapter extends BaseExpandableListAdapter
     if (null == boos) {
       return;
     }
+    if (baton.itemIndex.mSecond >= boos) {
+      return;
+    }
     Boo expected_boo = boos.get(baton.itemIndex.mSecond);
     @SuppressWarnings("unchecked")
     Pair<Boo, Integer> current = (Pair<Boo, Integer>) item_view.getTag();
