@@ -25,7 +25,8 @@ import java.util.List;
 
 import java.lang.ref.WeakReference;
 
-import android.util.Log;
+import de.unwesen.web.stacktrace.ExceptionHandler;
+import de.unwesen.web.stacktrace.ExceptionHandler.Log;
 
 /**
  * Holds a BooList, but also manages pagination. The class pretty much creates

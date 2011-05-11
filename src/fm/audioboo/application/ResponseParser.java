@@ -32,7 +32,8 @@ import fm.audioboo.data.BooData;
 
 import fm.audioboo.service.UploadManager;
 
-import android.util.Log;
+import de.unwesen.web.stacktrace.ExceptionHandler;
+import de.unwesen.web.stacktrace.ExceptionHandler.Log;
 
 /**
  * Helper class for parsing API responses.

@@ -33,7 +33,8 @@ import fm.audioboo.service.Constants;
 
 import java.util.List;
 
-import android.util.Log;
+import de.unwesen.web.stacktrace.ExceptionHandler;
+import de.unwesen.web.stacktrace.ExceptionHandler.Log;
 
 /**
  * The MessagesActivity shows messages (boos with a sender and addressee) that

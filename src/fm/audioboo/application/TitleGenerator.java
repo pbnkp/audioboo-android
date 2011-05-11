@@ -20,7 +20,8 @@ import android.content.Context;
 
 import java.lang.ref.WeakReference;
 
-import android.util.Log;
+import de.unwesen.web.stacktrace.ExceptionHandler;
+import de.unwesen.web.stacktrace.ExceptionHandler.Log;
 
 /**
  * Returns a semi-randomly picked Boo title. Titles are defined in localized.xml,

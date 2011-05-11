@@ -22,7 +22,8 @@ import android.view.animation.Transformation;
 
 import android.widget.Gallery;
 
-import android.util.Log;
+import de.unwesen.web.stacktrace.ExceptionHandler;
+import de.unwesen.web.stacktrace.ExceptionHandler.Log;
 
 /**
  * A Flow is a Gallery with smooth animations for transforming any but the

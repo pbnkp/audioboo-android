@@ -19,8 +19,8 @@ import java.lang.ref.WeakReference;
 
 import fm.audioboo.data.BooData;
 
-import android.util.Log;
-
+import de.unwesen.web.stacktrace.ExceptionHandler;
+import de.unwesen.web.stacktrace.ExceptionHandler.Log;
 
 /**
  * Records Boos. This class uses FLACRecorder to record individual FLAC files

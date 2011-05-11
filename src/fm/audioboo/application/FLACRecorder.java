@@ -23,7 +23,8 @@ import java.nio.ByteBuffer;
 
 import java.lang.ref.WeakReference;
 
-import android.util.Log;
+import de.unwesen.web.stacktrace.ExceptionHandler;
+import de.unwesen.web.stacktrace.ExceptionHandler.Log;
 
 /**
  * Records a single FLAC file from the microphone. Overwrites the file if it

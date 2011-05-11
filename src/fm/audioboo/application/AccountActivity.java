@@ -51,7 +51,8 @@ import fm.audioboo.data.User;
 
 import fm.audioboo.service.Constants;
 
-import android.util.Log;
+import de.unwesen.web.stacktrace.ExceptionHandler;
+import de.unwesen.web.stacktrace.ExceptionHandler.Log;
 
 /**
  * Displays a settings pane, and allows to link or unlink the device to/from
@@ -111,6 +112,9 @@ public class AccountActivity
   public void onCreate(Bundle savedInstanceState)
   {
     super.onCreate(savedInstanceState);
+
+    ExceptionHandler.register(this, getResources().getString(R.string.stacktrace_url),
+        getResources().getString(R.string.stacktrace_key));
 
     setContentView(R.layout.account);
   }

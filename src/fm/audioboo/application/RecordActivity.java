@@ -64,7 +64,8 @@ import java.io.File;
 import java.util.List;
 import java.util.LinkedList;
 
-import android.util.Log;
+import de.unwesen.web.stacktrace.ExceptionHandler;
+import de.unwesen.web.stacktrace.ExceptionHandler.Log;
 
 /**
  * The RecordActivity allows for recording (and playing back) of Boos, and

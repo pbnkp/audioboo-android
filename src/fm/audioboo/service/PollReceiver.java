@@ -30,8 +30,8 @@ import fm.audioboo.application.R;
 
 import java.util.Date;
 
-import android.util.Log;
-
+import de.unwesen.web.stacktrace.ExceptionHandler;
+import de.unwesen.web.stacktrace.ExceptionHandler.Log;
 
 /**
  * Receiver for poll Intents. Waits for Globals to connect to the service,

@@ -30,7 +30,8 @@ import fm.audioboo.service.Constants;
 import fm.audioboo.service.BooPlayerClient;
 import fm.audioboo.data.PlayerState;
 
-import android.util.Log;
+import de.unwesen.web.stacktrace.ExceptionHandler;
+import de.unwesen.web.stacktrace.ExceptionHandler.Log;
 
 /**
  * Base for lists of Boos, such as BrowseActivity, MessagesActivity, etc.

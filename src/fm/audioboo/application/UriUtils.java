@@ -22,7 +22,8 @@ import org.apache.http.NameValuePair;
 
 import java.util.List;
 
-import android.util.Log;
+import de.unwesen.web.stacktrace.ExceptionHandler;
+import de.unwesen.web.stacktrace.ExceptionHandler.Log;
 
 
 /**

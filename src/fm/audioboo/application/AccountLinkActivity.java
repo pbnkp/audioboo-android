@@ -22,7 +22,8 @@ import android.graphics.Bitmap;
 
 import android.net.Uri;
 
-import android.util.Log;
+import de.unwesen.web.stacktrace.ExceptionHandler;
+import de.unwesen.web.stacktrace.ExceptionHandler.Log;
 
 /**
  * Displays a settings pane, and allows to link or unlink the device to/from

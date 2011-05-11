@@ -22,7 +22,8 @@ import org.apache.http.entity.mime.MIME;
 
 import java.security.MessageDigest;
 
-import android.util.Log;
+import de.unwesen.web.stacktrace.ExceptionHandler;
+import de.unwesen.web.stacktrace.ExceptionHandler.Log;
 
 
 /**

@@ -11,7 +11,8 @@ package fm.audioboo.application;
 
 import android.app.Application;
 
-import android.util.Log;
+import de.unwesen.web.stacktrace.ExceptionHandler;
+import de.unwesen.web.stacktrace.ExceptionHandler.Log;
 
 /**
  * Process-level object creates and owns singleton objects.

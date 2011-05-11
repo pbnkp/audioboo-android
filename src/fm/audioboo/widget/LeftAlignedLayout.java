@@ -18,7 +18,8 @@ import android.view.View.MeasureSpec;
 import android.content.Context;
 import android.util.AttributeSet;
 
-import android.util.Log;
+import de.unwesen.web.stacktrace.ExceptionHandler;
+import de.unwesen.web.stacktrace.ExceptionHandler.Log;
 
 /**
  * Lays out it's subviews like left-aligned text, i.e. in one row until

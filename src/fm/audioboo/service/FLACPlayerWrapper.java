@@ -14,7 +14,8 @@ import android.content.Context;
 import fm.audioboo.application.FLACPlayer;
 import fm.audioboo.application.Boo;
 
-import android.util.Log;
+import de.unwesen.web.stacktrace.ExceptionHandler;
+import de.unwesen.web.stacktrace.ExceptionHandler.Log;
 
 /**
  * Player for FLAC files, which are presumed to be local.

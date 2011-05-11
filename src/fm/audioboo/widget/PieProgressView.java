@@ -24,7 +24,8 @@ import android.graphics.Color;
 
 import fm.audioboo.application.R;
 
-import android.util.Log;
+import de.unwesen.web.stacktrace.ExceptionHandler;
+import de.unwesen.web.stacktrace.ExceptionHandler.Log;
 
 /**
  * Similar to a ProgressBar, but simply draws a colored pie.

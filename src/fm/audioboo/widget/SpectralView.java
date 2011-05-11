@@ -30,7 +30,8 @@ import java.lang.ref.WeakReference;
 
 import fm.audioboo.application.R;
 
-import android.util.Log;
+import de.unwesen.web.stacktrace.ExceptionHandler;
+import de.unwesen.web.stacktrace.ExceptionHandler.Log;
 
 /**
  * The SpectralView class displays recording amplitudes reported via the

@@ -52,7 +52,8 @@ import java.io.FileOutputStream;
 import java.util.List;
 import java.util.LinkedList;
 
-import android.util.Log;
+import de.unwesen.web.stacktrace.ExceptionHandler;
+import de.unwesen.web.stacktrace.ExceptionHandler.Log;
 
 import fm.audioboo.widget.EditTags;
 

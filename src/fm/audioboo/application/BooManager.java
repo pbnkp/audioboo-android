@@ -21,7 +21,8 @@ import java.nio.ByteBuffer;
 import java.util.Collections;
 import java.util.zip.CRC32;
 
-import android.util.Log;
+import de.unwesen.web.stacktrace.ExceptionHandler;
+import de.unwesen.web.stacktrace.ExceptionHandler.Log;
 
 
 /**

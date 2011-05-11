@@ -45,7 +45,8 @@ import fm.audioboo.application.Globals;
 
 import fm.audioboo.application.R;
 
-import android.util.Log;
+import de.unwesen.web.stacktrace.ExceptionHandler;
+import de.unwesen.web.stacktrace.ExceptionHandler.Log;
 
 
 /**

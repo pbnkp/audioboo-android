@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+ This file is part of PackRat, an android program for managing media collections.
+ Copyright (C) 2009 Jens Finkhaeuser <unwesen@users.sourceforge.net>
+ All rights reserved.
+
+ $Id: stacktraces.xml 1034 2010-02-28 13:31:01Z unwesen $
+-->
+<resources>
+  <!-- API key, URL for posting stack traces  -->
+  <string name="stacktrace_url">http://packrat.unwesen.de/stacktrace.php</string>
+  <string name="stacktrace_key">qmdk8PNdXhFidT9GjH3GHHhu93bazNjJI44B1FX7</string>
+</resources>

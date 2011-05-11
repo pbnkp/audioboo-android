@@ -39,7 +39,8 @@ import fm.audioboo.data.User;
 
 import fm.audioboo.service.Constants;
 
-import android.util.Log;
+import de.unwesen.web.stacktrace.ExceptionHandler;
+import de.unwesen.web.stacktrace.ExceptionHandler.Log;
 
 /**
  * Representation of a Boo's data.

@@ -89,7 +89,8 @@ import fm.audioboo.data.User;
 
 import fm.audioboo.service.UploadManager;
 
-import android.util.Log;
+import de.unwesen.web.stacktrace.ExceptionHandler;
+import de.unwesen.web.stacktrace.ExceptionHandler.Log;
 
 /**
  * Abstraction for the AudioBoo API.
@@ -193,8 +194,8 @@ public class API
   private static final String LTAG  = "API";
 
   // Default API host. Used as a fallback if SRV lookup fails.
-  private static final String DEFAULT_API_HOST            = "api.audioboo.fm";
-//  private static final String DEFAULT_API_HOST            = "api.staging.audioboo.fm";
+  // private static final String DEFAULT_API_HOST            = "api.audioboo.fm";
+  private static final String DEFAULT_API_HOST            = "api.staging.audioboo.fm";
 
   // Scheme for API requests.
   private static final String API_REQUEST_URI_SCHEME      = "http";

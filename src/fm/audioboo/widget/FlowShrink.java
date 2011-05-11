@@ -18,7 +18,8 @@ import android.view.animation.Transformation;
 
 import android.widget.ImageView;
 
-import android.util.Log;
+import de.unwesen.web.stacktrace.ExceptionHandler;
+import de.unwesen.web.stacktrace.ExceptionHandler.Log;
 
 
 /**

@@ -23,7 +23,8 @@ import android.widget.Toast;
 import java.util.List;
 import java.util.LinkedList;
 
-import android.util.Log;
+import de.unwesen.web.stacktrace.ExceptionHandler;
+import de.unwesen.web.stacktrace.ExceptionHandler.Log;
 
 /**
  * DispatchActivity listens to URIs with the audioboo scheme, and dispatches

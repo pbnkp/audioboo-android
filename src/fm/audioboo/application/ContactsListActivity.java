@@ -31,7 +31,8 @@ import java.util.List;
 
 import fm.audioboo.data.User;
 
-import android.util.Log;
+import de.unwesen.web.stacktrace.ExceptionHandler;
+import de.unwesen.web.stacktrace.ExceptionHandler.Log;
 
 
 /**

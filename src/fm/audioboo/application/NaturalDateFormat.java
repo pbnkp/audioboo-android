@@ -15,7 +15,8 @@ import android.content.Context;
 import java.util.Date;
 import java.util.GregorianCalendar;
 
-import android.util.Log;
+import de.unwesen.web.stacktrace.ExceptionHandler;
+import de.unwesen.web.stacktrace.ExceptionHandler.Log;
 
 
 /**

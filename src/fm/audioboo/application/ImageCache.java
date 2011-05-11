@@ -41,7 +41,8 @@ import java.util.LinkedList;
 
 import java.lang.ref.WeakReference;
 
-import android.util.Log;
+import de.unwesen.web.stacktrace.ExceptionHandler;
+import de.unwesen.web.stacktrace.ExceptionHandler.Log;
 
 /**
  * Cache for images downloaded for Boos/Users. Limits the cache contents to a
