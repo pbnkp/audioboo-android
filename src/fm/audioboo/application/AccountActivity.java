@@ -113,9 +113,6 @@ public class AccountActivity
   {
     super.onCreate(savedInstanceState);
 
-    ExceptionHandler.register(this, getResources().getString(R.string.stacktrace_url),
-        getResources().getString(R.string.stacktrace_key));
-
     setContentView(R.layout.account);
   }
 
