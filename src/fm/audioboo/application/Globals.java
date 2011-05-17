@@ -193,6 +193,7 @@ public class Globals
   // Cache/update linked status of the app
   private API.Status                mStatus;
   private volatile int              mStatusRetries = 0;
+  private volatile int              mStatusAuthErrors = 0;
   private Handler                   mOnwardsHandler;
   private Handler                   mStatusHandler = new Handler(new Handler.Callback() {
       public boolean handleMessage(Message msg)
@@ -212,10 +213,17 @@ public class Globals
         }
         else {
           ++mStatusRetries;
+          if (API.ERR_AUTHENTICATION == msg.what) {
+            ++mStatusAuthErrors;
+          }
+
           if (API.STATUS_UPDATE_MAX_RETRIES <= mStatusRetries) {
             Log.e(LTAG, "Giving up after " + mStatusRetries + " attempts.");
 
-            clearCredentials();
+            if (API.STATUS_UPDATE_MAX_RETRIES <= mStatusAuthErrors) {
+              // It's probably not a good idea to keep these credentials now
+              clearCredentials();
+            }
 
             if (null != mOnwardsHandler) {
               mOnwardsHandler.obtainMessage(msg.what).sendToTarget();
@@ -508,7 +516,7 @@ public class Globals
     Log.e(LTAG, "Clearing credentials.");
 
     // Automatically means our status needs to be cleared
-    mAPI.clearStatus();
+    mAPI.resetCredentials();
     mStatus = null;
 
     SharedPreferences prefs = getPrefs();
@@ -826,6 +834,7 @@ public class Globals
   {
     getStatus();
     mStatusRetries = 0;
+    mStatusAuthErrors = 0;
     mOnwardsHandler = onwardsHandler;
     mAccount = null;
     mAPI.updateStatus(mStatusHandler);

@@ -115,6 +115,7 @@ public class API
   public static final int ERR_UNKNOWN               = 10007;
   public static final int ERR_LOCATION_REQUIRED     = 10008;
   public static final int ERR_METHOD_NOT_ALLOWED    = 10009;
+  public static final int ERR_AUTHENTICATION        = 10010;
 
   // Boo types - XXX same order as recent_boos_filters
   public static final int BOOS_FEATURED             = 0;
@@ -312,6 +313,9 @@ public class API
     private int                     mRequestType;
     private Object                  mBaton;
 
+    // Response data
+    private int                     httpStatus = 0;
+
 
     public Request(String api,
         HashMap<String, Object> params,
@@ -502,12 +506,19 @@ public class API
 
 
   /**
-   * Clears the status, effectively logging users out.
+   * Clears the status and credentials, effectively logging users out.
    **/
-  public void clearStatus()
+  public void resetCredentials()
   {
     mStatus = null;
     mStatusTimeout = 0;
+
+    mAPIKey             = SERVICE_KEY;
+    mAPISecret          = SERVICE_SECRET;
+
+    mParamNameKey       = KEY_SERVICE_KEY;
+    mParamNameSignature = KEY_SERVICE_SIGNATURE;
+    mParamNameTimestamp = KEY_SERVICE_TIMESTAMP;
   }
 
 
@@ -1236,6 +1247,7 @@ public class API
         default:
           break;
       }
+      req.httpStatus = code;
 
       // Log.d(LTAG, "Status code: " + code);
 
@@ -1683,8 +1695,14 @@ public class API
     HashMap<String, Object> signedParams = new HashMap<String, Object>();
     HttpRequestBase request = constructRequest(API_STATUS, null, signedParams);
     byte[] data = fetchRawSynchronous(request, req);
+
+    if (401 == req.httpStatus) {
+      sendMessage(req, ERR_AUTHENTICATION);
+      return false;
+    }
+
     if (null == data) {
-      Log.e(LTAG, "No response to status update call.");
+      sendMessage(req, ERR_EMPTY_RESPONSE);
       return false;
     }
 
