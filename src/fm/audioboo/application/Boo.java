@@ -447,7 +447,13 @@ public class Boo
 
     for (BooData.Recording rec : mData.mRecordings) {
       //Log.d(LTAG, "Using recording: " + rec);
-      FLACStreamDecoder decoder = new FLACStreamDecoder(rec.mFilename);
+      FLACStreamDecoder decoder = null;
+      try {
+        decoder = new FLACStreamDecoder(rec.mFilename);
+      } catch (IllegalArgumentException ex) {
+        Log.e(LTAG, "Could not open recording file, skipping.");
+        continue;
+      }
 
       int bufsize = decoder.minBufferSize();
       //Log.d(LTAG, "bufsize is: " + bufsize);
