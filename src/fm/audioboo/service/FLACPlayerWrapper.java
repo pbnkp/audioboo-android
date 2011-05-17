@@ -91,37 +91,49 @@ public class FLACPlayerWrapper extends PlayerBase
 
   public void pause()
   {
-    mFlacPlayer.pausePlayback();
+    if (null != mFlacPlayer) {
+      mFlacPlayer.pausePlayback();
+    }
   }
 
 
 
   public boolean resume()
   {
-    mFlacPlayer.resumePlayback();
-    return true;
+    if (null != mFlacPlayer) {
+      mFlacPlayer.resumePlayback();
+      return true;
+    }
+    return false;
   }
 
 
 
   public void stop()
   {
-    mFlacPlayer.mShouldRun = false;
-    mFlacPlayer.interrupt();
-    mFlacPlayer = null;
+    if (null != mFlacPlayer) {
+      mFlacPlayer.mShouldRun = false;
+      mFlacPlayer.interrupt();
+      mFlacPlayer = null;
+    }
   }
 
 
 
   public void seekTo(long position)
   {
-    mFlacPlayer.seekTo(position);
+    if (null != mFlacPlayer) {
+      mFlacPlayer.seekTo(position);
+    }
   }
 
 
 
   public long getPosition()
   {
-    return mFlacPlayer.currentPosition();
+    if (null != mFlacPlayer) {
+      return mFlacPlayer.currentPosition();
+    }
+    return 0;
   }
 }
