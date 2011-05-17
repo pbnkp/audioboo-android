@@ -13,6 +13,8 @@ package fm.audioboo.data;
 import android.os.Parcelable;
 import android.os.Parcel;
 
+import java.io.File;
+
 import java.io.Serializable;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
@@ -41,15 +43,33 @@ public class UploadInfo implements Parcelable, Serializable
   // Chunk/attachment IDs we already know, and how much of each we've already
   // uploaded.
   public int      mAudioChunkId     = -1;
+  public int      mAudioSize        = 0;
   public int      mAudioUploaded    = 0;
   public int      mImageChunkId     = -1;
+  public int      mImageSize        = 0;
   public int      mImageUploaded    = 0;
   public int      mUploadStage      = UPLOAD_STAGE_AUDIO;
 
 
-  public UploadInfo()
+  public UploadInfo(BooData data)
   {
+    if (null != data.mHighMP3Url) {
+      String filename = data.mHighMP3Url.getPath();
+      if (null != filename) {
+        File f = new File(filename);
+        mAudioSize = (int) f.length();
+      }
+    }
+
+    if (null != data.mImageUrl) {
+      String filename = data.mImageUrl.getPath();
+      if (null != filename) {
+        File f = new File(filename);
+        mImageSize = (int) f.length();
+      }
+    }
   }
+
 
 
   /***************************************************************************
@@ -65,8 +85,10 @@ public class UploadInfo implements Parcelable, Serializable
   public void writeToParcel(Parcel out, int flags)
   {
     out.writeInt(mAudioChunkId);
+    out.writeInt(mAudioSize);
     out.writeInt(mAudioUploaded);
     out.writeInt(mImageChunkId);
+    out.writeInt(mImageSize);
     out.writeInt(mImageUploaded);
     out.writeInt(mUploadStage);
   }
@@ -91,8 +113,10 @@ public class UploadInfo implements Parcelable, Serializable
   private UploadInfo(Parcel in)
   {
     mAudioChunkId = in.readInt();
+    mAudioSize = in.readInt();
     mAudioUploaded = in.readInt();
     mImageChunkId = in.readInt();
+    mImageSize = in.readInt();
     mImageUploaded = in.readInt();
     mUploadStage = in.readInt();
   }

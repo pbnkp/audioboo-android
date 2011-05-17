@@ -501,20 +501,19 @@ public class Boo
     }
 
     int finished = mData.mUploadInfo.mAudioUploaded + mData.mUploadInfo.mImageUploaded;
-
-    String filename = mData.mHighMP3Url.getPath();
-    double progress = new File(filename).length();
-
-    if (null != mData.mImageUrl) {
-      filename = mData.mImageUrl.getPath();
-      progress += new File(filename).length();
-    }
+    double total = mData.mUploadInfo.mAudioSize + mData.mUploadInfo.mImageSize;
 
     // Add some for metadata. The /4 is arbitrary, just because the chunk size
     // is fairly large and metadata isn't.
-    progress += Constants.MIN_UPLOAD_CHUNK_SIZE / 4;
+    total += Constants.MIN_UPLOAD_CHUNK_SIZE / 4;
 
-    progress = (finished / progress) * 100;
-    return progress;
+    if (finished > total) {
+      // This is exceedingly weird; it's so weird, that we best log an error and
+      // return 100% progress.
+      Log.e(LTAG, "More uploaded than existed: " + finished + " > " + total);
+      return 100.0;
+    }
+
+    return (finished / total) * 100;
   }
 }

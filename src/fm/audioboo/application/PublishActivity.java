@@ -320,7 +320,7 @@ public class PublishActivity extends Activity
     updateBoo(true);
 
     // Mark this for uploading.
-    mBoo.mData.mUploadInfo = new UploadInfo();
+    mBoo.mData.mUploadInfo = new UploadInfo(mBoo.mData);
     mBoo.writeToFile();
 
     // Notify upload manage that there's stuff to do!
