@@ -97,9 +97,6 @@ public class Boo
   public static final String IMAGE_FILE = "image.png";
   public static final String TEMP_IMAGE_FILE = "image.png";
 
-  // Serialization UID
-  public static final long serialVersionUID = 5505418760954089521L;
-
 
 
   /***************************************************************************
@@ -187,8 +184,10 @@ public class Boo
       Log.e(LTAG, "File not found: " + filename);
     } catch (ClassNotFoundException ex) {
       Log.e(LTAG, "Class not found: " + filename);
+      f.delete();
     } catch (IOException ex) {
       Log.e(LTAG, "Error reading file: " + filename);
+      f.delete();
     }
 
     return null;
