@@ -214,6 +214,9 @@ public class Globals
           ++mStatusRetries;
           if (API.STATUS_UPDATE_MAX_RETRIES <= mStatusRetries) {
             Log.e(LTAG, "Giving up after " + mStatusRetries + " attempts.");
+
+            clearCredentials();
+
             if (null != mOnwardsHandler) {
               mOnwardsHandler.obtainMessage(msg.what).sendToTarget();
               mOnwardsHandler = null;
@@ -479,7 +482,7 @@ public class Globals
   /**
    * Return a pair of API key/secret, or null if that does not exist.
    **/
-  Pair<String, String> getCredentials()
+  public Pair<String, String> getCredentials()
   {
     SharedPreferences prefs = getPrefs();
     if (null == prefs) {
@@ -493,6 +496,30 @@ public class Globals
     }
 
     return new Pair<String, String>(apiKey, apiSecret);
+  }
+
+
+
+  /**
+   * Clears stored credentials.
+   **/
+  public void clearCredentials()
+  {
+    Log.e(LTAG, "Clearing credentials.");
+
+    // Automatically means our status needs to be cleared
+    mAPI.clearStatus();
+    mStatus = null;
+
+    SharedPreferences prefs = getPrefs();
+    if (null == prefs) {
+      return;
+    }
+
+    SharedPreferences.Editor edit = prefs.edit();
+    edit.remove(Globals.PREF_API_KEY);
+    edit.remove(Globals.PREF_API_SECRET);
+    edit.commit();
   }
 
 

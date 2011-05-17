@@ -194,22 +194,17 @@ public class API
   private static final String LTAG  = "API";
 
   // Default API host. Used as a fallback if SRV lookup fails.
-  // private static final String DEFAULT_API_HOST            = "api.audioboo.fm";
-  private static final String DEFAULT_API_HOST            = "api.staging.audioboo.fm";
+  private static final String DEFAULT_API_HOST            = "api.audioboo.fm";
+  // private static final String DEFAULT_API_HOST            = "api.staging.audioboo.fm";
 
   // Scheme for API requests.
   private static final String API_REQUEST_URI_SCHEME      = "http";
 
-  // Base URL for API calls. XXX Trailing slash is expected.
-  private static final String BASE_URL                    = "http://api.audioboo.fm/";
-  // private static final String BASE_URL                    = "http://api.staging.audioboo.fm/";
-
   // Format string for making SRV lookups. %s is the client ID.
   private static final String SRV_LOOKUP_FORMAT           = "_%s._audioboo._tcp.audioboo.fm.";
-  // Attempts to perform SRV lookup before reverting to BASE_URL above.
-  //private static final int    SRV_LOOKUP_ATTEMPTS_MAX     = 3; 
-  // FIXME disable SRV lookup for now.
-  private static final int    SRV_LOOKUP_ATTEMPTS_MAX     = 0; 
+  // Attempts to perform SRV lookup before just using the host name.
+  //private static final int    SRV_LOOKUP_ATTEMPTS_MAX     = 3;
+  private static final int    SRV_LOOKUP_ATTEMPTS_MAX     = 0;
 
   // Request/response format for API calls.
   private static final String API_FORMAT                  = "json";
@@ -502,6 +497,17 @@ public class API
       mStatus = null;
     }
     return mStatus;
+  }
+
+
+
+  /**
+   * Clears the status, effectively logging users out.
+   **/
+  public void clearStatus()
+  {
+    mStatus = null;
+    mStatusTimeout = 0;
   }
 
 
