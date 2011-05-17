@@ -502,7 +502,7 @@ public class Boo
    **/
   public double uploadProgress()
   {
-    if (null == mData.mUploadInfo) {
+    if (null == mData || null == mData.mUploadInfo) {
       return -1;
     }
 
