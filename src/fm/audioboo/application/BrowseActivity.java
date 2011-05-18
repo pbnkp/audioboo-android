@@ -15,6 +15,8 @@ import android.os.Bundle;
 
 import android.content.res.Resources;
 
+import android.content.SharedPreferences;
+
 import android.widget.ListView;
 import android.widget.ArrayAdapter;
 
@@ -43,6 +45,9 @@ public class BrowseActivity extends BooListActivity
   // Log ID
   private static final String LTAG  = "BrowseActivity";
 
+  // Remember filter
+  public static final String  PREF_FILTER   = "browse.last_filter";
+
   // Action identifiers -- must correspond to the indices of the array
   // "recent_boos_actions" in res/values/localized.xml
   private static final int  ACTION_REFRESH  = 0;
@@ -67,7 +72,12 @@ public class BrowseActivity extends BooListActivity
    **/
   public int getInitAPI()
   {
-    return API.BOOS_FEATURED;
+    SharedPreferences prefs = Globals.get().getPrefs();
+    if (null == prefs) {
+      return API.BOOS_FEATURED;
+    }
+
+    return prefs.getInt(PREF_FILTER, API.BOOS_FEATURED);
   }
 
 
@@ -157,6 +167,13 @@ public class BrowseActivity extends BooListActivity
                       if (booType >= FOLLOWED_INDEX) {
                         ++booType;
                       }
+                    }
+
+                    SharedPreferences prefs = Globals.get().getPrefs();
+                    if (null != prefs) {
+                      SharedPreferences.Editor edit = prefs.edit();
+                      edit.putInt(PREF_FILTER, booType);
+                      edit.commit();
                     }
 
                     refresh(booType);
