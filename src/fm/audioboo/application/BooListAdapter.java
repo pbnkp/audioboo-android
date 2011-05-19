@@ -477,7 +477,7 @@ public class BooListAdapter extends BaseExpandableListAdapter
 
     List<Boo> boos = data.getGroup(group);
     if (null == boos) {
-      return VIEW_TYPE_UNKNOWN;
+      return VIEW_TYPE_MORE;
     }
 
     if (!data.doesPaginate(group) || position < boos.size()) {
@@ -497,7 +497,7 @@ public class BooListAdapter extends BaseExpandableListAdapter
 
     List<Boo> boos = data.getGroup(group);
     if (null == boos) {
-      return 0;
+      return 1;
     }
 
     int ret = boos.size();

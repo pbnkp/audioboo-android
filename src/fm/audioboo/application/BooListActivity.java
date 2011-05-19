@@ -231,10 +231,15 @@ public abstract class BooListActivity
 
   private void setPageLoading(boolean loading)
   {
+    BooList list = mPaginator.getPaginatedList();
+    if (null == list || null == list.mClips) {
+      return;
+    }
+
     // Find out which view the progress view is, and switch it to "loading".
     ExpandableListView lv = getExpandableListView();
     int pos = mPaginator.getAdapter().mapPosition(paginatedGroup(),
-        mPaginator.getPaginatedList().mClips.size());
+        list.mClips.size());
     pos = pos - lv.getFirstVisiblePosition();
 
     if (pos < 0 || pos >= lv.getChildCount()) {
@@ -296,9 +301,6 @@ public abstract class BooListActivity
 
   public void onError(int code, API.APIException exception)
   {
-    // Also reset view.
-    setListAdapter(null);
-
     ViewAnimator anim = (ViewAnimator) findViewById(R.id.boo_list_progress);
     if (null != anim) {
       anim.setDisplayedChild(1);
@@ -310,29 +312,41 @@ public abstract class BooListActivity
       mPaginator.getAdapter().setLoading(false, null);
     }
 
-    // Flip error flipper to show error view.
-    anim = (ViewAnimator) findViewById(R.id.boo_list_error_flipper);
-    if (null != anim) {
-      anim.setDisplayedChild(1);
+    // If we've only got one group to display, all we can do at this
+    // point is error out.
+    if (1 >= mPaginator.getGroupCount()) {
+      // Also reset view.
+      setListAdapter(null);
 
-      TextView msg = (TextView) findViewById(R.id.boo_list_error);
-      if (null != msg) {
-        int error_id = R.string.boo_list_generic_error;
-        if (API.ERR_LOCATION_REQUIRED == code) {
-          error_id = R.string.boo_list_location_error;
-        }
-        else {
-          if (null != exception) {
-            Log.d(LTAG, "Error code: " + exception.getCode());
-            switch (exception.getCode()) {
-              case 403:
-                error_id = R.string.boo_list_login_error;
-                break;
+      // Flip error flipper to show error view.
+      anim = (ViewAnimator) findViewById(R.id.boo_list_error_flipper);
+      if (null != anim) {
+        anim.setDisplayedChild(1);
+
+        TextView msg = (TextView) findViewById(R.id.boo_list_error);
+        if (null != msg) {
+          int error_id = R.string.boo_list_generic_error;
+          if (API.ERR_LOCATION_REQUIRED == code) {
+            error_id = R.string.boo_list_location_error;
+          }
+          else {
+            if (null != exception) {
+              Log.d(LTAG, "Error code: " + exception.getCode());
+              switch (exception.getCode()) {
+                case 403:
+                  error_id = R.string.boo_list_login_error;
+                  break;
+              }
             }
           }
+          msg.setText(error_id);
         }
-        msg.setText(error_id);
       }
+    }
+    else {
+      // If, on the other hand, we have multiple groups, then we can still
+      // show the dynamic one as errored out.
+      mPaginator.setPaginatedError(true);
     }
   }
 
@@ -384,7 +398,7 @@ public abstract class BooListActivity
 
 
   /***************************************************************************
-   * Default implementations for BooListPaginator.DataSource
+   * Default implementations for BooListPaginator.PaginatorDataSource
    **/
   public int getBackgroundResource(int viewType)
   {

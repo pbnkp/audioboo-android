@@ -215,7 +215,14 @@ public class BooListPaginator implements BooListAdapter.DataSource
 
         if (group == mData.paginatedGroup()) {
           // We're either asked for more data or for dispatching a click event.
-          if (position >= mBoos.mClips.size()) {
+          if (null == mBoos || null == mBoos.mClips) {
+            if (mRequesting) {
+              return true;
+            }
+
+            refresh();
+          }
+          else if (position >= mBoos.mClips.size()) {
             if (mRequesting) {
               return true;
             }
@@ -270,6 +277,17 @@ public class BooListPaginator implements BooListAdapter.DataSource
       }
     });
 
+  }
+
+
+
+  public void setPaginatedError(boolean error)
+  {
+    Log.d(LTAG, "Paginated error");
+    if (error) {
+      onReceiveBoos(null, true);
+    }
+    // FIXME
   }
 
 
@@ -459,6 +477,9 @@ public class BooListPaginator implements BooListAdapter.DataSource
   public List<Boo> getGroup(int group)
   {
     if (group == mData.paginatedGroup()) {
+      if (null == mBoos || null == mBoos.mClips) {
+        return null;
+      }
       return mBoos.mClips;
     }
     return mData.getGroup(group);
