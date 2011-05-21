@@ -605,11 +605,13 @@ public class Globals
           if (null != ctx) {
             LocationManager locman = (LocationManager) ctx.getSystemService(
                 Context.LOCATION_SERVICE);
-            locman.removeUpdates(this);
+            if (null != locman) {
+              locman.removeUpdates(this);
 
-            Log.i(LTAG, "Changing location update period to " + mLocationUpdatePeriod);
-            locman.requestLocationUpdates(mLocationProvider, mLocationUpdatePeriod,
-                LOCATION_UPDATE_RESOLUTION, mLocationListener);
+              Log.i(LTAG, "Changing location update period to " + mLocationUpdatePeriod);
+              locman.requestLocationUpdates(mLocationProvider, mLocationUpdatePeriod,
+                  LOCATION_UPDATE_RESOLUTION, mLocationListener);
+            }
           }
         }
       }
