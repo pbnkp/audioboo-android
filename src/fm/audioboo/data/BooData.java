@@ -163,8 +163,20 @@ public class BooData implements Parcelable, Serializable
 
   public String toString()
   {
-    return String.format("<%d:%s:%f:[%s]:%d>", mId, mTitle, getDuration(), mUser,
-        (null == mRecordings ? 0 : mRecordings.size()));
+    String rep = String.format("<%s:%d:%s:%f:[%s]:%d:", mFilename, mId, mTitle,
+        getDuration(), mUser, (null == mRecordings ? 0 : mRecordings.size()));
+    if (null != mRecordings) {
+      for (Recording rec : mRecordings) {
+        rep += rec.toString() + ",";
+      }
+      rep += ":";
+    }
+    rep += (null != mImageUrl ? mImageUrl.toString() : "<no image>") + ":";
+    rep += (null != mThumbImageUrl ? mThumbImageUrl.toString() : "<no thumb>") + ":";
+    rep += (null != mFullImageUrl ? mFullImageUrl.toString() : "<no image>");
+
+    rep += ">";
+    return rep;
   }
 
 
