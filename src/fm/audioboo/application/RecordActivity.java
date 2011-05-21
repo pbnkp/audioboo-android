@@ -81,6 +81,7 @@ public class RecordActivity extends Activity
 
   // Limit for the recording time we allow, in seconds.
   private static final int    RECORDING_TIME_LIMIT        = 300;
+  // private static final int    RECORDING_TIME_LIMIT        = 45;
 
   // Dialog IDs.
   private static final int  DIALOG_RECORDING_ERROR        = 0;
@@ -104,7 +105,9 @@ public class RecordActivity extends Activity
    * Data members
    **/
   // Recorder instance
-  private BooRecorder   mBooRecorder;
+  private BooRecorder     mBooRecorder;
+  // Temporary place to store mBoo.getDuration()
+  private double          mRecordingOffset;
 
   // The record activity essentially represents a Boo, even though it's not
   // filled with all possible bits of information yet. We (re-)create this
@@ -237,6 +240,7 @@ public class RecordActivity extends Activity
       mBoo = Globals.get().getBooManager().createBoo();
       mBoo.mData.mTitle = mNewTitle;
     }
+    Log.d(LTAG, "Boo: " + mBoo);
   }
 
 
@@ -267,6 +271,8 @@ public class RecordActivity extends Activity
 
     // Force screen to stay on.
     mRecordButton.setKeepScreenOn(true);
+
+    mRecordingOffset = mBoo.getDuration();
 
     // Log.d(LTAG, "Resume recording!");
     mBooRecorder.start();
@@ -655,16 +661,14 @@ public class RecordActivity extends Activity
     }
 
     // Disable buttons if there's nothing to do with them yet.
-    if (mBoo.getDuration() <= 0.0) {
-      disableSecondaryButtons();
-    }
+    updateButtons();
   }
 
 
 
   private void updateRecordingState(FLACRecorder.Amplitudes amp)
   {
-    int position = (int) (amp.mPosition / 1000f);
+    int position = (int) (mRecordingOffset + (amp.mPosition / 1000f));
 
     // Update UI
     mSpectralView.setAmplitudes(amp.mAverage, amp.mPeak);
