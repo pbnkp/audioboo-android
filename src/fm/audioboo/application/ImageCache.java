@@ -12,6 +12,7 @@
 package fm.audioboo.application;
 
 import android.content.Context;
+import android.content.SharedPreferences;
 
 import android.net.Uri;
 
@@ -71,6 +72,9 @@ public class ImageCache extends SQLiteOpenHelper
 
   // Chunk size for converting a Bitmap to a compressed byte stream
   private static final int COMPRESS_CHUNK_SIZE  = 8192;
+
+  // Image cache preferences keys.
+  private static final String PREFS_KEY_FIX1_APPLIED    = "image-cache.fixes.1.applied";
 
 
   /***************************************************************************
@@ -232,6 +236,21 @@ public class ImageCache extends SQLiteOpenHelper
   public void onOpen(SQLiteDatabase db)
   {
     db.setLockingEnabled(true);
+
+    SharedPreferences prefs = Globals.get().getPrefs();
+    if (null == prefs) {
+      return;
+    }
+
+    // Delete cache if requested as fix for issue #151
+    boolean applied = prefs.getBoolean(PREFS_KEY_FIX1_APPLIED, false);
+    if (!applied) {
+      db.execSQL("DELETE FROM " + CACHE_TABLE + ";");
+
+      SharedPreferences.Editor edit = prefs.edit();
+      edit.putBoolean(PREFS_KEY_FIX1_APPLIED, true);
+      edit.commit();
+    }
   }
 
 
@@ -406,6 +425,7 @@ public class ImageCache extends SQLiteOpenHelper
   private void processItemResult(CacheItem item, Handler resultHandler, byte[] data)
   {
     // Log.d(LTAG, "Got: " + item.mImageUri);
+    boolean isLocal = "file".equals(item.mImageUri.getScheme());
 
     // Great. First, create a Bitmap from the raw data. We'll need that to
     // determine the file's dimensions, both for storing in the DB and for
@@ -419,7 +439,9 @@ public class ImageCache extends SQLiteOpenHelper
 
     // Store raw image.
     int dimensions = Math.max(bitmap.getWidth(), bitmap.getHeight());
-    storeImage(item.getCacheKey(), bitmap, dimensions);
+    if (!isLocal) {
+      storeImage(item.getCacheKey(), bitmap, dimensions);
+    }
 
     // If the dimensions are other than the requested one, scale the image
     // up/down.
@@ -451,7 +473,9 @@ public class ImageCache extends SQLiteOpenHelper
       }
 
       // Store scaled image with the target dimensions
-      storeImage(item.getCacheKey(), scaled_bitmap, item.mDimensions);
+      if (!isLocal) {
+        storeImage(item.getCacheKey(), scaled_bitmap, item.mDimensions);
+      }
     }
 
     // We can send the scaled image on to the caller now.
