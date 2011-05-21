@@ -283,11 +283,9 @@ public class BooListPaginator implements BooListAdapter.DataSource
 
   public void setPaginatedError(boolean error)
   {
-    Log.d(LTAG, "Paginated error");
     if (error) {
       onReceiveBoos(null, true);
     }
-    // FIXME
   }
 
 
