@@ -9,8 +9,8 @@
 -->
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="fm.audioboo.application"
-    android:versionCode="10"
-    android:versionName="2.0.0-beta5"
+    android:versionCode="11"
+    android:versionName="2.0.0-rc1"
   >
 
   <!-- Permissions used by this bundle -->
