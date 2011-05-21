@@ -92,6 +92,7 @@ public class UploadInfo implements Parcelable, Serializable
     out.writeInt(mImageSize);
     out.writeInt(mImageUploaded);
     out.writeInt(mUploadStage);
+    out.writeInt(mUploadError ? 1 : 0);
   }
 
 
@@ -120,5 +121,6 @@ public class UploadInfo implements Parcelable, Serializable
     mImageSize = in.readInt();
     mImageUploaded = in.readInt();
     mUploadStage = in.readInt();
+    mUploadError = (in.readInt() != 0);
   }
 }
