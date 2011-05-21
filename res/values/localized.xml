@@ -130,7 +130,7 @@
 
   <!-- Toast text when something has been queued -->
   <string name="publish_queued">Queued for upload!</string>
-  <string name="outbox_upload_kicked">Re-started uploading!</string>
+  <string name="outbox_upload_kicked">Restarted uploads!</string>
 
   <!--
     Account view
@@ -399,6 +399,8 @@
 
   <!-- Uploading -->
   <string name="upload_progress">Uploading Boo... %1$.0f%%</string>
+  <string name="upload_error">Upload interrupted by error</string>
+  <string name="upload_done">Successfully uploaded</string>
 
   <!-- Intro boo -->
   <string name="intro_boo_title">Welcome to Audioboo</string>
