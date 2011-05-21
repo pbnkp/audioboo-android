@@ -105,6 +105,10 @@ public class MyBoosActivity extends BooListActivity
 
     switch (group) {
       case 0: // Uploads
+        // Re-kick upload manager.
+        Globals.get().mUploader.processQueue();
+        Toast.makeText(this, getResources().getString(R.string.outbox_upload_kicked),
+            Toast.LENGTH_LONG).show();
         return;
 
       case 1: // Drafts

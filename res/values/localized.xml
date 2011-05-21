@@ -130,6 +130,7 @@
 
   <!-- Toast text when something has been queued -->
   <string name="publish_queued">Queued for upload!</string>
+  <string name="outbox_upload_kicked">Re-started uploading!</string>
 
   <!--
     Account view
