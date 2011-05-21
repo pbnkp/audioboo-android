@@ -41,7 +41,9 @@ public class Constants
   // Notification IDs
   public static final int  NOTIFICATION_PLAYING_BACK  = 0;
   public static final int  NOTIFICATION_UPLOADING     = 1;
-  public static final int  NOTIFICATION_MESSAGES      = 2;
+  public static final int  NOTIFICATION_UPLOAD_DONE   = 2;
+  public static final int  NOTIFICATION_UPLOAD_ERROR  = 3;
+  public static final int  NOTIFICATION_MESSAGES      = 4;
 
   // Preference keys
   public static final String PREF_POLL_INTERVAL = "poll-interval";

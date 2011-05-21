@@ -179,8 +179,8 @@ public class UploadManager
       // Check for errors.
       if (API.ERR_SUCCESS != result) {
         Log.e(LTAG, "Response code: " + result);
+        setNotification(mBooUpload, Constants.NOTIFICATION_UPLOAD_ERROR);
         mBooUpload = null;
-        clearNotification();
         return;
       }
 
@@ -207,7 +207,7 @@ public class UploadManager
 
       // Empty queue, we're done.
       if (null == mBooUpload) {
-        clearNotification();
+        clearUploadingNotification();
         return;
       }
 
@@ -231,11 +231,12 @@ public class UploadManager
   {
     if (null == mBooUpload.mData || null == mBooUpload.mData.mUploadInfo) {
       Log.e(LTAG, "Can't process null upload: " + mBooUpload);
+
+      setNotification(mBooUpload, Constants.NOTIFICATION_UPLOAD_ERROR);
       mBooUpload = null;
-      clearNotification();
       return false;
     }
-    setNotification(mBooUpload);
+    setNotification(mBooUpload, Constants.NOTIFICATION_UPLOADING);
 
     // Process timestamps first, to determine new chunk size.
     if (-1 != mUploadStarted) {
@@ -276,8 +277,8 @@ public class UploadManager
 
       default:
         Log.e(LTAG, "Invalid processing stage: " + mBooUpload.mData.mUploadInfo.mUploadStage);
+        setNotification(mBooUpload, Constants.NOTIFICATION_UPLOAD_ERROR);
         mBooUpload = null;
-        clearNotification();
         break;
     }
 
@@ -299,14 +300,15 @@ public class UploadManager
           && mBooUpload.mData.mUploadInfo.mAudioChunkId != res.id)
       {
         Log.e(LTAG, "Got response, but the chunk IDs don't match. Ugh.");
+        setNotification(mBooUpload, Constants.NOTIFICATION_UPLOAD_ERROR);
         mBooUpload = null;
-        clearNotification();
         return false;
       }
 
       // Update metadata
       mBooUpload.mData.mUploadInfo.mAudioChunkId = res.id;
       mBooUpload.mData.mUploadInfo.mAudioUploaded = res.received;
+      mBooUpload.mData.mUploadInfo.mUploadError = false;
 
       if (res.complete || res.outstanding <= 0) {
         mBooUpload.mData.mUploadInfo.mUploadStage = UploadInfo.UPLOAD_STAGE_IMAGE;
@@ -347,14 +349,15 @@ public class UploadManager
           && mBooUpload.mData.mUploadInfo.mImageChunkId != res.id)
       {
         Log.e(LTAG, "Got response, but the chunk IDs don't match. Ugh.");
+        setNotification(mBooUpload, Constants.NOTIFICATION_UPLOAD_ERROR);
         mBooUpload = null;
-        clearNotification();
         return false;
       }
 
       // Update metadata
       mBooUpload.mData.mUploadInfo.mImageChunkId = res.id;
       mBooUpload.mData.mUploadInfo.mImageUploaded = res.received;
+      mBooUpload.mData.mUploadInfo.mUploadError = false;
 
       if (res.complete || res.outstanding <= 0) {
         mBooUpload.mData.mUploadInfo.mUploadStage = UploadInfo.UPLOAD_STAGE_METADATA;
@@ -397,9 +400,10 @@ public class UploadManager
   {
     // Log.d(LTAG, "metadata stage: " + res);
     if (null != res && res.id > 0) {
+      setNotification(mBooUpload, Constants.NOTIFICATION_UPLOAD_DONE);
+
       mBooUpload.delete();
       mBooUpload = null;
-      clearNotification();
       return false;
     }
 
@@ -413,7 +417,7 @@ public class UploadManager
   /**
    * Clear upload notification
    **/
-  private void clearNotification()
+  private void clearUploadingNotification()
   {
     Context ctx = mContext.get();
     if (null == ctx) {
@@ -429,11 +433,29 @@ public class UploadManager
   /**
    * Set upload notification
    **/
-  private void setNotification(Boo boo)
+  private void setNotification(Boo boo, int notificationType)
   {
     Context ctx = mContext.get();
     if (null == ctx) {
       return;
+    }
+
+    // Handle notification/upload state.
+    switch (notificationType) {
+      case Constants.NOTIFICATION_UPLOADING:
+        break; // Nothing to do.
+
+      case Constants.NOTIFICATION_UPLOAD_ERROR:
+        boo.mData.mUploadInfo.mUploadError = true;
+        boo.writeToFile();
+        // XXX fall through
+
+      case Constants.NOTIFICATION_UPLOAD_DONE:
+        clearUploadingNotification();
+        break;
+
+      default:
+        break;
     }
 
     // Create notification
@@ -451,20 +473,44 @@ public class UploadManager
     PendingIntent contentIntent = PendingIntent.getActivity(ctx, 0, intent, 0);
 
     String title = boo.mData.mTitle;
-    double progress = boo.uploadProgress();
-    String prog = ctx.getResources().getString(R.string.upload_progress);
-    prog = String.format(prog, progress);
+    String message = null;
+    int drawable = R.drawable.notification;
+    switch (notificationType) {
+      case Constants.NOTIFICATION_UPLOADING:
+        double progress = boo.uploadProgress();
+        message = ctx.getResources().getString(R.string.upload_progress);
+        message = String.format(message, progress);
+        drawable = android.R.drawable.stat_sys_upload;
+        break;
 
-    Notification notification = new Notification(android.R.drawable.stat_sys_upload,
-        null, System.currentTimeMillis());
-    notification.setLatestEventInfo(ctx, prog, title, contentIntent);
+      case Constants.NOTIFICATION_UPLOAD_ERROR:
+        message = ctx.getResources().getString(R.string.upload_error);
+        break;
+
+      case Constants.NOTIFICATION_UPLOAD_DONE:
+        message = ctx.getResources().getString(R.string.upload_done);
+        break;
+
+      default:
+        Log.e(LTAG, "Unreachable line reached.");
+        return;
+    }
+
+    Notification notification = new Notification(drawable, null,
+        System.currentTimeMillis());
+    notification.setLatestEventInfo(ctx, message, title, contentIntent);
 
     // Set ongoing and no-clear flags to ensure the notification stays until
     // cleared by this service.
-    notification.flags |= Notification.FLAG_ONGOING_EVENT;
-    notification.flags |= Notification.FLAG_NO_CLEAR;
+    if (Constants.NOTIFICATION_UPLOADING == notificationType) {
+      notification.flags |= Notification.FLAG_ONGOING_EVENT;
+      notification.flags |= Notification.FLAG_NO_CLEAR;
+    }
+    else {
+      notification.flags |= Notification.FLAG_AUTO_CANCEL;
+    }
 
     // Install notification
-    nm.notify(Constants.NOTIFICATION_UPLOADING, notification);
+    nm.notify(notificationType, notification);
   }
 }

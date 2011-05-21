@@ -49,6 +49,7 @@ public class UploadInfo implements Parcelable, Serializable
   public int      mImageSize        = 0;
   public int      mImageUploaded    = 0;
   public int      mUploadStage      = UPLOAD_STAGE_AUDIO;
+  public boolean  mUploadError      = false;
 
 
   public UploadInfo(BooData data)
