@@ -417,7 +417,7 @@ public class BooListPaginator implements BooListAdapter.DataSource
     }
 
     // Either replace results or add results.
-    if (null == mBoos || 0 == boos.mOffset) {
+    if (null == boos || 0 == boos.mOffset) {
       mBoos = boos;
     }
     else {
