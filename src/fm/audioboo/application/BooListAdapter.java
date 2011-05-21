@@ -273,13 +273,13 @@ public class BooListAdapter extends BaseExpandableListAdapter
         last += 1;
       }
 
-      if (position >= first && position <= last) {
+      if (position >= first && position < last) {
         // Got the mapping!
         return new Pair<Integer, Integer>(group, position - first);
       }
 
       // No mapping in this group; increase offset.
-      offset += last + 1;
+      offset = last;
     }
 
     // No mapping!
