@@ -43,6 +43,7 @@ import fm.audioboo.widget.PieProgressView;
 
 import fm.audioboo.data.BooLocation;
 import fm.audioboo.data.DestinationInfo;
+import fm.audioboo.data.User;
 
 import android.view.animation.Animation;
 import android.view.animation.AnimationUtils;
@@ -240,7 +241,7 @@ public class RecordActivity extends Activity
       mBoo = Globals.get().getBooManager().createBoo();
       mBoo.mData.mTitle = mNewTitle;
     }
-    Log.d(LTAG, "Boo: " + mBoo);
+    // Log.d(LTAG, "Boo: " + mBoo);
   }
 
 
@@ -611,11 +612,17 @@ public class RecordActivity extends Activity
     // Set author in progress views.
     text_view = (TextView) findViewById(R.id.record_author);
     if (null != text_view) {
-      if (null == mBoo.mData.mUser) {
-        text_view.setText(R.string.boo_player_no_author);
+      if (null != mBoo.mData.mUser) {
+        text_view.setText(mBoo.mData.mUser.mUsername);
       }
       else {
-        text_view.setText(mBoo.mData.mUser.mUsername);
+        User account = Globals.get().mAccount;
+        if (null != account && null != account.mUsername) {
+          text_view.setText(account.mUsername);
+        }
+        else {
+          text_view.setText(R.string.boo_player_author_self);
+        }
       }
     }
 

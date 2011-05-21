@@ -104,6 +104,7 @@
   <string name="boo_player_new_title">New recording</string>
   <string name="boo_player_no_title">unnamed boo</string>
   <string name="boo_player_no_author">Mystery User</string>
+  <string name="boo_player_author_self">me</string>
 
 
   <!--
@@ -336,6 +337,7 @@
     Placeholder strings
   -->
   <string name="boo_unknown_author">Mystery User</string>
+  <string name="boo_author_self">me</string>
   <string name="boo_unknown_title">unnamed boo</string>
 
   <!--

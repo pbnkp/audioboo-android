@@ -332,7 +332,8 @@ public class Boo
     }
 
     if (null == mData.mHighMP3Url) {
-      return false;
+      // Assuming that the server *never* sends back data without a URL.
+      return true;
     }
 
     String scheme = mData.mHighMP3Url.getScheme();

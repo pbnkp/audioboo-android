@@ -45,6 +45,7 @@ import fm.audioboo.service.Constants;
 import fm.audioboo.service.BooPlayerClient;
 
 import fm.audioboo.data.PlayerState;
+import fm.audioboo.data.User;
 
 import fm.audioboo.application.R;
 
@@ -411,7 +412,7 @@ public class BooPlayerView
 
 
 
-  private void setTitleAndAuthor(String title, String author)
+  private void setTitleAndAuthor(String title, String author, boolean isLocal)
   {
     if (null == title) {
       setTitle(R.string.boo_player_new_title);
@@ -421,7 +422,20 @@ public class BooPlayerView
     }
 
     if (null == author) {
-      setAuthor(R.string.boo_player_no_author);
+      if (!isLocal) {
+        setAuthor(R.string.boo_player_no_author);
+      }
+      else {
+        // If it's local, that means the current user is the author. We may be
+        // able to get the username from Globals.
+        User account = Globals.get().mAccount;
+        if (null != account && null != account.mUsername) {
+          setAuthor(account.mUsername);
+        }
+        else {
+          setAuthor(R.string.boo_player_author_self);
+        }
+      }
     }
     else {
       setAuthor(author);
@@ -471,7 +485,7 @@ public class BooPlayerView
       case Constants.STATE_PREPARING:
       case Constants.STATE_BUFFERING:
         setEnabled(true);
-        setTitleAndAuthor(state.mBooTitle, state.mBooUsername);
+        setTitleAndAuthor(state.mBooTitle, state.mBooUsername, state.mBooIsLocal);
         mButton.setChecked(false);
         showBuffering();
         setProgress(state.mProgress);
@@ -479,7 +493,7 @@ public class BooPlayerView
 
       case Constants.STATE_PLAYING:
         setEnabled(true);
-        setTitleAndAuthor(state.mBooTitle, state.mBooUsername);
+        setTitleAndAuthor(state.mBooTitle, state.mBooUsername, state.mBooIsLocal);
         mButton.setChecked(false);
         showPlaying(state.mProgress, state.mTotal);
         setProgress(state.mTotal);
@@ -488,7 +502,7 @@ public class BooPlayerView
       case Constants.STATE_FINISHED:
         resetProgress();
         setEnabled(true);
-        setTitleAndAuthor(state.mBooTitle, state.mBooUsername);
+        setTitleAndAuthor(state.mBooTitle, state.mBooUsername, state.mBooIsLocal);
         mButton.setChecked(true);
         showPlaying(state.mProgress, state.mTotal);
         setProgress(state.mTotal);
@@ -496,7 +510,7 @@ public class BooPlayerView
 
       case Constants.STATE_PAUSED:
         setEnabled(state.mTotal > 0f);
-        setTitleAndAuthor(state.mBooTitle, state.mBooUsername);
+        setTitleAndAuthor(state.mBooTitle, state.mBooUsername, state.mBooIsLocal);
         mButton.setChecked(true);
         showPlaying(state.mProgress, state.mTotal);
         setProgress(state.mProgress);

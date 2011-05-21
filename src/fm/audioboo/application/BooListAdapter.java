@@ -37,6 +37,8 @@ import android.os.Message;
 import java.util.List;
 import java.util.LinkedList;
 
+import fm.audioboo.data.User;
+
 import java.lang.ref.WeakReference;
 
 import de.unwesen.web.stacktrace.ExceptionHandler;
@@ -757,7 +759,18 @@ public class BooListAdapter extends BaseExpandableListAdapter
         text_view.setText(boo.mData.mUser.mUsername);
       }
       else {
-        text_view.setText(activity.getResources().getString(R.string.boo_unknown_author));
+        if (!boo.isLocal()) {
+          text_view.setText(activity.getResources().getString(R.string.boo_unknown_author));
+        }
+        else {
+          User account = Globals.get().mAccount;
+          if (null != account && null != account.mUsername) {
+            text_view.setText(account.mUsername);
+          }
+          else {
+            text_view.setText(R.string.boo_author_self);
+          }
+        }
       }
     }
 

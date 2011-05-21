@@ -59,8 +59,8 @@ public class PlayerState implements Parcelable, Serializable
 
   public String toString()
   {
-    return String.format("<%d|%f/%f|%d|%s>", mState, mProgress, mTotal, mBooId,
-        mBooTitle);
+    return String.format("<%d|%f/%f|%d|%s|%s|%d|%d>", mState, mProgress, mTotal, mBooId,
+        mBooTitle, mBooUsername, mBooIsMessage ? 1 : 0, mBooIsLocal ? 1 : 0);
   }
 
 
