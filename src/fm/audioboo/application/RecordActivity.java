@@ -441,6 +441,8 @@ public class RecordActivity extends Activity
     MediaPlayer mp = MediaPlayer.create(this, R.raw.countdown);
     mp.start();
 
+    mRecordButton.setEnabled(false);
+
     countDownStep(3);
   }
 
@@ -457,6 +459,8 @@ public class RecordActivity extends Activity
 
       View v = findViewById(R.id.record_overlay);
       v.setVisibility(View.GONE);
+
+      mRecordButton.setEnabled(true);
 
       startRecording();
       return;
