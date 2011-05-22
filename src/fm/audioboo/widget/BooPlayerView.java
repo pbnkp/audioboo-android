@@ -167,6 +167,19 @@ public class BooPlayerView
 
 
 
+  @Override
+  public void setVisibility(int visibility)
+  {
+    super.setVisibility(visibility);
+    // Log.d(LTAG, "Visibility set to: " + visibility);
+    if (View.VISIBLE == visibility) {
+      clearAnimation();
+      mAnimation = null;
+    }
+  }
+
+
+
   private void showDisclosure(boolean show)
   {
     if (null != mDisclosure) {
@@ -526,6 +539,7 @@ public class BooPlayerView
     super.onWindowFocusChanged(hasWindowFocus);
 
     if (!hasWindowFocus && null != mAnimation) {
+      // Log.d(LTAG, "About to clear animation!");
       clearAnimation();
       mAnimation = null;
       return;
@@ -559,6 +573,7 @@ public class BooPlayerView
     // not be noticeable.
     long draw = SystemClock.uptimeMillis();
     if (draw - mLastDraw > 1000) {
+      // Log.d(LTAG, "dispatch draw!");
       mLastDraw = draw;
       BooPlayerClient client = Globals.get().mPlayer;
       if (null != client) {
