@@ -396,28 +396,63 @@ public class API
           // first time it's run.
           initializeAPIKeys(req);
 
-          // Update status. This should return immediately after the first time
-          // it's run. If the API requested is in fact the status update API, then
-          // the Requester will terminate after this call.
-          if (req.mApi.equals(API_STATUS)) {
-            updateStatus(req, true);
-            continue;
-          }
-          else {
-            if (!updateStatus(req, false)) {
+          // It's possible for our request to fail because the status we've
+          // got is stale. We want to guard against that.
+          int requestTries = 0;
+          boolean sleepAgain = false;
+          do {
+            // To do that, we'll first update our idea of the status before
+            // sending off the request we were supposed to make. We'll try a
+            // few times to be on the safe side.
+            int statusTries = 0;
+            int status = -1;
+            do {
+              status = updateStatus(req);
+              ++statusTries;
+            } while (ERR_SUCCESS != status && statusTries <= 3);
+
+            if (ERR_SUCCESS != status) {
               Log.e(LTAG, "Could not update status, going back to sleep.");
-              sendMessage(req, ERR_INVALID_STATE);
+              sendMessage(req, ERR_AUTHENTICATION);
+              sleepAgain = true;
               break;
             }
-          }
 
-          // Construct request.
-          HttpRequestBase request = constructRequest(req);
+            // If we've reached here, the updateStatus() calls were successful.
+            // However, they can return cached information, so the actual
+            // request can still fail. Let's try, though.
+            //
+            // First, however, we may already be done if the API call scheduled
+            // was in fact for the status.
+            if (req.mApi.equals(API_STATUS)) {
+              sendMessage(req, status);
+              break;
+            }
 
-          // Perform request.
-          byte[] data = fetchRawSynchronous(request, req);
-          if (null != data) {
-            sendMessage(req, ERR_SUCCESS, new String(data));
+            // Now try the actual request.
+            HttpRequestBase request = constructRequest(req);
+
+            // Perform request.
+            byte[] data = fetchRawSynchronous(request, req);
+
+            // If the request does *not* result in an authentication error.
+            // we're good.
+            if (401 != req.httpStatus) {
+              // Log.d(LTAG, "authentication error: " + requestTries);
+              if (null != data) {
+                sendMessage(req, ERR_SUCCESS, new String(data));
+              }
+              break;
+            }
+
+            // If on the other hand it did, we may try the loop again.
+            ++requestTries;
+          } while (requestTries <= 3);
+
+          // If we've found that we need to sleep again, let's do so now.
+          // Let's also do that if we got authentication errors too often.
+          if (sleepAgain || requestTries > 3) {
+            break;
           }
         } while (true);
       }
@@ -1249,6 +1284,7 @@ public class API
       }
       req.httpStatus = code;
 
+      // Log.d(LTAG, "Request: " + request.getURI().toString());
       // Log.d(LTAG, "Status code: " + code);
 
       // Read response
@@ -1682,13 +1718,10 @@ public class API
   /**
    * If no status is known, performs a status request.
    **/
-  private boolean updateStatus(final Request req, boolean signalSuccess)
+  private int updateStatus(final Request req)
   {
     if (null != getStatus()) {
-      if (signalSuccess) {
-        sendMessage(req, ERR_SUCCESS);
-      }
-      return true;
+      return ERR_SUCCESS;
     }
 
     // Construct status request. We pass an signedParams map to force signing
@@ -1697,13 +1730,11 @@ public class API
     byte[] data = fetchRawSynchronous(request, req);
 
     if (401 == req.httpStatus) {
-      sendMessage(req, ERR_AUTHENTICATION);
-      return false;
+      return ERR_AUTHENTICATION;
     }
 
     if (null == data) {
-      sendMessage(req, ERR_EMPTY_RESPONSE);
-      return false;
+      return ERR_EMPTY_RESPONSE;
     }
 
     ResponseParser.Response<Status> status
@@ -1716,16 +1747,10 @@ public class API
     }
 
     if (null == mStatus) {
-      sendMessage(req, ERR_EMPTY_RESPONSE);
-      return false;
-    }
-    else {
-      if (signalSuccess) {
-        sendMessage(req, ERR_SUCCESS);
-      }
+      return ERR_EMPTY_RESPONSE;
     }
 
-    return true;
+    return ERR_SUCCESS;
   }
 
 
