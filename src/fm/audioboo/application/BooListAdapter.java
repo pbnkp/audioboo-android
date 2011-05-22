@@ -21,6 +21,8 @@ import android.content.res.ColorStateList;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.LayoutInflater;
+import android.view.animation.Animation;
+import android.view.animation.Transformation;
 
 import android.widget.TextView;
 import android.widget.ImageView;
@@ -33,6 +35,7 @@ import android.graphics.drawable.BitmapDrawable;
 
 import android.os.Handler;
 import android.os.Message;
+import android.os.SystemClock;
 
 import java.util.List;
 import java.util.LinkedList;
@@ -182,6 +185,90 @@ public class BooListAdapter extends BaseExpandableListAdapter
     {
       itemIndex = _itemIndex;
       viewIndex = _viewIndex;
+    }
+  }
+
+
+  /***************************************************************************
+   * Upload view animation
+   **/
+  private class UploadAnimation extends Animation
+  {
+    private long                mLastDraw = 0;
+    private String              mBooFilename;
+    private WeakReference<View> mView;
+
+
+
+    public UploadAnimation(View view, String filename)
+    {
+      mView = new WeakReference<View>(view);
+      mBooFilename = filename;
+    }
+
+
+
+    @Override
+    public boolean getTransformation(long currentTime, Transformation outTransformation)
+    {
+      boolean ret = super.getTransformation(currentTime, outTransformation);
+
+      View view = mView.get();
+      if (null == view) {
+        return ret;
+      }
+
+      ExpandableListActivity activity = mActivity.get();
+      if (null == activity) {
+        return ret;
+      }
+
+      long draw = SystemClock.uptimeMillis();
+      if (draw - mLastDraw > 1000) {
+        mLastDraw = draw;
+
+        TextView text_view = (TextView) view.findViewById(R.id.boo_list_upload_progress);
+        if (null == text_view) {
+          view.clearAnimation();
+          return ret;
+        }
+
+        // We need to re-read the Boo file in order to get the latest upload
+        // information.
+        Boo boo = Boo.constructFromFile(mBooFilename);
+
+        // Status string we're writing.
+        String status = null;
+
+        if (null == boo) {
+          // We treat this case as "completed". It's in the list, but it's not
+          // on disk any longer.
+          status = activity.getResources().getString(R.string.boo_list_upload_done);
+          view.clearAnimation();
+        }
+        else if (null == boo.mData.mUploadInfo) {
+          // Just ignore.
+          return ret;
+        }
+        else if (boo.mData.mUploadInfo.mUploadError) {
+          // Error.
+          status = activity.getResources().getString(R.string.boo_list_upload_error);
+        }
+        else {
+          // Update progress
+          double progress = boo.uploadProgress();
+          if (progress > 0.0) {
+            status = String.format(activity.getResources().getString(R.string.boo_list_upload_progress), progress);
+          }
+          else {
+            status = activity.getResources().getString(R.string.boo_list_upload_pending);
+          }
+        }
+
+        text_view.setText(status);
+      }
+
+      return ret;
     }
   }
 
@@ -957,6 +1044,13 @@ public class BooListAdapter extends BaseExpandableListAdapter
         image_view.setImageResource(R.drawable.anonymous_boo);
       }
     }
+
+    // Start an animation for this view. The animation updates the progress.
+    view.clearAnimation();
+    UploadAnimation anim = new UploadAnimation(view, boo.mData.mFilename);
+    anim.setRepeatCount(Animation.INFINITE);
+    anim.setDuration(1000L);
+    view.startAnimation(anim);
 
     return true;
   }

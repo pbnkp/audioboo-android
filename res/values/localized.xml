@@ -30,6 +30,8 @@
   <string name="boo_list_location_error">You need to allow me to use your current location in the settings for this to work.</string>
   <string name="boo_list_upload_progress">Uploaded: %1$.0f%%</string>
   <string name="boo_list_upload_pending">Pending</string>
+  <string name="boo_list_upload_error">Error! Tap to try again.</string>
+  <string name="boo_list_upload_done">Successfully uploaded.</string>
   <string name="boo_list_me">me</string>
 
   <!--
