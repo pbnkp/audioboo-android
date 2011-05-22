@@ -496,7 +496,7 @@ public class BooPlayerView
         setTitleAndAuthor(state.mBooTitle, state.mBooUsername, state.mBooIsLocal);
         mButton.setChecked(false);
         showPlaying(state.mProgress, state.mTotal);
-        setProgress(state.mTotal);
+        setProgress(state.mProgress);
         break;
 
       case Constants.STATE_FINISHED:
@@ -513,7 +513,7 @@ public class BooPlayerView
         setTitleAndAuthor(state.mBooTitle, state.mBooUsername, state.mBooIsLocal);
         mButton.setChecked(true);
         showPlaying(state.mProgress, state.mTotal);
-        setProgress(state.mProgress);
+        setProgress(state.mTotal);
         break;
     }
   }
