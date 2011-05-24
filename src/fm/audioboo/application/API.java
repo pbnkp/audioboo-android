@@ -649,7 +649,7 @@ public class API
     }
 
     // This request has no parameters.
-    mRequestQueue.add(new Request(api, null, signedParams,
+    scheduleRequest(new Request(api, null, signedParams,
         new Handler.Callback() {
           public boolean handleMessage(Message msg)
           {
@@ -667,7 +667,6 @@ public class API
           }
         }
     ));
-    mRequester.interrupt();
   }
 
 
@@ -708,7 +707,7 @@ public class API
     }
 
     // This request has no parameters.
-    mRequestQueue.add(new Request(API_BOO_URLS[type], null, signedParams,
+    scheduleRequest(new Request(API_BOO_URLS[type], null, signedParams,
         new Handler.Callback() {
           public boolean handleMessage(Message msg)
           {
@@ -728,7 +727,6 @@ public class API
           }
         }
     ));
-    mRequester.interrupt();
   }
 
 
@@ -742,7 +740,7 @@ public class API
     HashMap<String, Object> signedParams = new HashMap<String, Object>();
 
     // This request has no parameters.
-    mRequestQueue.add(new Request(API_CONTACTS, null, signedParams,
+    scheduleRequest(new Request(API_CONTACTS, null, signedParams,
         new Handler.Callback() {
           public boolean handleMessage(Message msg)
           {
@@ -762,7 +760,6 @@ public class API
           }
         }
     ));
-    mRequester.interrupt();
   }
 
 
@@ -776,7 +773,7 @@ public class API
     HashMap<String, Object> signedParams = new HashMap<String, Object>();
 
     // This request has no parameters.
-    mRequestQueue.add(new Request(API_ACCOUNT, null, signedParams,
+    scheduleRequest(new Request(API_ACCOUNT, null, signedParams,
         new Handler.Callback() {
           public boolean handleMessage(Message msg)
           {
@@ -796,7 +793,6 @@ public class API
           }
         }
     ));
-    mRequester.interrupt();
   }
 
 
@@ -809,7 +805,7 @@ public class API
     String api = String.format(API_USER, userId);
 
     // This request has no parameters.
-    mRequestQueue.add(new Request(api, null, null,
+    scheduleRequest(new Request(api, null, null,
         new Handler.Callback() {
           public boolean handleMessage(Message msg)
           {
@@ -829,7 +825,6 @@ public class API
           }
         }
     ));
-    mRequester.interrupt();
   }
 
 
@@ -855,7 +850,7 @@ public class API
     // This request has no parameters. We pass empty signed parameters to force
     // singing.
     HashMap<String, Object> signedParams = new HashMap<String, Object>();
-    mRequestQueue.add(new Request(API_UNLINK, null, signedParams,
+    scheduleRequest(new Request(API_UNLINK, null, signedParams,
         new Handler.Callback() {
           public boolean handleMessage(Message msg)
           {
@@ -880,7 +875,6 @@ public class API
           }
         }
     ));
-    mRequester.interrupt();
   }
 
 
@@ -896,14 +890,13 @@ public class API
 
     // This request has no parameters. The result handler also handles
     // any responses itself.
-    mRequestQueue.add(new Request(API_STATUS, null, null, new Handler.Callback() {
+    scheduleRequest(new Request(API_STATUS, null, null, new Handler.Callback() {
           public boolean handleMessage(Message msg)
           {
             result_handler.obtainMessage(msg.what, msg.obj).sendToTarget();
             return true;
           }
     }));
-    mRequester.interrupt();
   }
 
 
@@ -929,7 +922,7 @@ public class API
     signedParams.put("following_user_id", String.format("%d", user.mId));
 
     // This request has no parameters.
-    mRequestQueue.add(new Request(API_CONTACTS, null, signedParams,
+    scheduleRequest(new Request(API_CONTACTS, null, signedParams,
         new Handler.Callback() {
           public boolean handleMessage(Message msg)
           {
@@ -944,7 +937,6 @@ public class API
             return true;
           }
         }, requestType));
-    mRequester.interrupt();
   }
 
 
@@ -988,7 +980,7 @@ public class API
     HashMap<String, Object> signedParams = new HashMap<String, Object>();
     signedParams.put("message[played]", 1);
 
-    mRequestQueue.add(new Request(api, null, signedParams,
+    scheduleRequest(new Request(api, null, signedParams,
         new Handler.Callback() {
           public boolean handleMessage(Message msg)
           {
@@ -1003,7 +995,6 @@ public class API
           }
         }, RT_MULTIPART_PUT)
     );
-    mRequester.interrupt();
   }
 
 
@@ -1097,7 +1088,7 @@ public class API
     //   Log.d(LTAG, "P: " + key + " = " + signedParams.get(key));
     // }
 
-    mRequestQueue.add(new Request(api, null, signedParams,
+    scheduleRequest(new Request(api, null, signedParams,
         new Handler.Callback() {
           public boolean handleMessage(Message msg)
           {
@@ -1116,7 +1107,6 @@ public class API
           }
         }, RT_MULTIPART_POST)
     );
-    mRequester.interrupt();
   }
 
 
@@ -1157,7 +1147,7 @@ public class API
     }
 
     // Log.d(LTAG, "Creating attachment request: " + api);
-    mRequestQueue.add(new Request(api, null, signedParams,
+    scheduleRequest(new Request(api, null, signedParams,
         new Handler.Callback() {
           public boolean handleMessage(Message msg)
           {
@@ -1174,7 +1164,6 @@ public class API
             return true;
           }
         }, request_type));
-    mRequester.interrupt();
   }
 
 
@@ -1586,6 +1575,12 @@ public class API
       return true;
     }
 
+    // Shortcut.
+    if (0 >= SRV_LOOKUP_ATTEMPTS_MAX) {
+      mAPIHost = DEFAULT_API_HOST;
+      return true;
+    }
+
     Globals glob = Globals.get();
     if (null == glob) {
       return false;
@@ -1865,5 +1860,12 @@ public class API
     }
     req.mBaton = obj;
     mHandler.obtainMessage(type, req).sendToTarget();
+  }
+
+
+  private void scheduleRequest(Request req)
+  {
+    mRequestQueue.add(req);
+    mRequester.interrupt();
   }
 }
