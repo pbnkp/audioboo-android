@@ -292,6 +292,7 @@ public class API
 
   // Requester startup delay. Avoids high load at startup that could impact UX.
   private static final int          REQUESTER_SLEEP_TIME    = 300 * 1000;
+  private static final int          REQUESTER_FIRST_SLEEP   = 1000;
 
   // Chunk size to read responses in (in Bytes).
   private static final int          READ_CHUNK_SIZE         = 8192;
@@ -369,11 +370,20 @@ public class API
     @Override
     public void run()
     {
+      boolean first = true;
       while (mKeepRunning) {
         try {
-          sleep(REQUESTER_SLEEP_TIME);
+          if (first) {
+            sleep(REQUESTER_FIRST_SLEEP);
+            first = false;
+          }
+          else {
+            sleep(REQUESTER_SLEEP_TIME);
+          }
         } catch (java.lang.InterruptedException ex) {
-          // pass
+          if (first) {
+            continue;
+          }
         }
 
         do {
