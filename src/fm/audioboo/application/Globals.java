@@ -134,6 +134,8 @@ public class Globals
 
   public static final String      PREF_USE_LOCATION   = "settings.use_location";
 
+  public static final String      PREF_RECORDING_TIME = "settings.cached-recording-time";
+
   // Reusable dialog IDs. The ones defined here start from 10000.
   public static final int         DIALOG_GPS_SETTINGS = 10000;
   public static final int         DIALOG_ERROR        = 10001;
@@ -209,6 +211,15 @@ public class Globals
               mOnwardsHandler = null;
             }
           }
+
+          // Update recording time prefrence.
+          SharedPreferences prefs = getPrefs();
+          if (null != prefs) {
+            SharedPreferences.Editor edit = prefs.edit();
+            edit.putInt(PREF_RECORDING_TIME, mStatus.mRecordDuration);
+            edit.commit();
+          }
+
         }
         else {
           ++mStatusRetries;
@@ -526,6 +537,7 @@ public class Globals
     SharedPreferences.Editor edit = prefs.edit();
     edit.remove(Globals.PREF_API_KEY);
     edit.remove(Globals.PREF_API_SECRET);
+    edit.remove(Globals.PREF_RECORDING_TIME);
     edit.commit();
   }
 
@@ -814,6 +826,22 @@ public class Globals
     }
 
     return mBooManager;
+  }
+
+
+
+  /**
+   * Return the recording time limit.
+   **/
+  public int getRecordingLimit()
+  {
+    // Grab the recording limit from the preferences first.
+    SharedPreferences prefs = getPrefs();
+    if (null != prefs) {
+      return prefs.getInt(PREF_RECORDING_TIME, API.Status.DEFAULT_RECORD_DURATION);
+    }
+
+    return API.Status.DEFAULT_RECORD_DURATION;
   }
 
 

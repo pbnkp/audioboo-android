@@ -114,7 +114,7 @@ public class RecordActivity extends Activity
   private Boo             mBoo;
 
   // Time limit for recordings; we'll grab that at startup.
-  private int             mRecordingTimeLimit = API.Status.DEFAULT_RECORD_DURATION;
+  private int             mRecordingTimeLimit;
 
   // Reference to UI elements
   private RecordButton    mRecordButton;
@@ -243,12 +243,7 @@ public class RecordActivity extends Activity
     // Log.d(LTAG, "Boo: " + mBoo);
 
     // Grab recording time limit.
-    if (null != Globals.get().getStatus()) {
-      mRecordingTimeLimit = Globals.get().getStatus().mRecordDuration;
-      if (mRecordingTimeLimit <= 0) {
-        mRecordingTimeLimit = API.Status.DEFAULT_RECORD_DURATION;
-      }
-    }
+    mRecordingTimeLimit = Globals.get().getRecordingLimit();
   }
 
 
