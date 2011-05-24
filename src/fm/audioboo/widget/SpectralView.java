@@ -60,6 +60,9 @@ public class SpectralView extends RelativeLayout
   private static final double FILTER_LOWER_LIMIT          = 0.1;
   private static final double FILTER_UPPER_LIMIT          = 0.7;
 
+  // Boost lower amplitudes by up to this much.
+  private static final double BOOST_FACTOR                = 10.0;
+
 
   /***************************************************************************
    * Data members
@@ -333,9 +336,18 @@ public class SpectralView extends RelativeLayout
     for (int i = 0 ; i < mNumberOfBars ; ++i, x += bar_width) {
       double scale = 0.0;
       if (mShouldAnimate) {
+        float amp = mPeakAmp;
+
+        // Boost lower amplitudes, but clamp everything to 1.0.
+        double boost = Math.sin(1.0 - amp) / Math.sin(1.0);
+        double boosted = amp * (1 + (BOOST_FACTOR * boost));
+        if (boosted > 1.0) {
+          boosted = 1.0;
+        }
+
         // The scale takes into consideration the height of each bar (via their
         // exponents), and a low pass filter is applied.
-        scale = Math.pow(mPeakAmp, mBarHeightExponents[mBarHeightSlot[i]]);
+        scale = Math.pow(amp, mBarHeightExponents[mBarHeightSlot[i]]);
         double filterSize = FILTER_LOWER_LIMIT + mBarFilterFactors[mBarFilterSlot[i]] * mFilterStep;
         scale = filterSize * scale + (1.0 - filterSize) * mBarHeights[i];
       }
@@ -348,7 +360,6 @@ public class SpectralView extends RelativeLayout
       if (level < min_level) {
         level = min_level;
       }
-//      Log.d(LTAG, "Level: " + level);
 
       d.setBounds((int) x, (int) y, (int) (x + bar_width), height);
       d.setLevel(level);
