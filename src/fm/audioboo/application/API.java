@@ -89,8 +89,7 @@ import fm.audioboo.data.User;
 
 import fm.audioboo.service.UploadManager;
 
-import de.unwesen.web.stacktrace.ExceptionHandler;
-import de.unwesen.web.stacktrace.ExceptionHandler.Log;
+import android.util.Log;
 
 /**
  * Abstraction for the AudioBoo API.

@@ -28,8 +28,7 @@ import android.widget.Toast;
 
 import java.util.List;
 
-import de.unwesen.web.stacktrace.ExceptionHandler;
-import de.unwesen.web.stacktrace.ExceptionHandler.Log;
+import android.util.Log;
 
 /**
  * The MyBoosActivity shows any non-message boos that the user has crated, is

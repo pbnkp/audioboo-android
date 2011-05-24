@@ -11,8 +11,7 @@ package fm.audioboo.application;
 
 import android.app.Application;
 
-import de.unwesen.web.stacktrace.ExceptionHandler;
-import de.unwesen.web.stacktrace.ExceptionHandler.Log;
+import android.util.Log;
 
 /**
  * Process-level object creates and owns singleton objects.
@@ -31,10 +30,6 @@ public class AudioBooApplication extends Application
   public void onCreate()
   {
     Log.i(LTAG, "Starting up...");
-
-    ExceptionHandler.register(this, getResources().getString(R.string.stacktrace_url),
-        getResources().getString(R.string.stacktrace_key));
-
     Globals.create(this);
     Log.i(LTAG, "Startup complete.");
   }

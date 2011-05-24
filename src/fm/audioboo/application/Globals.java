@@ -63,8 +63,7 @@ import fm.audioboo.data.User;
 
 import java.lang.ref.WeakReference;
 
-import de.unwesen.web.stacktrace.ExceptionHandler;
-import de.unwesen.web.stacktrace.ExceptionHandler.Log;
+import android.util.Log;
 
 /**
  * Globals; uses singleton pattern to ensure that all members exist only

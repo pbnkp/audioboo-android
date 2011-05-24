@@ -44,8 +44,7 @@ import fm.audioboo.data.User;
 
 import java.lang.ref.WeakReference;
 
-import de.unwesen.web.stacktrace.ExceptionHandler;
-import de.unwesen.web.stacktrace.ExceptionHandler.Log;
+import android.util.Log;
 
 /**
  * Adapter for presenting a BooList in a ListView, Gallery or similar.

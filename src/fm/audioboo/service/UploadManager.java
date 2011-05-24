@@ -35,8 +35,7 @@ import fm.audioboo.application.R;
 
 import fm.audioboo.data.UploadInfo;
 
-import de.unwesen.web.stacktrace.ExceptionHandler;
-import de.unwesen.web.stacktrace.ExceptionHandler.Log;
+import android.util.Log;
 
 /**
  * Uploads Boos/Messages in the upload queue. It's not very clever that way, but

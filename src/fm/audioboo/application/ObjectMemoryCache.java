@@ -12,9 +12,6 @@ package fm.audioboo.application;
 
 import java.util.HashMap;
 
-import de.unwesen.web.stacktrace.ExceptionHandler;
-import de.unwesen.web.stacktrace.ExceptionHandler.Log;
-
 /**
  * Simple in-memory cache for arbitrary objects.
  **/

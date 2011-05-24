@@ -51,8 +51,7 @@ import fm.audioboo.data.User;
 
 import fm.audioboo.service.Constants;
 
-import de.unwesen.web.stacktrace.ExceptionHandler;
-import de.unwesen.web.stacktrace.ExceptionHandler.Log;
+import android.util.Log;
 
 /**
  * Displays a settings pane, and allows to link or unlink the device to/from

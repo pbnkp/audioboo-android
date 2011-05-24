@@ -17,8 +17,7 @@ import android.media.MediaPlayer;
 import fm.audioboo.application.Boo;
 import fm.audioboo.application.R;
 
-import de.unwesen.web.stacktrace.ExceptionHandler;
-import de.unwesen.web.stacktrace.ExceptionHandler.Log;
+import android.util.Log;
 
 /**
  * Player for MP3 files; since it can play more than MP3s through the

@@ -52,15 +52,13 @@ import java.io.FileOutputStream;
 import java.util.List;
 import java.util.LinkedList;
 
-import de.unwesen.web.stacktrace.ExceptionHandler;
-import de.unwesen.web.stacktrace.ExceptionHandler.Log;
-
 import fm.audioboo.widget.EditTags;
 
 import fm.audioboo.data.BooLocation;
 import fm.audioboo.data.Tag;
 import fm.audioboo.data.UploadInfo;
 
+import android.util.Log;
 
 /**
  * Contains code necessary for uploading Boos.

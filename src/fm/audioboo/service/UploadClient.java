@@ -23,9 +23,7 @@ import fm.audioboo.application.Boo;
 
 import java.lang.ref.WeakReference;
 
-import de.unwesen.web.stacktrace.ExceptionHandler;
-import de.unwesen.web.stacktrace.ExceptionHandler.Log;
-
+import android.util.Log;
 
 /**
  * Client class for talking to AudiobooService's UploadService.

@@ -22,9 +22,7 @@ import org.apache.http.entity.mime.MIME;
 
 import java.security.MessageDigest;
 
-import de.unwesen.web.stacktrace.ExceptionHandler;
-import de.unwesen.web.stacktrace.ExceptionHandler.Log;
-
+import android.util.Log;
 
 /**
  * Similar to FileBody from org.apache, but you specify parts of a file, via an

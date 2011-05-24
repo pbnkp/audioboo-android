@@ -25,8 +25,7 @@ import fm.audioboo.jni.FLACStreamDecoder;
 
 import java.nio.ByteBuffer;
 
-import de.unwesen.web.stacktrace.ExceptionHandler;
-import de.unwesen.web.stacktrace.ExceptionHandler.Log;
+import android.util.Log;
 
 /**
  * Plays FLAC audio files.

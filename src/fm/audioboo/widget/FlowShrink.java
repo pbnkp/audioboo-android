@@ -18,9 +18,6 @@ import android.view.animation.Transformation;
 
 import android.widget.ImageView;
 
-import de.unwesen.web.stacktrace.ExceptionHandler;
-import de.unwesen.web.stacktrace.ExceptionHandler.Log;
-
 
 /**
  * Animation for Flow class; simply shrinks views that are not in the center.

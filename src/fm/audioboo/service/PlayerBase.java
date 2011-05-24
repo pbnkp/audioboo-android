@@ -15,9 +15,6 @@ import java.lang.ref.WeakReference;
 
 import fm.audioboo.application.Boo;
 
-import de.unwesen.web.stacktrace.ExceptionHandler;
-import de.unwesen.web.stacktrace.ExceptionHandler.Log;
-
 /**
  * Base class for a tiny class hierarchy that lets us abstract some of the
  * logic differences between playing back MP3s (remote) and FLACs (local)

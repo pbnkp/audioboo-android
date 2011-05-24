@@ -21,9 +21,7 @@ import java.nio.ByteBuffer;
 import java.util.Collections;
 import java.util.zip.CRC32;
 
-import de.unwesen.web.stacktrace.ExceptionHandler;
-import de.unwesen.web.stacktrace.ExceptionHandler.Log;
-
+import android.util.Log;
 
 /**
  * Like a file manager, except for Boos.

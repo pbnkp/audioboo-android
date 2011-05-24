@@ -15,9 +15,7 @@ import android.content.Context;
 import java.util.Date;
 import java.util.GregorianCalendar;
 
-import de.unwesen.web.stacktrace.ExceptionHandler;
-import de.unwesen.web.stacktrace.ExceptionHandler.Log;
-
+import android.util.Log;
 
 /**
  * Formats a time difference (from now) as "just now", "5 seconds ago", etc.

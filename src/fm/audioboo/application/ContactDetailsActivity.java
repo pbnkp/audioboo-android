@@ -36,8 +36,7 @@ import java.util.LinkedList;
 
 import fm.audioboo.data.User;
 
-import de.unwesen.web.stacktrace.ExceptionHandler;
-import de.unwesen.web.stacktrace.ExceptionHandler.Log;
+import android.util.Log;
 
 /**
  * Displays details for a user, and includes the ability to follow/unfollow

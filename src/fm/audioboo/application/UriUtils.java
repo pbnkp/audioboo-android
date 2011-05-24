@@ -22,9 +22,7 @@ import org.apache.http.NameValuePair;
 
 import java.util.List;
 
-import de.unwesen.web.stacktrace.ExceptionHandler;
-import de.unwesen.web.stacktrace.ExceptionHandler.Log;
-
+import android.util.Log;
 
 /**
  * Utilities for URI manipulation.

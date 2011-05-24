@@ -21,8 +21,7 @@ import java.lang.ref.WeakReference;
 import fm.audioboo.data.PlayerState;
 import fm.audioboo.application.Boo;
 
-import de.unwesen.web.stacktrace.ExceptionHandler;
-import de.unwesen.web.stacktrace.ExceptionHandler.Log;
+import android.util.Log;
 
 /**
  * Plays Boos. Abstracts out all the differences between streaming MP3s from the

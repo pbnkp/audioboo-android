@@ -24,8 +24,7 @@ import java.util.List;
 
 import java.io.Serializable;
 
-import de.unwesen.web.stacktrace.ExceptionHandler;
-import de.unwesen.web.stacktrace.ExceptionHandler.Log;
+import android.util.Log;
 
 /**
  * Representation of a Boo's or user's location

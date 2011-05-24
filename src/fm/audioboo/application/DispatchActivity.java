@@ -23,9 +23,6 @@ import android.widget.Toast;
 import java.util.List;
 import java.util.LinkedList;
 
-import de.unwesen.web.stacktrace.ExceptionHandler;
-import de.unwesen.web.stacktrace.ExceptionHandler.Log;
-
 /**
  * DispatchActivity listens to URIs with the audioboo scheme, and dispatches
  * them to other Activities in the application. It's intentionally short-lived.

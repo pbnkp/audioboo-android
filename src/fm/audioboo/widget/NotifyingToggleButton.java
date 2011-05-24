@@ -14,8 +14,6 @@ import android.widget.ToggleButton;
 import android.content.Context;
 import android.util.AttributeSet;
 
-import de.unwesen.web.stacktrace.ExceptionHandler;
-import de.unwesen.web.stacktrace.ExceptionHandler.Log;
 
 /**
  * Simple extension to ToggleButton; allows attaching a listener to be notified

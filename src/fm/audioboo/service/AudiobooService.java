@@ -45,9 +45,6 @@ import fm.audioboo.application.Globals;
 
 import fm.audioboo.application.R;
 
-import de.unwesen.web.stacktrace.ExceptionHandler;
-import de.unwesen.web.stacktrace.ExceptionHandler.Log;
-
 
 /**
  * Service implementing IAudiobooService

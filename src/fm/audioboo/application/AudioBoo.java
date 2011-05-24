@@ -40,8 +40,8 @@ import android.app.Dialog;
 
 import java.lang.ref.WeakReference;
 
-import de.unwesen.web.stacktrace.ExceptionHandler;
-import de.unwesen.web.stacktrace.ExceptionHandler.Log;
+import android.util.Log;
+
 
 /**
  * Main Activity. Contains a few buttons (most in a Flow) and a player view.

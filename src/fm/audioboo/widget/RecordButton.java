@@ -28,9 +28,6 @@ import fm.audioboo.application.R;
 
 import java.lang.ref.WeakReference;
 
-import de.unwesen.web.stacktrace.ExceptionHandler;
-import de.unwesen.web.stacktrace.ExceptionHandler.Log;
-
 /**
  * The record button in the AudioBoo client is just complex enough that it's
  * easiest to keep it's state in it's own class.

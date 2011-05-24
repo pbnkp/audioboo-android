@@ -51,8 +51,7 @@ import fm.audioboo.application.R;
 
 import java.lang.ref.WeakReference;
 
-import de.unwesen.web.stacktrace.ExceptionHandler;
-import de.unwesen.web.stacktrace.ExceptionHandler.Log;
+import android.util.Log;
 
 /**
  * Displays a player window, and uses the BooPlayer in Globals to play back

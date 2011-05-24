@@ -32,8 +32,7 @@ import java.lang.ref.WeakReference;
 import java.util.List;
 import java.util.LinkedList;
 
-import de.unwesen.web.stacktrace.ExceptionHandler;
-import de.unwesen.web.stacktrace.ExceptionHandler.Log;
+import android.util.Log;
 
 /**
  * Client class for talking to the AudiobooService's BooPlaybackService

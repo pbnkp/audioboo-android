@@ -50,8 +50,7 @@ import fm.audioboo.service.BooPlayerClient;
 import fm.audioboo.service.Constants;
 import fm.audioboo.widget.LeftAlignedLayout;
 
-import de.unwesen.web.stacktrace.ExceptionHandler;
-import de.unwesen.web.stacktrace.ExceptionHandler.Log;
+import android.util.Log;
 
 /**
  * Show details for a Boo.

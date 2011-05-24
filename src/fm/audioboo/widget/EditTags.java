@@ -25,9 +25,6 @@ import fm.audioboo.application.R;
 import java.util.List;
 import java.util.LinkedList;
 
-import de.unwesen.web.stacktrace.ExceptionHandler;
-import de.unwesen.web.stacktrace.ExceptionHandler.Log;
-
 /**
  * EditTags is an EditText that applies tag quoting rules to it's contents.
  **/
