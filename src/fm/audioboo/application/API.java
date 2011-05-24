@@ -160,6 +160,9 @@ public class API
    **/
   public static class Status
   {
+    // ** Constants.
+    public static final int DEFAULT_RECORD_DURATION = 300;
+
     // ** Common fields
     // Flag showing whether the device is linked to an account or not.
     public boolean  mLinked;
@@ -172,6 +175,8 @@ public class API
     // Username and email address for the linked user.
     public String   mUsername;
     public String   mEmail;
+    // Record duration, in seconds.
+    public int      mRecordDuration = DEFAULT_RECORD_DURATION;
 
 
     public String toString()

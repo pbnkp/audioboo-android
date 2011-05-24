@@ -139,6 +139,9 @@ class ResponseParser
   private static final String STATUS_ACCOUNT          = "account";
   private static final String STATUS_ACC_USERNAME     = "username";
   private static final String STATUS_ACC_EMAIL        = "email";
+  private static final String STATUS_LIMITS           = "limits";
+  private static final String STATUS_LIMITS_REC       = "record";
+  private static final String STATUS_LIMITS_REC_TIME  = "duration";
 
   // Unlink response
   private static final String UNLINKED                = "unlinked";
@@ -279,6 +282,7 @@ class ResponseParser
    **/
   public static Response<API.Status> parseStatusResponse(String response, API.Request req)
   {
+    Log.d(LTAG, "Response: " + response);
     try {
       Response<JSONObject> body = retrieveBody(response, req);
       if (null == body) {
@@ -296,6 +300,12 @@ class ResponseParser
 
         status.mUsername = account.getString(STATUS_ACC_USERNAME);
         status.mEmail = account.getString(STATUS_ACC_EMAIL);
+
+        // There should also be a "record" field with a duration.
+        JSONObject limits = body.mContent.getJSONObject(STATUS_LIMITS);
+        JSONObject record = limits.getJSONObject(STATUS_LIMITS_REC);
+
+        status.mRecordDuration = record.getInt(STATUS_LIMITS_REC_TIME);
       }
       else {
         // The only thing we'll find if the device is not linked is a

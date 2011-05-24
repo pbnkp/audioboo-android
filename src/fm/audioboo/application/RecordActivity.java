@@ -80,10 +80,6 @@ public class RecordActivity extends Activity
   // Log ID
   private static final String LTAG  = "RecordActivity";
 
-  // Limit for the recording time we allow, in seconds.
-  private static final int    RECORDING_TIME_LIMIT        = 300;
-  // private static final int    RECORDING_TIME_LIMIT        = 45;
-
   // Dialog IDs.
   private static final int  DIALOG_RECORDING_ERROR        = 0;
   private static final int  DIALOG_DRAFT                  = 1;
@@ -116,6 +112,9 @@ public class RecordActivity extends Activity
   private DestinationInfo mDestinationInfo;
   private String          mNewTitle;
   private Boo             mBoo;
+
+  // Time limit for recordings; we'll grab that at startup.
+  private int             mRecordingTimeLimit = API.Status.DEFAULT_RECORD_DURATION;
 
   // Reference to UI elements
   private RecordButton    mRecordButton;
@@ -242,6 +241,14 @@ public class RecordActivity extends Activity
       mBoo.mData.mTitle = mNewTitle;
     }
     // Log.d(LTAG, "Boo: " + mBoo);
+
+    // Grab recording time limit.
+    if (null != Globals.get().getStatus()) {
+      mRecordingTimeLimit = Globals.get().getStatus().mRecordDuration;
+      if (mRecordingTimeLimit <= 0) {
+        mRecordingTimeLimit = API.Status.DEFAULT_RECORD_DURATION;
+      }
+    }
   }
 
 
@@ -326,7 +333,7 @@ public class RecordActivity extends Activity
       mPublishButton.setEnabled(duration > 0.0f);
     }
     if (null != mRecordButton) {
-      mRecordButton.setEnabled(duration < RECORDING_TIME_LIMIT);
+      mRecordButton.setEnabled(duration < mRecordingTimeLimit);
     }
   }
 
@@ -538,7 +545,7 @@ public class RecordActivity extends Activity
 
     mPieProgress = (PieProgressView) findViewById(R.id.record_pie_progress);
     if (null != mPieProgress) {
-      mPieProgress.setMax(RECORDING_TIME_LIMIT);
+      mPieProgress.setMax(mRecordingTimeLimit);
       double duration = mBoo.getDuration();
       if (duration > 0.0) {
         mPieProgress.setProgress((int) duration);
@@ -690,7 +697,7 @@ public class RecordActivity extends Activity
       mPieProgress.setProgress(position);
     }
 
-    double remaining = RECORDING_TIME_LIMIT - position;
+    double remaining = mRecordingTimeLimit - position;
     if (null != mTextProgress) {
       int min = (int) (remaining / 60);
       int sec = ((int) remaining) % 60;
@@ -714,7 +721,7 @@ public class RecordActivity extends Activity
     }
 
     // We may have reason to stop recording here.
-    if (position >= RECORDING_TIME_LIMIT) {
+    if (position >= mRecordingTimeLimit) {
       stopRecording();
     }
   }
