@@ -141,7 +141,15 @@ public class FLACPlayer extends Thread
   public void run()
   {
     // Try to initialize the decoder.
-    mDecoder = new FLACStreamDecoder(mPath);
+    try {
+      mDecoder = new FLACStreamDecoder(mPath);
+    } catch (IllegalArgumentException ex) {
+      Log.e(LTAG, "Error: " + ex);
+      if (null != mListener) {
+        mListener.onError();
+      }
+      return;
+    }
 
     // Map channel config & format
     int sampleRate = mDecoder.sampleRate();
