@@ -445,8 +445,12 @@ public class UploadManager
         break; // Nothing to do.
 
       case Constants.NOTIFICATION_UPLOAD_ERROR:
-        boo.mData.mUploadInfo.mUploadError = true;
-        boo.writeToFile();
+        if (null != boo) {
+          if (null != boo.mData && null != boo.mData.mUploadInfo) {
+            boo.mData.mUploadInfo.mUploadError = true;
+          }
+          boo.writeToFile();
+        }
         // XXX fall through
 
       case Constants.NOTIFICATION_UPLOAD_DONE:
