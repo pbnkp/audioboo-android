@@ -282,7 +282,7 @@ class ResponseParser
    **/
   public static Response<API.Status> parseStatusResponse(String response, API.Request req)
   {
-    Log.d(LTAG, "Response: " + response);
+    // Log.d(LTAG, "Response: " + response);
     try {
       Response<JSONObject> body = retrieveBody(response, req);
       if (null == body) {
