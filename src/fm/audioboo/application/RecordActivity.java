@@ -23,6 +23,7 @@ import android.os.Handler;
 import android.os.Message;
 import android.os.Vibrator;
 
+import android.media.AudioManager;
 import android.media.MediaPlayer;
 
 import android.view.View;
@@ -496,9 +497,16 @@ public class RecordActivity extends Activity
     });
     tv.startAnimation(animation);
 
-    // ... and vibrate!
-    Vibrator v = (Vibrator)getSystemService(Context.VIBRATOR_SERVICE);
-    v.vibrate(VIBRATE_DURATION);
+    // ... and vibrate, if we're in vibrate mode!
+    AudioManager am = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
+    if (null != am) {
+      if (AudioManager.RINGER_MODE_VIBRATE == am.getRingerMode()) {
+        Vibrator v = (Vibrator) getSystemService(Context.VIBRATOR_SERVICE);
+        if (null != v) {
+          v.vibrate(VIBRATE_DURATION);
+        }
+      }
+    }
   }
 
 
