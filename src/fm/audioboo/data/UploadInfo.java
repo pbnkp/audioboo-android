@@ -51,6 +51,8 @@ public class UploadInfo implements Parcelable, Serializable
   public int      mUploadStage      = UPLOAD_STAGE_AUDIO;
   public boolean  mUploadError      = false;
 
+  public transient boolean  mUploading = false;
+
 
   public UploadInfo(BooData data)
   {
@@ -93,6 +95,7 @@ public class UploadInfo implements Parcelable, Serializable
     out.writeInt(mImageUploaded);
     out.writeInt(mUploadStage);
     out.writeInt(mUploadError ? 1 : 0);
+    out.writeInt(mUploading ? 1 : 0);
   }
 
 
@@ -122,5 +125,30 @@ public class UploadInfo implements Parcelable, Serializable
     mImageUploaded = in.readInt();
     mUploadStage = in.readInt();
     mUploadError = (in.readInt() != 0);
+    mUploading = (in.readInt() != 0);
+  }
+
+
+  /***************************************************************************
+   * Serializable implementation
+   **/
+  private void writeObject(java.io.ObjectOutputStream out) throws IOException
+  {
+    out.defaultWriteObject();
+
+    out.writeBoolean(mUploading);
+  }
+
+
+
+  private void readObject(java.io.ObjectInputStream in) throws IOException, ClassNotFoundException
+  {
+    in.defaultReadObject();
+
+    try {
+      mUploading = in.readBoolean();
+    } catch (IOException ex) {
+      mUploading = false;
+    }
   }
 }
