@@ -200,7 +200,36 @@ public class UploadManager
         Collections.sort(uploads, Boo.RECORDING_DATE_COMPARATOR);
 
         if (!uploads.isEmpty()) {
-          mBooUpload = uploads.get(0);
+          Boo first = null;
+          for (int i = 0 ; i < uploads.size() ; ++i) {
+            Boo candidate = uploads.get(i);
+            if (null == candidate.mData || null == candidate.mData.mUploadInfo) {
+              // Shouldn't happen.
+              continue;
+            }
+
+            if (candidate.mData.mUploadInfo.mUploading) {
+              // Stuff is still happening. No idea why we've reached here.
+              Log.e(LTAG, "Trying to queue multiple uploads.");
+              first = null;
+              break;
+            }
+
+            if (null == first) {
+              first = candidate;
+            }
+          }
+
+          // If we're uploading, first will be null. If there are no viable
+          // candidates, first will be null. Otherwise, first will be the top
+          // of the queue - we can just assign it to mBooUpload and continue.
+          // However, in the interest of keeping the mUploading flag in a good
+          // state, we'll write it now before assigning.
+          if (null != first) {
+            first.mData.mUploadInfo.mUploading = true;
+            first.writeToFile();
+          }
+          mBooUpload = first;
         }
       }
 
@@ -439,6 +468,12 @@ public class UploadManager
       return;
     }
 
+    if (null == boo || null == boo.mData) {
+      Log.e(LTAG, "Received null boo, ignoring.");
+      clearUploadingNotification(); // XXX can't be useful at this point.
+      return;
+    }
+
     // Handle notification/upload state.
     switch (notificationType) {
       case Constants.NOTIFICATION_UPLOADING:
@@ -448,6 +483,7 @@ public class UploadManager
         if (null != boo) {
           if (null != boo.mData && null != boo.mData.mUploadInfo) {
             boo.mData.mUploadInfo.mUploadError = true;
+            boo.mData.mUploadInfo.mUploading = false;
           }
           boo.writeToFile();
         }
@@ -464,7 +500,6 @@ public class UploadManager
     // Create notification
     NotificationManager nm = (NotificationManager) ctx.getSystemService(Context.NOTIFICATION_SERVICE);
 
-    // Create Notification
     Intent intent = null;
     if (boo.mData.mIsMessage) {
       intent = new Intent(ctx, MessagesActivity.class);
