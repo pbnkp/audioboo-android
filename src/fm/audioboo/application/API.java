@@ -1715,6 +1715,10 @@ public class API
 
       m.update(String.format(":%s", mAPISecret).getBytes());
       String signature = new BigInteger(1, m.digest()).toString(16);
+      while (signature.length() < 40) {
+        signature = "0" + signature;
+      }
+
       // Log.d(LTAG, "signature: " + signature);
       params.put(mParamNameSignature, signature);
     } catch (java.security.NoSuchAlgorithmException ex) {
