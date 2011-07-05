@@ -53,6 +53,8 @@ public class UploadManager
   // Sleep time, if the thread's not woken.
   private static final int SLEEP_TIME_LONG      = 5 * 60 * 1000;
 
+  // Minimum delay for interrupting the queue again.
+  private static final int MIN_QUEUE_DELAY      = 5 * 1000;
 
 
   /***************************************************************************
@@ -114,6 +116,9 @@ public class UploadManager
   private Object                  mUploadLock = new Object();
   private Boo                     mBooUpload;
 
+  // Throttles queue rescheduling.
+  private long                    mQueueInterrupted = 0;
+
   // Current chunk upload size, and timestamp for last upload request begin;
   // the chunk size is going to be recalculated based on that timestamp.
   private QueueThread             mThread;
@@ -156,7 +161,11 @@ public class UploadManager
   public void processQueue()
   {
     // Really just need to interrupt the main run loop, that's all.
-    mThread.interrupt();
+    long now = System.currentTimeMillis();
+    if (now - mQueueInterrupted > MIN_QUEUE_DELAY) {
+      mQueueInterrupted = now;
+      mThread.interrupt();
+    }
   }
 
 
