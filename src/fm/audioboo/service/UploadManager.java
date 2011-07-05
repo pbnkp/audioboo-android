@@ -211,7 +211,7 @@ public class UploadManager
       }
 
       // Now process stages until we're supposed to stop.
-      while (processNextStage(res)) {
+      while (processNextStage(result, res)) {
         // After the first iteration, any result that might've come in needs to
         // be discarded.
         res = null;
@@ -226,7 +226,7 @@ public class UploadManager
    * immediately, false otherwise.
    * XXX Must be called when the upload lock is held.
    **/
-  private boolean processNextStage(UploadResult res)
+  private boolean processNextStage(int result, UploadResult res)
   {
     if (null == mBooUpload.mData || null == mBooUpload.mData.mUploadInfo) {
       Log.e(LTAG, "Can't process null upload: " + mBooUpload);
@@ -237,41 +237,26 @@ public class UploadManager
     }
     setNotification(mBooUpload, Constants.NOTIFICATION_UPLOADING);
 
-    // Process timestamps first, to determine new chunk size.
+    // Calculate how long the last upload request took.
+    long diff = -1;
     if (-1 != mUploadStarted) {
-      long diff = System.currentTimeMillis() - mUploadStarted;
-
-      if (diff > Constants.MAX_UPLOAD_TIME) {
-        mChunkSize /= 1.5;
-      }
-      else if (diff < Constants.MIN_UPLOAD_TIME) {
-        mChunkSize *= 1.5;
-      }
-
-      if (mChunkSize < Constants.MIN_UPLOAD_CHUNK_SIZE) {
-        mChunkSize = Constants.MIN_UPLOAD_CHUNK_SIZE;
-      }
-      else if (mChunkSize > Constants.MAX_UPLOAD_CHUNK_SIZE) {
-        mChunkSize = Constants.MAX_UPLOAD_CHUNK_SIZE;
-      }
-
+      diff = System.currentTimeMillis() - mUploadStarted;
       mUploadStarted = -1;
     }
-    // Log.d(LTAG, "Chunk size is: " + mChunkSize);
 
     // Delegate to chunk-specific function
     boolean ret = false;
     switch (mBooUpload.mData.mUploadInfo.mUploadStage) {
       case UploadInfo.UPLOAD_STAGE_AUDIO:
-        ret = processAudioStage(res);
+        ret = processAudioStage(result, diff, res);
         break;
 
       case UploadInfo.UPLOAD_STAGE_IMAGE:
-        ret = processImageStage(res);
+        ret = processImageStage(result, diff, res);
         break;
 
       case UploadInfo.UPLOAD_STAGE_METADATA:
-        ret = processMetadataStage(res);
+        ret = processMetadataStage(result, res);
         break;
 
       default:
@@ -290,9 +275,11 @@ public class UploadManager
    * Part of processNextStage()
    * XXX Must be called when the upload lock is held.
    **/
-  private boolean processAudioStage(UploadResult res)
+  private boolean processAudioStage(int result, long diff, UploadResult res)
   {
     // Log.d(LTAG, "Audio stage: " + mBooUpload);
+
+    int oldOffset = mBooUpload.mData.mUploadInfo.mAudioUploaded;
 
     if (null != res) {
       if (-1 != mBooUpload.mData.mUploadInfo.mAudioChunkId
@@ -301,6 +288,15 @@ public class UploadManager
         Log.e(LTAG, "Got response, but the chunk IDs don't match. Ugh.");
         setNotification(mBooUpload, Constants.NOTIFICATION_UPLOAD_ERROR);
         mBooUpload = null;
+        return false;
+      }
+
+      // We might have multiple results. In order to avoid sending more
+      // duplicate requests, check that the result actually matters.
+      if (res.received <= mBooUpload.mData.mUploadInfo.mAudioUploaded) {
+        Log.w(LTAG, "Multiple requests detected, cancelling this loop.");
+        // We don't want to null mBooUpload here or send an error - just
+        // silently carry on.
         return false;
       }
 
@@ -315,6 +311,12 @@ public class UploadManager
         return true;
       }
       mBooUpload.writeToFile();
+    }
+
+    // Adjust chunk size, unless this is a retry.
+    if (oldOffset != mBooUpload.mData.mUploadInfo.mAudioUploaded) {
+      // It is a retry.
+      adjustChunkSize(diff, result);
     }
 
     // Create a new attachment if we don't have an ID yet. Otherwise add to the
@@ -339,9 +341,11 @@ public class UploadManager
    * Part of processNextStage()
    * XXX Must be called when the upload lock is held.
    **/
-  private boolean processImageStage(UploadResult res)
+  private boolean processImageStage(int result, long diff, UploadResult res)
   {
     // Log.d(LTAG, "Image stage: " + mBooUpload);
+
+    int oldOffset = mBooUpload.mData.mUploadInfo.mImageUploaded;
 
     if (null != res) {
       if (-1 != mBooUpload.mData.mUploadInfo.mImageChunkId
@@ -350,6 +354,15 @@ public class UploadManager
         Log.e(LTAG, "Got response, but the chunk IDs don't match. Ugh.");
         setNotification(mBooUpload, Constants.NOTIFICATION_UPLOAD_ERROR);
         mBooUpload = null;
+        return false;
+      }
+
+      // We might have multiple results. In order to avoid sending more
+      // duplicate requests, check that the result actually matters.
+      if (res.received <= mBooUpload.mData.mUploadInfo.mImageUploaded) {
+        Log.w(LTAG, "Multiple requests detected, cancelling this loop.");
+        // We don't want to null mBooUpload here or send an error - just
+        // silently carry on.
         return false;
       }
 
@@ -371,6 +384,12 @@ public class UploadManager
       mBooUpload.mData.mUploadInfo.mUploadStage = UploadInfo.UPLOAD_STAGE_METADATA;
       mBooUpload.writeToFile();
       return true;
+    }
+
+    // Adjust chunk size, unless this is a retry.
+    if (oldOffset != mBooUpload.mData.mUploadInfo.mImageUploaded) {
+      // It is a retry.
+      adjustChunkSize(diff, result);
     }
 
     // Create a new attachment if we don't have an ID yet. Otherwise add to the
@@ -395,7 +414,7 @@ public class UploadManager
    * Part of processNextStage()
    * XXX Must be called when the upload lock is held.
    **/
-  private boolean processMetadataStage(UploadResult res)
+  private boolean processMetadataStage(int result, UploadResult res)
   {
     // Log.d(LTAG, "metadata stage: " + res);
     if (null != res && res.id > 0) {
@@ -520,5 +539,26 @@ public class UploadManager
 
     // Install notification
     nm.notify(notificationType, notification);
+  }
+
+
+
+  private void adjustChunkSize(long diff, int result)
+  {
+    if (diff > Constants.MAX_UPLOAD_TIME || API.ERR_SUCCESS != result) {
+      mChunkSize /= 1.5;
+    }
+    else if (diff < Constants.MIN_UPLOAD_TIME) {
+      mChunkSize *= 1.5;
+    }
+
+    if (mChunkSize < Constants.MIN_UPLOAD_CHUNK_SIZE) {
+      mChunkSize = Constants.MIN_UPLOAD_CHUNK_SIZE;
+    }
+    else if (mChunkSize > Constants.MAX_UPLOAD_CHUNK_SIZE) {
+      mChunkSize = Constants.MAX_UPLOAD_CHUNK_SIZE;
+    }
+
+    // Log.d(LTAG, "Chunk size is: " + mChunkSize);
   }
 }
