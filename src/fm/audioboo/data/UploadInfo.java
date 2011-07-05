@@ -73,6 +73,15 @@ public class UploadInfo implements Parcelable, Serializable
 
 
 
+  public String toString()
+  {
+    return String.format("[%d/%d/%d;%d/%d/%d;%d/%s]", mAudioChunkId, mAudioSize,
+        mAudioUploaded, mImageChunkId, mImageSize, mImageUploaded, mUploadStage,
+        mUploadError ? "error" : "no error");
+  }
+
+
+
   /***************************************************************************
    * Parcelable implementation
    **/
