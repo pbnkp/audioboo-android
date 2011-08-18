@@ -1,0 +1,77 @@
+<project name="dnsjava" default="all" basedir=".">
+    <property name="build_dir" value="${basedir}"/>
+    <property name="src_dir" value="${basedir}"/>
+    <property name="doc_dir" value="${basedir}/doc"/>
+    <property name="dist_dir" value="${basedir}"/>
+    <property name="version" value="1.6.6"/>
+    <property name="jarname" value="dnsjava-${version}.jar"/>
+    <property name="zipname" value="dnsjava-${version}.zip"/>
+    <property name="targzname" value="dnsjava-${version}.tar.gz"/>
+
+    <property name="j2se.javadoc"
+      value="http://java.sun.com/j2se/1.4/docs/api/"/>
+
+    <target name="all" description="Compile and Jar" depends="jar">
+    </target>
+
+    <target name="compile" description="Compile everything">
+        <javac destdir="${build_dir}" debug="true">
+            <src path="${src_dir}"/>
+            <exclude name="org/xbill/DNS/security/*.java"/>
+        </javac>
+    </target>
+
+    <target name="dnssec" description="Compile the DNSSEC code">
+        <javac destdir="${build_dir}" debug="true">
+            <src path="${src_dir}"/>
+            <include name="org/xbill/DNS/security/*.java"/>
+        </javac>
+    </target>
+
+    <target name="jar" description="Makes dnsjava.jar" depends="compile">
+        <jar jarfile="${dist_dir}/${jarname}"
+             basedir="${build_dir}" includes="**/*.class">
+            <manifest>
+                <attribute name="Implementation-Title" value="dnsjava"/>
+                <attribute name="Implementation-Version" value="${version}"/>
+            </manifest>
+        </jar>
+    </target>
+
+    <target name="clean" description="Remove old class files">
+        <delete>
+            <fileset dir="${build_dir}" includes="**/*.class"/>
+            <fileset dir="${build_dir}" includes="*.jar *.zip *.tar.gz"/>
+        </delete>
+    </target>
+
+    <target name="docs" description="Makes Javadoc documentation">
+        <javadoc destdir="${doc_dir}"
+                 sourcepath="${src_dir}"
+                 packagenames="org.xbill.DNS,org.xbill.DNS.utils,org.xbill.DNS.security"
+                 windowtitle="dnsjava documentation">
+
+            <link href="${j2se.javadoc}"/>
+        </javadoc>
+    </target>
+
+    <target name="docsclean" description="Remove old documentation">
+        <delete dir="${doc_dir}"/>
+    </target>
+
+    <property name="source_excludes"
+              value="**/*.class,${jarname},${zipname},${targzname}" />
+
+    <target name="sourcedist" description="Builds source distributions"
+            depends="compile,docs">
+        <zip destfile="${dist_dir}/${zipname}">
+            <zipfileset dir="${src_dir}" prefix="dnsjava-${version}"
+	                excludes="${source_excludes}" />
+        </zip>
+        <tar destfile="${dist_dir}/${targzname}" compression="gzip">
+            <tarfileset dir="${src_dir}" prefix="dnsjava-${version}"
+	                excludes="${source_excludes}" />
+        </tar>
+    </target>
+
+</project>

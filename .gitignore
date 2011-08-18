@@ -5,7 +5,4 @@
 /ndk
 /obj
 /bin
-/externals/dnsjava
 /gen
-/jni/flac
-/jni/ogg

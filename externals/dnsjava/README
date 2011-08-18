@@ -1,0 +1,107 @@
+dnsjava v1.6
+
+http://www.xbill.org/dnsjava
+http://www.dnsjava.org/
+
+Author:
+
+Brian Wellington (bwelling@xbill.org)
+March 12, 2004
+
+Overview:
+
+dnsjava is an implementation of DNS in Java.  It supports all defined record
+types (including the DNSSEC types), and unknown types.  It can be used for
+queries, zone transfers, and dynamic updates.  It includes a cache which can be
+used by clients, and an authoritative only server.  It supports TSIG
+authenticated messages, partial DNSSEC verification, and EDNS0.  It is fully
+thread safe.
+
+dnsjava was started as an excuse to learn Java.  It was useful for testing new
+features in BIND without rewriting the C resolver.  It was then cleaned up and
+extended in order to be used as a testing framework for DNS interoperability
+testing.  The high level API and caching resolver were added to make it useful
+to a wider audience.  The authoritative only server was added as proof of
+concept.
+
+
+Getting started:
+
+Run 'make' or 'ant' from the toplevel directory to build dnsjava.  JDK 1.2
+or higher is required.
+
+To compile dnssec support (org.xbill.DNS.security), the Java Cryptography
+Extensions are required.  Run 'make dnssec' or 'ant dnssec' to compile this
+package.  TSIG support is separate from dnssec support, and does not require
+that dnssec support be built.
+
+Limitations:
+
+There's no way to determine what the local nameserver is at runtime from within
+the JVM.  First, the property 'dns.server' (a comma delimited list) is
+checked.  These can either be IP addresses or hostnames (which are resolved
+using Java's built in DNS support).  If the underlying OS is unix-based, the
+dnsjava package can parse /etc/resolv.conf and determine the nameservers.  If
+the underlying OS is Windows, winipcfg/ipconfig can be called and the output
+parsed.  Note that this may fail for some non-English versions of Windows.
+Otherwise, or if these attempts fail, the default nameserver is
+"localhost".  This is unavoidable.  Unfortunately, I have no idea how to
+determine the nameserver for any other OSes.  Contributions of code
+are welcome (see org/xbill/DNS/ResolverConfig.java for the basic structure).
+
+On some machines, InetAddress.getLocalHost() returns 127.0.0.1.  This is
+usually caused by a bug in the JVM, and often happens when the machine has
+a dynamic address and its hostname is not in DNS.  This breaks the (mostly
+undocumented) feature that the @me@ variable can be used in the textual form
+of an A record to indicate the local address.  If InetAddress.getLocalHost()
+doesn't work, a RuntimeException will be thrown.  This should be fixable
+if/when dnsjava requires Java 1.4.
+
+The underlying platform must use an ASCII encoding of characters.  This means
+that dnsjava will not work on OS/390, for example.
+
+
+Additional documentation:
+
+Javadoc documentation is provided in the doc/ subdirectory of binary
+distributions, and can be built with 'make docs' or 'ant docs'.
+
+
+License:
+
+dnsjava is placed under the BSD license.  Several files are also under
+additional licenses; see the individual files for details.
+
+Copyright (c) 1999-2003, Brian Wellington
+All rights reserved.
+
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions are met:
+
+    * Redistributions of source code must retain the above copyright notice,
+      this list of conditions and the following disclaimer.
+    * Redistributions in binary form must reproduce the above copyright notice,
+      this list of conditions and the following disclaimer in the documentation
+      and/or other materials provided with the distribution.
+    * Neither the name of the dnsjava project nor the names of its contributors
+      may be used to endorse or promote products derived from this software
+      without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR
+ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+(INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
+ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+
+Final notes:
+
+ - Thanks to Network Associates, Inc. for sponsoring some of the original
+   dnsjava work in 1999-2000.
+
+ - Thanks to Nominum, Inc. for sponsoring some work on dnsjava from 2000-2003.
