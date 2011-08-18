@@ -1,7 +1,7 @@
 /**
- * This file is part of AudioBoo, an android program for audio blogging.
+ * This file is part of Audioboo, an android program for audio blogging.
  * Copyright (C) 2011 Audioboo Ltd.
- * Copyright (C) 2010,2011 AudioBoo Ltd.
+ * Copyright (C) 2010,2011 Audioboo Ltd.
  * All rights reserved.
  *
  * Author: Jens Finkhaeuser <jens@finkhaeuser.de>
@@ -46,13 +46,13 @@ import android.util.Log;
 /**
  * Main Activity. Contains a few buttons (most in a Flow) and a player view.
  **/
-public class AudioBoo extends Activity
+public class Audioboo extends Activity
 {
   /***************************************************************************
    * Private constants
    **/
   // Log ID
-  private static final String LTAG                = "AudioBoo";
+  private static final String LTAG                = "Audioboo";
 
   // Dialog IDs.
   private static final int DIALOG_GPS_SETTINGS    = Globals.DIALOG_GPS_SETTINGS;
@@ -182,7 +182,7 @@ public class AudioBoo extends Activity
           }
           else {
             Intent i = new Intent();
-            i.setClassName(AudioBoo.this, mActions[position]);
+            i.setClassName(Audioboo.this, mActions[position]);
             startActivity(i);
           }
         }
@@ -194,7 +194,7 @@ public class AudioBoo extends Activity
       button.setOnClickListener(new View.OnClickListener() {
           public void onClick(View v)
           {
-            Intent i = new Intent(AudioBoo.this, RecordActivity.class);
+            Intent i = new Intent(Audioboo.this, RecordActivity.class);
             startActivity(i);
           }
       });

@@ -1,6 +1,6 @@
 #! /bin/bash
 #
-# This file is part of AudioBoo, an android program for audio blogging.
+# This file is part of Audioboo, an android program for audio blogging.
 # Copyright (C) 2011 Audioboo Ltd. All rights reserved.
 #
 # Author: Jens Finkhaeuser <jens@finkhaeuser.de>
@@ -8,7 +8,7 @@
 # $Id: bootstrap.sh 1272 2010-11-01 14:07:29Z unwesen $
 
 # 1. Make sure we're in the project root. We'll look for AndroidManifest.xml,
-#    and check whether that includes a reference to AudioBoo.
+#    and check whether that includes a reference to Audioboo.
 PROJECT_PATH=$(pwd)
 MANIFEST="${PROJECT_PATH}/AndroidManifest.xml"
 if [ ! -f "${MANIFEST}" ] ; then
@@ -20,7 +20,7 @@ fi
 if grep -qi audioboo "${MANIFEST}" ; then
   true
 else
-  echo "No mention of AudioBoo found in AndroidManifest.xml!" >&2
+  echo "No mention of Audioboo found in AndroidManifest.xml!" >&2
   echo "You need to run this script in the project root." >&2
   exit 2
 fi

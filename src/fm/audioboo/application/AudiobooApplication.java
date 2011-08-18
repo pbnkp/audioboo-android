@@ -1,5 +1,5 @@
 /**
- * This file is part of AudioBoo, an android program for audio blogging.
+ * This file is part of Audioboo, an android program for audio blogging.
  * Copyright (C) 2011 Audioboo Ltd. All rights reserved.
  *
  * Author: Jens Finkhaeuser <jens@finkhaeuser.de>
@@ -16,12 +16,12 @@ import android.util.Log;
 /**
  * Process-level object creates and owns singleton objects.
  **/
-public class AudioBooApplication extends Application
+public class AudiobooApplication extends Application
 {
   /***************************************************************************
    * Private constants
    **/
-  private static final String     LTAG = "AudioBoo";
+  private static final String     LTAG = "Audioboo";
 
   /***************************************************************************
    * Public constants

@@ -1,7 +1,7 @@
 /**
- * This file is part of AudioBoo, an android program for audio blogging.
+ * This file is part of Audioboo, an android program for audio blogging.
  * Copyright (C) 2011 Audioboo Ltd.
- * Copyright (C) 2010,2011 AudioBoo Ltd.
+ * Copyright (C) 2010,2011 Audioboo Ltd.
  * All rights reserved.
  *
  * Author: Jens Finkhaeuser <jens@finkhaeuser.de>
@@ -29,7 +29,7 @@ import fm.audioboo.application.R;
 import java.lang.ref.WeakReference;
 
 /**
- * The record button in the AudioBoo client is just complex enough that it's
+ * The record button in the Audioboo client is just complex enough that it's
  * easiest to keep it's state in it's own class.
  * It's essentially a ToggleButton, but
  * - It's got three states, where the first state is only entered when it's

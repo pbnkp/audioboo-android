@@ -1,7 +1,7 @@
 /**
- * This file is part of AudioBoo, an android program for audio blogging.
+ * This file is part of Audioboo, an android program for audio blogging.
  * Copyright (C) 2011 Audioboo Ltd.
- * Copyright (C) 2010,2011 AudioBoo Ltd.
+ * Copyright (C) 2010,2011 Audioboo Ltd.
  * All rights reserved.
  *
  * Author: Jens Finkhaeuser <jens@finkhaeuser.de>
@@ -23,7 +23,7 @@ import java.io.IOException;
 
 
 /**
- * Representation of an AudioBoo user's data.
+ * Representation of an Audioboo user's data.
  **/
 public class User implements Parcelable, Serializable
 {

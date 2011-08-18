@@ -1,7 +1,7 @@
 /**
- * This file is part of AudioBoo, an android program for audio blogging.
+ * This file is part of Audioboo, an android program for audio blogging.
  * Copyright (C) 2011 Audioboo Ltd.
- * Copyright (C) 2010,2011 AudioBoo Ltd.
+ * Copyright (C) 2010,2011 Audioboo Ltd.
  * All rights reserved.
  *
  * Author: Jens Finkhaeuser <jens@finkhaeuser.de>
@@ -92,7 +92,7 @@ import fm.audioboo.service.UploadManager;
 import android.util.Log;
 
 /**
- * Abstraction for the AudioBoo API.
+ * Abstraction for the Audioboo API.
  **/
 public class API
 {

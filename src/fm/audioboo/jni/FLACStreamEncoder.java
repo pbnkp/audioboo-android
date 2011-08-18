@@ -1,5 +1,5 @@
 /**
- * This file is part of AudioBoo, an android program for audio blogging.
+ * This file is part of Audioboo, an android program for audio blogging.
  * Copyright (C) 2011 Audioboo Ltd. All rights reserved.
  *
  * Author: Jens Finkhaeuser <jens@finkhaeuser.de>
@@ -14,7 +14,7 @@ import java.nio.ByteBuffer;
 
 /**
  * This is *not* a full JNI wrapper for the FLAC codec, but merely exports
- * the minimum of functions necessary for the purposes of the AudioBoo client.
+ * the minimum of functions necessary for the purposes of the Audioboo client.
  **/
 public class FLACStreamEncoder
 {
